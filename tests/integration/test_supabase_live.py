@@ -4,6 +4,7 @@ These tests run against the active Supabase project defined in .env
 to verify that the 4NF schema, tables, views, RLS, and seed data are fully functional.
 """
 
+import os
 import pytest
 from app.infrastructure.supabase import (
     SupabaseClientManager,
@@ -11,6 +12,23 @@ from app.infrastructure.supabase import (
     SupabaseFertilizerRepository,
     SupabaseRawDataRepository,
 )
+
+
+def _has_supabase_credentials() -> bool:
+    try:
+        cfg = SupabaseConfig.from_env()
+        return bool(cfg.url and (cfg.key or cfg.service_role_key))
+    except Exception:
+        return False
+
+
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        not _has_supabase_credentials(),
+        reason="Live Supabase credentials (SUPABASE_URL and SUPABASE_KEY) not available in environment",
+    ),
+]
 
 
 @pytest.fixture(scope="module")

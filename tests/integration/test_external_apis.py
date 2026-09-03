@@ -13,6 +13,10 @@ load_dotenv()
 
 
 @pytest.mark.integration
+@pytest.mark.skipif(
+    not os.environ.get("FRED_API_KEY"),
+    reason="FRED_API_KEY not configured in environment",
+)
 def test_fred_api_connectivity_and_contract():
     """Verify FRED API key is valid and returns commodity price series."""
     api_key = os.environ.get("FRED_API_KEY")
@@ -55,6 +59,10 @@ def test_comex_stat_api_connectivity_and_contract():
 
 
 @pytest.mark.integration
+@pytest.mark.skipif(
+    not os.environ.get("COMTRADE_API_KEY"),
+    reason="COMTRADE_API_KEY not configured in environment",
+)
 def test_un_comtrade_api_connectivity_and_contract():
     """Verify UN Comtrade API key is valid and returns trade flow records."""
     api_key = os.environ.get("COMTRADE_API_KEY")
@@ -75,6 +83,10 @@ def test_un_comtrade_api_connectivity_and_contract():
 
 
 @pytest.mark.integration
+@pytest.mark.skipif(
+    not os.environ.get("FAOSTAT_TOKEN"),
+    reason="FAOSTAT_TOKEN not configured in environment",
+)
 def test_faostat_api_endpoint_check():
     """Verify FAOSTAT API endpoint status and diagnose authentication."""
     token = os.environ.get("FAOSTAT_TOKEN")
@@ -85,5 +97,5 @@ def test_faostat_api_endpoint_check():
         response = client.get(url, headers=headers)
 
     # Note: FAOSTAT tokens are short-lived Cognito JWTs (1h).
-    # If expired, it returns 403. This test documents the behavior.
-    assert response.status_code in (200, 403), f"Unexpected FAOSTAT status: {response.status_code}"
+    # If expired or unauthorized, it returns 401 or 403.
+    assert response.status_code in (200, 401, 403), f"Unexpected FAOSTAT status: {response.status_code}"
