@@ -89,3 +89,10 @@ Inicialmente, poderão ser avaliadas fontes relacionadas a:
 * World Bank Commodity Markets = https://www.worldbank.org/en/research/commodity-markets
 * OECD Data Explorer = https://data-explorer.oecd.org/
 * USGS Mineral Commodity Summaries = https://www.usgs.gov/centers/national-minerals-information-center/mineral-commodity-summaries
+
+---
+
+# 3. Boas práticas e controle de requisições
+
+Para especificações detalhadas de cotas de APIs, limites de requisições por segundo, estratégias de backoff e roteiro de povoamento sem sobrecarga das fontes públicas, consulte:
+* [Diretrizes e Boas Práticas de Requisições das Fontes de Dados](file:///c:/Users/MICRO/Desktop/FertiPartner/docs/architecture/external-apis-best-practices.md)

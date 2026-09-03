@@ -110,7 +110,7 @@ def test_config_from_env_success():
         "SUPABASE_TIMEOUT": "20.5",
     }
     with patch.dict(os.environ, mock_env, clear=False):
-        config = SupabaseConfig.from_env()
+        config = SupabaseConfig.from_env(load_env=False)
         assert config.url == "https://sample-project.supabase.co"
         assert config.key == "sample-key-123"
         assert config.service_role_key == "admin-secret-456"
@@ -126,7 +126,7 @@ def test_config_from_env_fallback_alternative_names():
         "SUPABASE_SERVICE_KEY": "sample-service-key",
     }
     with patch.dict(os.environ, mock_env, clear=True):
-        config = SupabaseConfig.from_env()
+        config = SupabaseConfig.from_env(load_env=False)
         assert config.url == "https://sample-project.supabase.co"
         assert config.key == "sample-anon-key"
         assert config.service_role_key == "sample-service-key"
@@ -138,3 +138,17 @@ def test_config_from_env_missing_vars():
         with pytest.raises(SupabaseConfigurationError, match="Missing required Supabase environment variables"):
             # Disable dotenv loading during this isolated test
             SupabaseConfig.from_env(load_env=False)
+
+
+def test_config_from_env_new_supabase_key_format_and_url_cleaning():
+    """Verify SupabaseConfig.from_env() supports sb_publishable_key, sb_secret_key, and cleans /rest/v1."""
+    mock_env = {
+        "SUPABASE_URL": "https://ghfbgcrvetskgntazdut.supabase.co/rest/v1/",
+        "sb_publishable_key": "sb_publishable_bOue9oc4Y1NhszCVJZtaDw_FECPdEKI",
+        "sb_secret_key": "sb_secret_-RKKEckrWhKE2AYLOxKong_35f1AiVJ",
+    }
+    with patch.dict(os.environ, mock_env, clear=True):
+        config = SupabaseConfig.from_env(load_env=False)
+        assert config.url == "https://ghfbgcrvetskgntazdut.supabase.co"
+        assert config.key == "sb_publishable_bOue9oc4Y1NhszCVJZtaDw_FECPdEKI"
+        assert config.service_role_key == "sb_secret_-RKKEckrWhKE2AYLOxKong_35f1AiVJ"

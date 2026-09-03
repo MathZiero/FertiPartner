@@ -79,8 +79,8 @@ class SupabaseConfig:
 
         Supported environment variable aliases:
             - URL: SUPABASE_URL, SUPABASE_PROJECT_URL, NEXT_PUBLIC_SUPABASE_URL
-            - Public Key: SUPABASE_KEY, SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_API_KEY, SUPABASE_PUBLIC_KEY
-            - Service Key: SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SERVICE_KEY, SUPABASE_SECRET_KEY
+            - Public Key: SUPABASE_KEY, SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_API_KEY, SUPABASE_PUBLIC_KEY, sb_publishable_key, SB_PUBLISHABLE_KEY
+            - Service Key: SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SERVICE_KEY, SUPABASE_SECRET_KEY, sb_secret_key, SB_SECRET_KEY
             - Schema: SUPABASE_SCHEMA (default: 'public')
             - Timeout: SUPABASE_TIMEOUT (default: 30.0)
 
@@ -93,12 +93,17 @@ class SupabaseConfig:
         if load_env and load_dotenv is not None:
             load_dotenv(dotenv_path=env_file, override=False)
 
-        url = (
+        raw_url = (
             os.environ.get("SUPABASE_URL")
             or os.environ.get("SUPABASE_PROJECT_URL")
             or os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
             or ""
         ).strip()
+
+        # Normalize URL by removing trailing slashes and /rest/v1 if inadvertently present
+        url = raw_url.rstrip("/")
+        if url.endswith("/rest/v1"):
+            url = url[:-8].rstrip("/")
 
         key = (
             os.environ.get("SUPABASE_KEY")
@@ -106,6 +111,8 @@ class SupabaseConfig:
             or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
             or os.environ.get("SUPABASE_API_KEY")
             or os.environ.get("SUPABASE_PUBLIC_KEY")
+            or os.environ.get("sb_publishable_key")
+            or os.environ.get("SB_PUBLISHABLE_KEY")
             or ""
         ).strip()
 
@@ -113,15 +120,21 @@ class SupabaseConfig:
             os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
             or os.environ.get("SUPABASE_SERVICE_KEY")
             or os.environ.get("SUPABASE_SECRET_KEY")
+            or os.environ.get("sb_secret_key")
+            or os.environ.get("SB_SECRET_KEY")
             or ""
         ).strip() or None
+
+        # If key wasn't provided but service_role_key was, allow fallback
+        if not key and service_role_key:
+            key = service_role_key
 
         schema = os.environ.get("SUPABASE_SCHEMA", "public").strip()
         timeout_str = os.environ.get("SUPABASE_TIMEOUT", "30.0").strip()
 
         if not url or not key:
             raise SupabaseConfigurationError(
-                "Missing required Supabase environment variables: SUPABASE_URL and SUPABASE_KEY (or SUPABASE_ANON_KEY)."
+                "Missing required Supabase environment variables: SUPABASE_URL and SUPABASE_KEY (or SUPABASE_ANON_KEY/sb_publishable_key)."
             )
 
         try:

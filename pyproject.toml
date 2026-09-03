@@ -13,6 +13,14 @@ dependencies = [
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+    "integration: marks integration tests against live databases or external APIs",
+]
 
 [tool.pyright]
 extraPaths = ["src"]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.411",
+]
