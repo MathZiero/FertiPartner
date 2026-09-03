@@ -1,4 +1,4 @@
-"""Command-line utility to generate, refresh, and inspect FAOSTAT tokens.
+"""Utilitário de linha de comando para gerar, renovar e verificar tokens do FAOSTAT.
 
 Usage:
     python scripts/faostat_token_generator.py

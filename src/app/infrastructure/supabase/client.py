@@ -1,4 +1,4 @@
-"""Supabase client manager and connection lifecycle handlers."""
+"""Gerenciador e fábrica de instâncias do cliente Supabase (público e admin)."""
 
 import logging
 from typing import Any

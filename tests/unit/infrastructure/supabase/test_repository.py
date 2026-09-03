@@ -1,4 +1,4 @@
-"""Unit tests for Supabase repositories."""
+"""Testes unitários dos repositórios base e específicos do Supabase."""
 
 from unittest.mock import MagicMock
 import pytest

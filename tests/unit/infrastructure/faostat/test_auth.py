@@ -1,4 +1,4 @@
-"""Unit tests for FAOSTAT token authentication manager."""
+"""Testes unitários do gerenciador de autenticação e validação de tokens do FAOSTAT."""
 
 import base64
 import json

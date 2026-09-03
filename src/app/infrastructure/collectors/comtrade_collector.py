@@ -1,9 +1,4 @@
-"""UN Comtrade Collector for Global Bilateral Trade Flows in Fertilizers.
-
-Extracts annual trade records between Brazil and global partners for HS codes
-310210 (Urea), 310520 (MAP), 310530 (DAP), 310420 (KCl/MOP), stores raw JSON into
-raw_data, and normalizes into trade_records in 4NF.
-"""
+"""Coletor de fluxos de comércio bilateral global de fertilizantes (UN Comtrade)."""
 
 import logging
 import os

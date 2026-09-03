@@ -1,8 +1,4 @@
-"""Live integration and contract verification tests for external data source APIs.
-
-These tests check whether the API keys and endpoints configured in .env
-are currently active, responding, and compatible with FertiPartner ingestion models.
-"""
+"""Testes de integração e verificação de contratos com APIs externas (FRED, Comex Stat, Comtrade, FAOSTAT)."""
 
 import os
 import pytest

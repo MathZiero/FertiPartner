@@ -1,4 +1,4 @@
-"""Unit tests for Supabase configuration and exceptions."""
+"""Testes unitários de configurações, variáveis de ambiente e exceções do Supabase."""
 
 import os
 from unittest.mock import patch

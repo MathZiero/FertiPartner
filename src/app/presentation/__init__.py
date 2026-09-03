@@ -1,1 +1,1 @@
-"""Presentation layer: API routes, controllers, CLI interfaces, and views."""
+"""Camada de apresentação: rotas de API, CLI e controladores de interface."""

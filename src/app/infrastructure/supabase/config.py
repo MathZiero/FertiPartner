@@ -1,4 +1,4 @@
-"""Configuration and environment management for Supabase."""
+"""Configurações, validação de ambiente e URLs para conexão com o Supabase."""
 
 from dataclasses import dataclass
 import os

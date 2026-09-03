@@ -1,1 +1,1 @@
-"""Domain layer: entities, value objects, domain events, and repository interfaces."""
+"""Camada de domínio: entidades de negócio, regras e contratos de repositório."""

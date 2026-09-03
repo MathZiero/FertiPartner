@@ -1,4 +1,4 @@
-"""CLI script to populate the FertiPartner database from external data sources.
+"""Script CLI para ingestão e povoamento do banco de dados a partir de fontes externas.
 
 Usage:
     python scripts/populate_database.py --all

@@ -1,9 +1,4 @@
-"""FAOSTAT Collector for Global Fertilizer Production and Agriculture Consumption.
-
-Extracts official production and consumption facts from FAOSTAT domain RFB
-(Fertilizers by Product), stores raw JSON into raw_data, and normalizes into
-production_records and consumption_records in 4NF.
-"""
+"""Coletor de dados globais de produção e consumo de fertilizantes (FAOSTAT RFB)."""
 
 import logging
 from typing import Any

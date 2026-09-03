@@ -1,9 +1,4 @@
-"""Authentication and Token Management for FAOSTAT API.
-
-FAOSTAT uses AWS Cognito tokens that expire after 60 minutes (3600 seconds).
-This module handles JWT inspection, automatic expiration checking, and programmatic
-token retrieval via the /auth/login endpoint.
-"""
+"""Gerenciamento de autenticação, renovação e validação de tokens JWT do FAOSTAT."""
 
 import base64
 import json

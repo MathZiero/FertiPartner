@@ -1,4 +1,4 @@
-"""HTTP resilience and client infrastructure."""
+"""Módulo de infraestrutura de cliente HTTP resiliente."""
 
 from app.infrastructure.http.resilient_client import ResilientHttpClient
 

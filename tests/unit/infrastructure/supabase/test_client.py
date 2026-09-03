@@ -1,4 +1,4 @@
-"""Unit tests for Supabase client manager and factory."""
+"""Testes unitários do gerenciador e fábrica de clientes Supabase."""
 
 from unittest.mock import MagicMock, patch
 import pytest

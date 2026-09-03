@@ -1,8 +1,4 @@
-"""FRED (Federal Reserve Economic Data) Collector for Fertilizer Prices & Indices.
-
-Collects monthly price series and PPI from the St. Louis Fed API,
-stores raw JSON observations into raw_data, and inserts normalized rows into price_records.
-"""
+"""Coletor de séries de preços e índices econômicos de fertilizantes (FRED - St. Louis Fed)."""
 
 import logging
 import os

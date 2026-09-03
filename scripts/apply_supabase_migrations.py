@@ -1,8 +1,4 @@
-"""Migration and Schema Utility for Supabase in FertiPartner.
-
-This script assists in applying and validating the 4NF PostgreSQL schema
-for FertiPartner against the Supabase database.
-"""
+"""Utilitário de linha de comando para aplicar e validar migrações SQL no Supabase."""
 
 import argparse
 import logging

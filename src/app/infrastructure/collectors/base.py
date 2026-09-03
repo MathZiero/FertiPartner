@@ -1,8 +1,4 @@
-"""Base Collector class for all FertiPartner data ingestion pipelines.
-
-Handles collection auditing (data_collection_runs), immutable raw payload persistence (raw_data),
-hash generation, and country/fertilizer foreign key caching.
-"""
+"""Classe base para coletores de dados: gerencia auditoria, persistência bruta e hashing."""
 
 from abc import ABC, abstractmethod
 import hashlib

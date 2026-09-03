@@ -1,1 +1,1 @@
-"""FertiPartner main application package."""
+"""Pacote principal da aplicação FertiPartner."""

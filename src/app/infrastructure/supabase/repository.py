@@ -1,4 +1,4 @@
-"""Base and specialized repositories for Supabase table operations."""
+"""Repositórios base e especializados para operações em tabelas do Supabase."""
 
 import logging
 from typing import Any, cast

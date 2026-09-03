@@ -1,8 +1,4 @@
-"""Live database tests for the Supabase instance.
-
-These tests run against the active Supabase project defined in .env
-to verify that the 4NF schema, tables, views, RLS, and seed data are fully functional.
-"""
+"""Testes de integração ao vivo para validar schema 4NF, tabelas, views e RLS no Supabase."""
 
 import os
 import pytest

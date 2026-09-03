@@ -1,4 +1,4 @@
-"""Unit tests for BaseCollector, FREDCollector, ComexStatCollector, and UNComtradeCollector."""
+"""Testes unitários dos coletores de dados (BaseCollector, FRED, Comex Stat e UN Comtrade)."""
 
 from unittest.mock import MagicMock, patch
 import pytest

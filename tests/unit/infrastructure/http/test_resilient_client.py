@@ -1,4 +1,4 @@
-"""Unit tests for ResilientHttpClient."""
+"""Testes unitários do cliente HTTP resiliente (rate limiting, retentativas e espaçamento)."""
 
 import time
 import pytest

@@ -1,7 +1,4 @@
-"""Integration tests for Supabase infrastructure.
-
-These tests verify contract adherence, mocking live interactions or running when valid credentials exist.
-"""
+"""Testes de integração simulada (mock) para o fluxo completo de repositórios do Supabase."""
 
 from unittest.mock import MagicMock, patch
 import pytest

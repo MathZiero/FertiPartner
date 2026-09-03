@@ -1,4 +1,4 @@
-"""Global pytest fixtures for FertiPartner test suite."""
+"""Fixtures globais do pytest compartilhadas entre os testes."""
 
 import pytest
 

@@ -1,4 +1,4 @@
-"""FAOSTAT API integration package."""
+"""Módulo de integração e autenticação com a API do FAOSTAT."""
 
 from app.infrastructure.faostat.auth import (
     FAOSTATAuthManager,

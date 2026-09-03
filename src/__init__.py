@@ -1,1 +1,1 @@
-"""FertiPartner source package."""
+"""Pacote raiz do código-fonte da aplicação FertiPartner."""

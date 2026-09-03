@@ -1,7 +1,4 @@
-"""Custom exception classes for the Supabase infrastructure integration.
-
-Adheres to FertiPartner error handling conventions.
-"""
+"""Exceções customizadas para operações e integração com o Supabase."""
 
 
 class SupabaseIntegrationError(Exception):

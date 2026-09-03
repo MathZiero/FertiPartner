@@ -1,9 +1,4 @@
-"""Resilient HTTP client with rate limiting, exponential backoff, and jitter.
-
-This client enforces provider-specific rate limits and handles throttling (HTTP 429),
-temporary gateway errors (HTTP 502/503/504), and provider-specific throttling messages
-(e.g., Comex Stat 10-second cool-off).
-"""
+"""Cliente HTTP resiliente com controle de taxa (rate limit), retentativas exponenciais e jitter."""
 
 import logging
 import random

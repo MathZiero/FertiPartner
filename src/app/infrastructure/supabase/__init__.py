@@ -1,7 +1,4 @@
-"""Supabase infrastructure integration module for FertiPartner.
-
-Provides configuration loaders, client management, repositories, and exception handling.
-"""
+"""Módulo de infraestrutura e integração com banco de dados Supabase."""
 
 from app.infrastructure.supabase.client import (
     SupabaseClientManager,

@@ -1,15 +1,10 @@
-"""Comex Stat (MDIC Brasil) Collector for Foreign Trade of Fertilizers.
-
-Extracts monthly granular microdata of Brazilian imports and exports by NCM, partner country,
-and destination state (UF), stores raw JSON into raw_data, and normalizes into trade_records
-and brazil_trade_details in 4NF.
-"""
+"""Coletor de dados de comércio exterior brasileiro (MDIC Comex Stat) para fertilizantes."""
 
 import calendar
 from datetime import datetime
 import logging
 import unicodedata
-from typing import Any
+from typing import Any, cast
 from supabase import Client
 from app.infrastructure.collectors.base import BaseCollector
 from app.infrastructure.http import ResilientHttpClient
@@ -104,8 +99,9 @@ class ComexStatCollector(BaseCollector):
                     })
                     .execute()
                 )
-                if res.data:
-                    new_id = int(res.data[0]["id"])
+                res_data = cast(list[dict[str, Any]], res.data)
+                if res_data:
+                    new_id = int(res_data[0]["id"])
                     self._countries_by_name[country_name.strip().lower()] = new_id
                     self._countries_by_name[clean_name] = new_id
                     self._countries_by_iso[iso2] = new_id
@@ -263,13 +259,14 @@ class ComexStatCollector(BaseCollector):
                     )
                     .execute()
                 )
-                if res.data:
-                    inserted_batch = len(res.data)
+                res_data = cast(list[dict[str, Any]], res.data)
+                if res_data:
+                    inserted_batch = len(res_data)
                     total_inserted += inserted_batch
 
                     # Insert corresponding brazil_trade_details for the primary state of entry
                     details_batch = []
-                    for idx, row_created in enumerate(res.data):
+                    for idx, row_created in enumerate(res_data):
                         if idx >= len(chunk):
                             break
                         row_data = chunk[idx]

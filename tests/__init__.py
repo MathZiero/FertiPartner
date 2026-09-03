@@ -1,1 +1,1 @@
-"""Tests root package."""
+"""Pacote raiz de testes do FertiPartner."""
