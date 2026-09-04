@@ -1,5 +1,7 @@
-"""Visão Geral do Mercado de Fertilizantes (Dashboard Executivo)."""
+"""Página 1: Visão Geral do Mercado de Fertilizantes (Dashboard Executivo)."""
 
+import sys
+from pathlib import Path
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
@@ -15,7 +17,7 @@ from app.presentation.streamlit.components.ui import (
 from app.presentation.streamlit.theme import apply_ferti_theme, get_default_plotly_config, FERTI_COLORS
 
 
-def render_view() -> None:
+def render_page() -> None:
     render_header(
         title="Visão Geral do Mercado NPK",
         subtitle="Inteligência integrada de fertilizantes: produção mundial, comércio exterior, preços e dependência estratégica do Brasil.",
@@ -23,20 +25,20 @@ def render_view() -> None:
         badge_type="emerald",
     )
 
-    # Coleta dos dados consolidados
+    # Coleta dos dados consolidados via serviço de dados
     df_fert = FertiDataService.get_fertilizer_profiles()
     df_prod = FertiDataService.get_global_production_rankings()
     df_trade = FertiDataService.get_bilateral_trade_flows()
     df_dep = FertiDataService.get_brazil_external_dependency()
     df_prices = FertiDataService.get_price_benchmark_trends()
 
-    # Cálculo dos KPIs principais
+    # Métricas principais
     total_br_import = df_dep["total_imports_mt"].sum() if not df_dep.empty else 41500000.0
     avg_br_dep = df_dep["external_dependency_pct"].mean() if not df_dep.empty else 88.5
     total_global_prod = df_prod["standard_quantity_mt"].sum() if not df_prod.empty else 184000000.0
     latest_price = df_prices["standard_price_usd_per_mt"].iloc[-1] if not df_prices.empty else 430.0
 
-    # Grid de KPIs
+    # Grid de KPIs com st.metric nativo em container com borda
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         render_kpi_card(
@@ -71,9 +73,9 @@ def render_view() -> None:
             help_text="USD por Tonelada Métrica",
         )
 
-    st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
+    st.write("")
 
-    # Abas com diferentes perspectivas analíticas
+    # Abas com perspectivas analíticas
     tab_overview, tab_prices, tab_products = st.tabs([
         "📊 Composição & Balanço",
         "📈 Panorama de Preços",
@@ -83,7 +85,7 @@ def render_view() -> None:
     with tab_overview:
         col_left, col_right = st.columns([6, 5])
         with col_left:
-            st.markdown("##### 🇧🇷 Demanda e Importações Brasileiras por Fertilizante (MT)")
+            st.subheader("🇧🇷 Demanda e Importações Brasileiras por Fertilizante (MT)")
             if not df_dep.empty:
                 fig_dep = px.bar(
                     df_dep,
@@ -100,53 +102,48 @@ def render_view() -> None:
                     name="Importações (MT)" if "total_imports" in t.name else "Produção Nacional (MT)"
                 ))
                 apply_ferti_theme(fig_dep, height=360)
-                st.plotly_chart(fig_dep, use_container_width=True, config=get_default_plotly_config())
+                st.plotly_chart(fig_dep, width="stretch", config=get_default_plotly_config())
             else:
-                st.info("Dados de dependência não disponíveis.")
+                st.info("Sem dados de dependência externa disponíveis.")
 
         with col_right:
-            st.markdown("##### 🌐 Participação na Produção Mundial por País")
+            st.subheader("🌐 Concentração da Produção Mundial")
             if not df_prod.empty:
-                prod_by_country = df_prod.groupby("country_name")["standard_quantity_mt"].sum().reset_index()
+                top_prods = df_prod.groupby("country_name")["standard_quantity_mt"].sum().reset_index()
+                top_prods = top_prods.sort_values(by="standard_quantity_mt", ascending=False).head(6)
                 fig_pie = px.pie(
-                    prod_by_country,
+                    top_prods,
                     names="country_name",
                     values="standard_quantity_mt",
-                    hole=0.55,
+                    hole=0.45,
                     color_discrete_sequence=FERTI_COLORS,
                 )
-                fig_pie.update_traces(
-                    textposition="inside",
-                    textinfo="percent+label",
-                    marker=dict(line=dict(color="#0B0F19", width=2)),
-                )
-                apply_ferti_theme(fig_pie, height=360, show_legend=False)
-                st.plotly_chart(fig_pie, use_container_width=True, config=get_default_plotly_config())
+                apply_ferti_theme(fig_pie, height=360)
+                st.plotly_chart(fig_pie, width="stretch", config=get_default_plotly_config())
             else:
-                st.info("Dados de produção não disponíveis.")
+                st.info("Sem dados de produção global.")
 
     with tab_prices:
-        st.markdown("##### 📉 Séries Históricas de Preços Internacionais (FOB / CFR - USD/MT)")
+        st.subheader("📉 Séries Históricas de Preços Internacionais (USD / MT)")
         if not df_prices.empty:
-            fig_prices = px.line(
+            fig_p = px.line(
                 df_prices,
                 x="price_date",
                 y="standard_price_usd_per_mt",
                 color="benchmark_name",
                 markers=True,
-                labels={"price_date": "Data", "standard_price_usd_per_mt": "Preço (USD/MT)", "benchmark_name": "Benchmark"},
+                labels={"price_date": "Data", "standard_price_usd_per_mt": "Preço Médio (USD / MT)", "benchmark_name": "Benchmark"},
             )
-            fig_prices.update_traces(line=dict(width=2.5))
-            apply_ferti_theme(fig_prices, height=400, x_title="Período", y_title="USD / MT")
-            st.plotly_chart(fig_prices, use_container_width=True, config=get_default_plotly_config())
+            apply_ferti_theme(fig_p, height=380)
+            st.plotly_chart(fig_p, width="stretch", config=get_default_plotly_config())
         else:
             st.info("Séries de preços não disponíveis.")
 
     with tab_products:
-        st.markdown("##### 📑 Catálogo de Fertilizantes Mapeados no Sistema")
+        st.subheader("🌱 Catálogo Ativo de Fertilizantes na Base 4NF")
         if not df_fert.empty:
-            display_cols = ["canonical_name", "category_name", "chemical_formula", "cas_rn"]
-            available_cols = [c for c in display_cols if c in df_fert.columns]
+            cols = ["canonical_name", "category_name", "chemical_formula", "cas_rn"]
+            available_cols = [c for c in cols if c in df_fert.columns]
             rename_map = {
                 "canonical_name": "Fertilizante",
                 "category_name": "Categoria",
@@ -155,13 +152,13 @@ def render_view() -> None:
             }
             st.dataframe(
                 df_fert[available_cols].rename(columns=rename_map),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
-            render_download_csv_button(df_fert, filename="catalogo_fertilizantes.csv")
+            render_download_csv_button(df_fert, filename="catalogo_fertilizantes.csv", key="dl_p01_fert")
 
     render_source_badge("MDIC Comex Stat • FAOSTAT • Banco Mundial / FRED", "Mensal & Anual")
 
 
 if __name__ == "__main__":
-    render_view()
+    render_page()

@@ -1,5 +1,6 @@
-"""Comércio Internacional: Importações e Exportações Globais (RF04, RF05)."""
+"""Página 4: Comércio Internacional: Importações e Exportações Globais (RF04, RF05)."""
 
+import sys
 import streamlit as st
 import plotly.express as px
 import pandas as pd
@@ -20,7 +21,7 @@ from app.presentation.streamlit.theme import (
 )
 
 
-def render_view() -> None:
+def render_page() -> None:
     render_header(
         title="Comércio Internacional (Importações & Exportações)",
         subtitle="Movimentação transfronteiriça de fertilizantes, valores aduaneiros (FOB/CIF) e preços médios praticados por corredor comercial.",
@@ -38,15 +39,15 @@ def render_view() -> None:
     c_flow, c_fert, c_year = st.columns([4, 4, 4])
     with c_flow:
         flow_options = ["Todos", "IMPORT", "EXPORT"]
-        selected_flow = st.segmented_control("Sentido do Fluxo", flow_options, default="Todos")
+        selected_flow = st.segmented_control("Sentido do Fluxo", flow_options, default="Todos", key="p04_flow_ctrl")
 
     with c_fert:
         fert_options = ["Todos"] + sorted(df_trade["fertilizer_name"].dropna().unique().tolist())
-        selected_fert = st.selectbox("Fertilizante:", fert_options)
+        selected_fert = st.selectbox("Fertilizante:", fert_options, key="p04_fert_select")
 
     with c_year:
         years = sorted(df_trade["trade_year"].dropna().unique().tolist(), reverse=True)
-        selected_year = st.selectbox("Ano:", years, index=0) if years else 2023
+        selected_year = st.selectbox("Ano:", years, index=0, key="p04_year_select") if years else 2023
 
     # Filtragem
     filtered = df_trade[df_trade["trade_year"] == selected_year].copy()
@@ -86,11 +87,11 @@ def render_view() -> None:
             help_text="Valor / Volume",
         )
 
-    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
+    st.write("")
 
     col_orig, col_dest = st.columns([6, 6])
     with col_orig:
-        st.markdown("##### 🚢 Principais Países Exportadores (Origens)")
+        st.subheader("🚢 Principais Países Exportadores (Origens)")
         exp_summary = filtered.groupby("exporter_country")["total_quantity_mt"].sum().reset_index()
         exp_summary = exp_summary.sort_values(by="total_quantity_mt", ascending=True).tail(8)
         fig_exp = px.bar(
@@ -104,10 +105,10 @@ def render_view() -> None:
         )
         fig_exp.update_traces(texttemplate="%{x:,.0f} MT", textposition="inside")
         apply_ferti_theme(fig_exp, height=340, show_legend=False)
-        st.plotly_chart(fig_exp, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_exp, width="stretch", config=get_default_plotly_config())
 
     with col_dest:
-        st.markdown("##### 📥 Principais Mercados Compradores (Destinos)")
+        st.subheader("📥 Principais Mercados Compradores (Destinos)")
         imp_summary = filtered.groupby("importer_country")["total_quantity_mt"].sum().reset_index()
         imp_summary = imp_summary.sort_values(by="total_quantity_mt", ascending=True).tail(8)
         fig_imp = px.bar(
@@ -121,9 +122,9 @@ def render_view() -> None:
         )
         fig_imp.update_traces(texttemplate="%{x:,.0f} MT", textposition="inside")
         apply_ferti_theme(fig_imp, height=340, show_legend=False)
-        st.plotly_chart(fig_imp, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_imp, width="stretch", config=get_default_plotly_config())
 
-    st.markdown("##### 📑 Relações Comerciais Detalhadas")
+    st.subheader("📑 Relações Comerciais Detalhadas")
     display_cols = ["fertilizer_name", "flow_type", "exporter_country", "importer_country", "total_quantity_mt", "total_value_usd", "avg_usd_per_mt"]
     st.dataframe(
         filtered[display_cols].rename(columns={
@@ -140,13 +141,13 @@ def render_view() -> None:
             "Valor ($ USD)": st.column_config.NumberColumn(format="$ %d"),
             "Preço Médio ($/MT)": st.column_config.NumberColumn(format="$ %.2f"),
         },
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
-    render_download_csv_button(filtered, filename=f"comercio_internacional_{selected_year}.csv")
+    render_download_csv_button(filtered, filename=f"comercio_internacional_{selected_year}.csv", key="dl_p04_table")
 
     render_source_badge("UN Comtrade • MDIC Comex Stat", "Mensal")
 
 
 if __name__ == "__main__":
-    render_view()
+    render_page()

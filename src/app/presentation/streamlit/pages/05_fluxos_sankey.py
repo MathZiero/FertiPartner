@@ -1,5 +1,6 @@
-"""Fluxos Comerciais Bilaterais com Diagrama Sankey Interativo (RF06)."""
+"""Página 5: Fluxos Comerciais Bilaterais com Diagrama Sankey Interativo (RF06)."""
 
+import sys
 import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
@@ -19,7 +20,7 @@ from app.presentation.streamlit.theme import (
 )
 
 
-def render_view() -> None:
+def render_page() -> None:
     render_header(
         title="Fluxos Comerciais Bilaterais (Diagrama Sankey)",
         subtitle="Mapeamento visual dinâmico dos fluxos de suprimento internacional conectando polos exportadores aos mercados consumidores.",
@@ -37,17 +38,18 @@ def render_view() -> None:
     c1, c2, c3 = st.columns([5, 4, 3])
     with c1:
         fert_options = ["Todos"] + sorted(df_trade["fertilizer_name"].dropna().unique().tolist())
-        selected_fert = st.selectbox("Fertilizante:", fert_options)
+        selected_fert = st.selectbox("Fertilizante:", fert_options, key="p05_fert_select")
 
     with c2:
         years = sorted(df_trade["trade_year"].dropna().unique().tolist(), reverse=True)
-        selected_year = st.selectbox("Ano de Referência:", years, index=0) if years else 2023
+        selected_year = st.selectbox("Ano de Referência:", years, index=0, key="p05_year_select") if years else 2023
 
     with c3:
         metric_choice = st.radio(
             "Ponderação das Rotas:",
             ["Volume (MT)", "Valor ($ USD)"],
             horizontal=True,
+            key="p05_metric_radio",
         )
 
     # Filtragem
@@ -64,11 +66,10 @@ def render_view() -> None:
         st.info("Nenhum fluxo bilateral encontrado para os filtros selecionados.")
         return
 
-    # Construção das listas de nós e links para o Sankey
+    # Construção dos nós e links
     exporters = sorted(routes["exporter_country"].unique().tolist())
     importers = sorted(routes["importer_country"].unique().tolist())
 
-    # Garantir nomes únicos se um país for ao mesmo tempo exportador e importador
     node_labels = exporters + importers
     node_indices = {name: i for i, name in enumerate(node_labels)}
 
@@ -76,7 +77,6 @@ def render_view() -> None:
     targets = [node_indices[imp] for imp in routes["importer_country"]]
     values = routes[agg_col].tolist()
 
-    # Cores personalizadas para nós e elos
     node_colors = []
     for i, name in enumerate(node_labels):
         if i < len(exporters):
@@ -86,7 +86,6 @@ def render_view() -> None:
 
     link_colors = ["rgba(59, 130, 246, 0.35)" for _ in values]
 
-    # Criação da figura Sankey
     fig_sankey = go.Figure(
         data=[
             go.Sankey(
@@ -124,10 +123,9 @@ def render_view() -> None:
     )
     fig_sankey.update_layout(margin=dict(l=20, r=20, t=60, b=20))
 
-    st.plotly_chart(fig_sankey, use_container_width=True, config=get_default_plotly_config())
+    st.plotly_chart(fig_sankey, width="stretch", config=get_default_plotly_config())
 
-    # Tabela detalhada das rotas comerciais
-    st.markdown("##### 🧭 Resumo das Rotas Comerciais Mais Ativas")
+    st.subheader("🧭 Resumo das Rotas Comerciais Mais Ativas")
     routes_sorted = routes.sort_values(by=agg_col, ascending=False)
     st.dataframe(
         routes_sorted.rename(columns={
@@ -140,13 +138,13 @@ def render_view() -> None:
                 format="%d MT" if metric_choice == "Volume (MT)" else "$ %d"
             )
         },
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
-    render_download_csv_button(routes_sorted, filename=f"rotas_sankey_{selected_year}.csv")
+    render_download_csv_button(routes_sorted, filename=f"rotas_sankey_{selected_year}.csv", key="dl_p05_sankey")
 
     render_source_badge("UN Comtrade & MDIC Comex Stat", "Mensal")
 
 
 if __name__ == "__main__":
-    render_view()
+    render_page()

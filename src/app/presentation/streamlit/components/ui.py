@@ -1,4 +1,4 @@
-"""Componentes visuais reutilizáveis para as páginas do FertiPartner."""
+"""Componentes visuais nativos e reutilizáveis para as páginas do FertiPartner."""
 
 from typing import Any
 import pandas as pd
@@ -11,20 +11,23 @@ def render_header(
     badge_text: str | None = None,
     badge_type: str = "emerald",
 ) -> None:
-    """Renderiza um cabeçalho moderno e impactante com estética AgTech."""
-    badge_html = ""
-    if badge_text:
-        badge_html = f'<span class="fp-badge fp-badge-{badge_type}" style="margin-left: 12px; vertical-align: middle;">{badge_text}</span>'
+    """Renderiza um cabeçalho limpo e moderno utilizando componentes nativos do Streamlit."""
+    col_title, col_badge = st.columns([10, 2])
+    with col_title:
+        st.title(title)
+        if subtitle:
+            st.caption(subtitle)
+    with col_badge:
+        if badge_text:
+            badge_color = {
+                "emerald": "green",
+                "blue": "blue",
+                "purple": "violet",
+                "amber": "orange",
+            }.get(badge_type, "green")
+            st.markdown(f":{badge_color}-background[**{badge_text}**]")
 
-    st.markdown(
-        f"""
-        <div class="fp-header-container">
-            <h1 class="fp-header-title">{title} {badge_html}</h1>
-            {f'<p class="fp-header-subtitle">{subtitle}</p>' if subtitle else ''}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.divider()
 
 
 def render_kpi_card(
@@ -34,49 +37,27 @@ def render_kpi_card(
     delta_positive: bool | None = None,
     help_text: str | None = None,
 ) -> None:
-    """Renderiza um card de indicador de desempenho (KPI) de alto impacto visual."""
-    delta_html = ""
-    if delta:
+    """Renderiza um indicador de desempenho (KPI) utilizando st.metric nativo em container com borda."""
+    with st.container(border=True):
         if delta_positive is True:
-            delta_class = "fp-delta-positive"
-            arrow = "▲"
+            delta_color = "normal"
         elif delta_positive is False:
-            delta_class = "fp-delta-negative"
-            arrow = "▼"
+            delta_color = "inverse"
         else:
-            delta_class = "fp-delta-neutral"
-            arrow = "•"
-        delta_html = f'<span class="{delta_class}">{arrow} {delta}</span>'
+            delta_color = "off" if delta is None else "normal"
 
-    help_html = f'<span style="color: #64748B; font-size: 0.75rem;">{help_text}</span>' if help_text else ""
-
-    st.markdown(
-        f"""
-        <div class="fp-kpi-card">
-            <div class="fp-kpi-title">{title}</div>
-            <div class="fp-kpi-value">{value}</div>
-            <div class="fp-kpi-footer">
-                {delta_html}
-                {help_html}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        st.metric(
+            label=title,
+            value=value,
+            delta=delta,
+            delta_color=delta_color,
+            help=help_text,
+        )
 
 
 def render_source_badge(source_name: str, frequency: str = "Mensal") -> None:
-    """Exibe badge com rastreabilidade da fonte e frequência de atualização (RF17)."""
-    st.markdown(
-        f"""
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #94A3B8; margin-top: 10px; margin-bottom: 10px;">
-            <span>ℹ️ <b>Fonte:</b> {source_name}</span>
-            <span class="fp-badge fp-badge-blue">{frequency}</span>
-            <span style="color: #64748B;">• Padrão 4NF / ISO</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """Exibe badge informativa de rastreabilidade da fonte e frequência de atualização (RF17)."""
+    st.caption(f"ℹ️ **Fonte:** {source_name} • **Frequência:** {frequency} • **Padrão:** 4NF / ISO")
 
 
 @st.dialog("Ficha Técnica do Fertilizante")
@@ -85,53 +66,58 @@ def show_fertilizer_details_modal(fert: dict[str, Any]) -> None:
     st.subheader(f"{fert.get('canonical_name', 'Fertilizante')}")
     st.caption(f"Categoria: {fert.get('category_name', 'N/A')} | Fórmula: `{fert.get('chemical_formula', 'N/A')}`")
 
-    st.markdown(f"**Descrição:** {fert.get('description', 'Sem descrição cadastrada.')}")
+    st.write(f"**Descrição:** {fert.get('description', 'Sem descrição cadastrada.')}")
 
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("**Identificação Química:**")
-        st.markdown(f"- **CAS RN:** `{fert.get('cas_rn', 'N/A')}`")
-        st.markdown(f"- **Slug do Sistema:** `{fert.get('slug', 'N/A')}`")
+        with st.container(border=True):
+            st.markdown("**Identificação Química:**")
+            st.markdown(f"- **CAS RN:** `{fert.get('cas_rn', 'N/A')}`")
+            st.markdown(f"- **Slug do Sistema:** `{fert.get('slug', 'N/A')}`")
 
     with c2:
-        st.markdown("**Composição Nutricional Típica:**")
-        nutrients = fert.get("typical_nutrients") or {}
-        if isinstance(nutrients, dict) and nutrients:
-            for nut, val in nutrients.items():
-                st.markdown(f"- **{nut}:** `{val}%`")
-        else:
-            st.write("Dados nutricionais não disponíveis.")
+        with st.container(border=True):
+            st.markdown("**Composição Nutricional Típica:**")
+            nutrients = fert.get("typical_nutrients") or {}
+            if isinstance(nutrients, dict) and nutrients:
+                for nut, val in nutrients.items():
+                    st.markdown(f"- **{nut}:** `{val}%`")
+            else:
+                st.write("Dados nutricionais não disponíveis.")
 
-    st.markdown("---")
+    st.divider()
     c3, c4 = st.columns(2)
     with c3:
-        st.markdown("**Classificações Fiscais (HS / NCM):**")
-        codes = fert.get("hs_ncm_codes") or []
-        if codes:
-            st.markdown(" ".join([f"`{c}`" for c in codes]))
-        else:
-            st.write("Nenhum código cadastrado.")
+        with st.container(border=True):
+            st.markdown("**Classificações Fiscais (HS / NCM):**")
+            codes = fert.get("hs_ncm_codes") or []
+            if codes:
+                st.markdown(" ".join([f"`{c}`" for c in codes]))
+            else:
+                st.write("Nenhum código cadastrado.")
 
     with c4:
-        st.markdown("**Sinônimos Comerciais:**")
-        synonyms = fert.get("synonyms") or []
-        if synonyms:
-            st.markdown(", ".join(synonyms))
-        else:
-            st.write("Nenhum sinônimo.")
+        with st.container(border=True):
+            st.markdown("**Sinônimos Comerciais:**")
+            synonyms = fert.get("synonyms") or []
+            if synonyms:
+                st.markdown(", ".join(synonyms))
+            else:
+                st.write("Nenhum sinônimo.")
 
 
 def render_download_csv_button(
     df: pd.DataFrame,
     filename: str = "fertipartner_data.csv",
     label: str = "Baixar Tabela (CSV)",
+    key: str | None = None,
 ) -> None:
-    """Renderiza botão estilizado para exportar DataFrame para CSV."""
+    """Renderiza botão estilizado nativo para exportar DataFrame para CSV."""
     csv_bytes = df.to_csv(index=False).encode("utf-8")
     st.download_button(
         label=f"📥 {label}",
         data=csv_bytes,
         file_name=filename,
         mime="text/csv",
-        use_container_width=False,
+        key=key,
     )

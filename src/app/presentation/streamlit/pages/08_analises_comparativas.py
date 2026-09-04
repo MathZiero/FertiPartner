@@ -1,5 +1,6 @@
-"""Análise Comparativa e Correlações entre Fertilizantes e Países (RF11, RF12)."""
+"""Página 8: Análise Comparativa e Correlações entre Fertilizantes e Países (RF11, RF12)."""
 
+import sys
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
@@ -18,7 +19,7 @@ from app.presentation.streamlit.theme import (
 )
 
 
-def render_view() -> None:
+def render_page() -> None:
     render_header(
         title="Análise Comparativa & Correlações",
         subtitle="Mecanismo de inteligência para benchmark comparativo entre múltiplos fertilizantes ou países (produção, preços e participação de mercado).",
@@ -36,10 +37,10 @@ def render_view() -> None:
     ])
 
     with tab_fert_comp:
-        st.markdown("##### 🧪 Selecione os Produtos para Comparação Multidimensional")
+        st.subheader("🧪 Selecione os Produtos para Comparação Multidimensional")
         fert_list = df_fert["canonical_name"].tolist() if not df_fert.empty else ["Ureia", "Fosfato Monoamônico (MAP)", "Cloreto de Potássio (KCl / MOP)"]
         default_selected = fert_list[:3] if len(fert_list) >= 3 else fert_list
-        selected_ferts = st.multiselect("Fertilizantes Selecionados:", fert_list, default=default_selected)
+        selected_ferts = st.multiselect("Fertilizantes Selecionados:", fert_list, default=default_selected, key="p08_ferts_multi")
 
         if not selected_ferts:
             st.info("Selecione ao menos um fertilizante para análise.")
@@ -58,7 +59,7 @@ def render_view() -> None:
                 labels={"price_date": "Data", "standard_price_usd_per_mt": "Preço (USD/MT)", "benchmark_name": "Benchmark"},
             )
             apply_ferti_theme(fig_p_comp, height=380)
-            st.plotly_chart(fig_p_comp, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_p_comp, width="stretch", config=get_default_plotly_config())
         else:
             st.info("Preços indisponíveis para os fertilizantes selecionados.")
 
@@ -77,15 +78,15 @@ def render_view() -> None:
                     "cas_rn": "CAS RN",
                     "garantia_nutricional": "Garantia Típica",
                 }),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
     with tab_country_comp:
-        st.markdown("##### 🌍 Comparativo de Produção e Escala Industrial por País")
+        st.subheader("🌍 Comparativo de Produção e Escala Industrial por País")
         all_countries = sorted(df_prod["country_name"].dropna().unique().tolist()) if not df_prod.empty else ["Brasil", "China", "Índia", "Canadá"]
         def_countries = [c for c in ["China", "Índia", "Canadá", "Brasil"] if c in all_countries]
-        selected_countries = st.multiselect("Países Selecionados:", all_countries, default=def_countries if def_countries else all_countries[:3])
+        selected_countries = st.multiselect("Países Selecionados:", all_countries, default=def_countries if def_countries else all_countries[:3], key="p08_countries_multi")
 
         if selected_countries and not df_prod.empty:
             country_df = df_prod[df_prod["country_name"].isin(selected_countries)]
@@ -98,7 +99,7 @@ def render_view() -> None:
                 labels={"standard_quantity_mt": "Produção (MT)", "country_name": "País", "fertilizer_name": "Fertilizante"},
             )
             apply_ferti_theme(fig_country, height=400)
-            st.plotly_chart(fig_country, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_country, width="stretch", config=get_default_plotly_config())
 
             st.dataframe(
                 country_df[["country_name", "fertilizer_name", "production_year", "standard_quantity_mt", "global_market_share_pct"]].rename(columns={
@@ -112,13 +113,13 @@ def render_view() -> None:
                     "Produção (MT)": st.column_config.NumberColumn(format="%d MT"),
                     "Market Share (%)": st.column_config.NumberColumn(format="%.2f%%"),
                 },
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
-            render_download_csv_button(country_df, filename="comparativo_paises.csv")
+            render_download_csv_button(country_df, filename="comparativo_paises.csv", key="dl_p08_countries")
 
     render_source_badge("Séries Normalizadas FertiPartner", "Consolidado")
 
 
 if __name__ == "__main__":
-    render_view()
+    render_page()

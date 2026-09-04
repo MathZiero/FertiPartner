@@ -1,6 +1,7 @@
-"""Ponto de entrada principal da aplicação FertiPartner."""
+"""Ponto de entrada raiz da aplicação FertiPartner."""
 
 import sys
+import os
 import subprocess
 from pathlib import Path
 
@@ -9,6 +10,12 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
+
+# Garante que src/ esteja no sys.path
+root_dir = Path(__file__).resolve().parent
+src_dir = root_dir / "src"
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
 
 # Detecta se está sendo executado através de 'streamlit run'
 is_streamlit = False
@@ -20,15 +27,14 @@ except Exception:
     pass
 
 if is_streamlit:
-    root_dir = Path(__file__).resolve().parent.parent
-    dashboard_path = root_dir / "src" / "app" / "presentation" / "streamlit" / "dashboard.py"
+    # Execução direta via `streamlit run main.py`
+    dashboard_path = src_dir / "app" / "presentation" / "streamlit" / "dashboard.py"
     with open(dashboard_path, "r", encoding="utf-8") as f:
         code = compile(f.read(), str(dashboard_path), "exec")
         exec(code, globals())
 else:
     def main() -> None:
         if "--dashboard" in sys.argv or "dashboard" in sys.argv:
-            root_dir = Path(__file__).resolve().parent.parent
             dashboard_script = root_dir / "scripts" / "run_dashboard.py"
             subprocess.run([sys.executable, str(dashboard_script)] + [arg for arg in sys.argv[1:] if arg not in ("--dashboard", "dashboard")])
             return

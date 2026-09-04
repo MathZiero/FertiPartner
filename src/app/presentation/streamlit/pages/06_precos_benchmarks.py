@@ -1,5 +1,6 @@
-"""Tendências de Preços e Benchmarks Internacionais (RF07, RF09)."""
+"""Página 6: Tendências de Preços e Benchmarks Internacionais (RF07, RF09)."""
 
+import sys
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
@@ -19,7 +20,7 @@ from app.presentation.streamlit.theme import (
 )
 
 
-def render_view() -> None:
+def render_page() -> None:
     render_header(
         title="Preços & Benchmarks Internacionais",
         subtitle="Séries históricas de preços FOB e CFR, médias móveis trimestrais e volatilidade mês a mês das principais referências globais.",
@@ -37,15 +38,15 @@ def render_view() -> None:
     c_fert, c_bench, c_time = st.columns([4, 5, 3])
     with c_fert:
         fert_options = ["Todos"] + sorted(df_prices["fertilizer_name"].dropna().unique().tolist())
-        selected_fert = st.selectbox("Fertilizante:", fert_options)
+        selected_fert = st.selectbox("Fertilizante:", fert_options, key="p06_fert_select")
 
     with c_bench:
         bench_df = df_prices if selected_fert == "Todos" else df_prices[df_prices["fertilizer_name"] == selected_fert]
         bench_options = ["Todos"] + sorted(bench_df["benchmark_name"].dropna().unique().tolist())
-        selected_bench = st.selectbox("Benchmark de Referência:", bench_options)
+        selected_bench = st.selectbox("Benchmark de Referência:", bench_options, key="p06_bench_select")
 
     with c_time:
-        time_window = st.segmented_control("Janela Temporal", ["1A", "3A", "5A", "Tudo"], default="Tudo")
+        time_window = st.segmented_control("Janela Temporal", ["1A", "3A", "5A", "Tudo"], default="Tudo", key="p06_time_ctrl")
 
     # Filtragem
     filtered = df_prices.copy()
@@ -100,15 +101,14 @@ def render_view() -> None:
             help_text="Variação máx - mín",
         )
 
-    st.markdown("<div style='height: 1.2rem;'></div>", unsafe_allow_html=True)
+    st.write("")
 
     # Gráfico Principal de Séries Temporais com Média Móvel
-    st.markdown("##### 📈 Evolução de Preços (USD / MT)")
+    st.subheader("📈 Evolução de Preços (USD / MT)")
     fig_line = go.Figure()
 
     for idx, (b_name, grp) in enumerate(filtered.groupby("benchmark_name")):
         color = FERTI_COLORS[idx % len(FERTI_COLORS)]
-        # Linha de preço spot/mensal
         fig_line.add_trace(
             go.Scatter(
                 x=grp["price_date"],
@@ -119,7 +119,6 @@ def render_view() -> None:
                 hovertemplate="<b>%{x|%b %Y}</b><br>Preço: $ %{y:,.2f}/MT<extra></extra>",
             )
         )
-        # Linha tracejada da média móvel 3M se disponível
         if "moving_avg_3m_usd" in grp.columns and grp["moving_avg_3m_usd"].notnull().any():
             fig_line.add_trace(
                 go.Scatter(
@@ -134,10 +133,10 @@ def render_view() -> None:
             )
 
     apply_ferti_theme(fig_line, height=420, x_title="Data da Cotação", y_title="USD por Tonelada Métrica (MT)")
-    st.plotly_chart(fig_line, use_container_width=True, config=get_default_plotly_config())
+    st.plotly_chart(fig_line, width="stretch", config=get_default_plotly_config())
 
     # Gráfico de Variação MoM %
-    st.markdown("##### 📊 Variação Mensal de Preço (%)")
+    st.subheader("📊 Variação Mensal de Preço (%)")
     valid_mom = filtered.dropna(subset=["month_over_month_pct_change"])
     if not valid_mom.empty:
         fig_mom = px.bar(
@@ -151,10 +150,9 @@ def render_view() -> None:
         )
         fig_mom.update_traces(texttemplate="%{y:+.1f}%", textposition="outside")
         apply_ferti_theme(fig_mom, height=280, show_legend=False)
-        st.plotly_chart(fig_mom, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_mom, width="stretch", config=get_default_plotly_config())
 
-    # Tabela detalhada
-    st.markdown("##### 📋 Histórico Numérico de Cotações")
+    st.subheader("📋 Histórico Numérico de Cotações")
     display_cols = ["price_date", "fertilizer_name", "benchmark_name", "hub_port_name", "incoterm", "standard_price_usd_per_mt", "month_over_month_pct_change", "moving_avg_3m_usd"]
     available = [c for c in display_cols if c in filtered.columns]
     st.dataframe(
@@ -173,13 +171,13 @@ def render_view() -> None:
             "Média 3M ($/MT)": st.column_config.NumberColumn(format="$ %.2f"),
             "Var. MoM (%)": st.column_config.NumberColumn(format="%.2f%%"),
         },
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
-    render_download_csv_button(filtered, filename="historico_precos.csv")
+    render_download_csv_button(filtered, filename="historico_precos.csv", key="dl_p06_prices")
 
     render_source_badge("FRED (Federal Reserve) • Banco Mundial Commodity Markets", "Mensal")
 
 
 if __name__ == "__main__":
-    render_view()
+    render_page()

@@ -1,5 +1,6 @@
-"""Mercado Brasileiro, Consumo Aparente e Dependência Externa (RF13, RF14)."""
+"""Página 7: Mercado Brasileiro, Consumo Aparente e Dependência Externa (RF13, RF14)."""
 
+import sys
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
@@ -20,7 +21,7 @@ from app.presentation.streamlit.theme import (
 )
 
 
-def render_view() -> None:
+def render_page() -> None:
     render_header(
         title="Mercado Brasileiro & Dependência Estratégica",
         subtitle="Panorama nacional do suprimento de fertilizantes: consumo aparente, capacidade industrial interna, taxa de dependência e distribuição estadual.",
@@ -40,10 +41,10 @@ def render_view() -> None:
     c1, c2 = st.columns([6, 6])
     with c1:
         years = sorted(df_dep["ref_year"].dropna().unique().tolist(), reverse=True)
-        selected_year = st.selectbox("Ano de Referência:", years, index=0) if years else 2024
+        selected_year = st.selectbox("Ano de Referência:", years, index=0, key="p07_year_select") if years else 2024
     with c2:
         fert_options = ["Todos"] + sorted(df_dep["fertilizer_name"].dropna().unique().tolist())
-        selected_fert = st.selectbox("Fertilizante:", fert_options)
+        selected_fert = st.selectbox("Fertilizante:", fert_options, key="p07_fert_select")
 
     # Filtragem
     filtered = df_dep[df_dep["ref_year"] == selected_year].copy()
@@ -91,7 +92,7 @@ def render_view() -> None:
             help_text="Meta Plano Nac. Fertilizantes: <50%",
         )
 
-    st.markdown("<div style='height: 1.2rem;'></div>", unsafe_allow_html=True)
+    st.write("")
 
     tab_balance, tab_geo, tab_suppliers = st.tabs([
         "⚖️ Balanço Oferta & Demanda",
@@ -102,7 +103,7 @@ def render_view() -> None:
     with tab_balance:
         c_bar, c_dep_ind = st.columns([7, 5])
         with c_bar:
-            st.markdown("##### 📦 Balanço Físico: Produção vs. Importações (MT)")
+            st.subheader("📦 Balanço Físico: Produção vs. Importações (MT)")
             fig_bal = px.bar(
                 filtered,
                 x="fertilizer_name",
@@ -118,10 +119,10 @@ def render_view() -> None:
                 name="Produção Nacional" if "national_production" in t.name else "Importações"
             ))
             apply_ferti_theme(fig_bal, height=360)
-            st.plotly_chart(fig_bal, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_bal, width="stretch", config=get_default_plotly_config())
 
         with c_dep_ind:
-            st.markdown("##### 🚨 Taxa de Dependência Externa por Fertilizante (%)")
+            st.subheader("🚨 Taxa de Dependência Externa por Fertilizante (%)")
             fig_gauge = px.bar(
                 filtered,
                 x="external_dependency_pct",
@@ -134,10 +135,10 @@ def render_view() -> None:
             )
             fig_gauge.update_traces(texttemplate="%{x:.1f}%", textposition="inside")
             apply_ferti_theme(fig_gauge, height=360, show_legend=False)
-            st.plotly_chart(fig_gauge, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_gauge, width="stretch", config=get_default_plotly_config())
 
     with tab_geo:
-        st.markdown("##### 🚜 Participação dos Estados no Consumo / Internalização de Fertilizantes")
+        st.subheader("🚜 Participação dos Estados no Consumo / Internalização")
         c_uf_chart, c_uf_table = st.columns([7, 5])
         with c_uf_chart:
             if not df_uf.empty and "share_pct" in df_uf.columns:
@@ -153,7 +154,7 @@ def render_view() -> None:
                 )
                 fig_uf.update_traces(texttemplate="%{x:.1f}%", textposition="inside")
                 apply_ferti_theme(fig_uf, height=380, show_legend=False)
-                st.plotly_chart(fig_uf, use_container_width=True, config=get_default_plotly_config())
+                st.plotly_chart(fig_uf, width="stretch", config=get_default_plotly_config())
             else:
                 st.info("Distribuição por UF não disponível.")
 
@@ -176,12 +177,12 @@ def render_view() -> None:
                         ),
                         "Volume Estimado (MT)": st.column_config.NumberColumn(format="%d MT"),
                     },
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True,
                 )
 
     with tab_suppliers:
-        st.markdown("##### 🚢 Origem das Importações do Brasil por País Parceiro")
+        st.subheader("🚢 Origem das Importações do Brasil por País Parceiro")
         br_imports = df_trade[
             (df_trade["importer_country"] == "Brasil") | (df_trade["importer_iso3"] == "BRA")
         ]
@@ -197,12 +198,12 @@ def render_view() -> None:
             )
             fig_supp.update_traces(textinfo="percent+label", textposition="inside")
             apply_ferti_theme(fig_supp, height=360, show_legend=False)
-            st.plotly_chart(fig_supp, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_supp, width="stretch", config=get_default_plotly_config())
         else:
             st.info("Registros de fornecedores do Brasil não encontrados.")
 
-    st.markdown("---")
-    st.markdown("##### 📋 Tabela Consolidada de Dependência Comercial")
+    st.divider()
+    st.subheader("📋 Tabela Consolidada de Dependência Comercial")
     st.dataframe(
         filtered.rename(columns={
             "fertilizer_name": "Fertilizante",
@@ -224,13 +225,13 @@ def render_view() -> None:
                 max_value=100,
             ),
         },
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
-    render_download_csv_button(filtered, filename="dependencia_brasil.csv")
+    render_download_csv_button(filtered, filename="dependencia_brasil.csv", key="dl_p07_br")
 
     render_source_badge("MDIC Comex Stat • ANDA • FAOSTAT", "Mensal")
 
 
 if __name__ == "__main__":
-    render_view()
+    render_page()

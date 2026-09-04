@@ -1,5 +1,6 @@
-"""Produção Global e Ranking Mundial de Produtores (RF03, RF15)."""
+"""Página 3: Produção Global e Ranking Mundial de Produtores (RF03, RF15)."""
 
+import sys
 import streamlit as st
 import plotly.express as px
 import pandas as pd
@@ -14,7 +15,7 @@ from app.presentation.streamlit.components.ui import (
 from app.presentation.streamlit.theme import apply_ferti_theme, get_default_plotly_config, FERTI_COLORS
 
 
-def render_view() -> None:
+def render_page() -> None:
     render_header(
         title="Produção Global & Ranking Mundial",
         subtitle="Mapeamento geográfico da produção mundial de fertilizantes, volume de síntese/extração e concentração de mercado.",
@@ -32,11 +33,11 @@ def render_view() -> None:
     col_fert, col_year = st.columns([6, 6])
     with col_fert:
         fert_options = ["Todos"] + sorted(df_prod["fertilizer_name"].dropna().unique().tolist())
-        selected_fert = st.selectbox("Selecione o Fertilizante:", fert_options, index=0)
+        selected_fert = st.selectbox("Selecione o Fertilizante:", fert_options, index=0, key="p03_fert_select")
 
     with col_year:
         years = sorted(df_prod["production_year"].dropna().unique().tolist(), reverse=True)
-        selected_year = st.selectbox("Ano de Referência:", years, index=0) if years else 2023
+        selected_year = st.selectbox("Ano de Referência:", years, index=0, key="p03_year_select") if years else 2023
 
     # Aplicação de filtros
     filtered = df_prod[df_prod["production_year"] == selected_year]
@@ -76,10 +77,10 @@ def render_view() -> None:
             help_text="Diversificação de oferta",
         )
 
-    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
+    st.write("")
 
     # Mapa Mundi Coroplético
-    st.markdown("##### 🌍 Mapa Global de Produção (Toneladas Métricas)")
+    st.subheader("🌍 Mapa Global de Produção (Toneladas Métricas)")
     if not filtered.empty:
         fig_map = px.choropleth(
             filtered,
@@ -112,12 +113,12 @@ def render_view() -> None:
             paper_bgcolor="rgba(0,0,0,0)",
             font=dict(color="#F1F5F9"),
         )
-        st.plotly_chart(fig_map, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_map, width="stretch", config=get_default_plotly_config())
 
     # Gráfico de Barras do Ranking
     col_chart, col_tbl = st.columns([6, 6])
     with col_chart:
-        st.markdown("##### 🏆 Ranking dos Maiores Produtores")
+        st.subheader("🏆 Ranking dos Maiores Produtores")
         sorted_prod = filtered.sort_values(by="standard_quantity_mt", ascending=True)
         fig_bar = px.bar(
             sorted_prod,
@@ -134,10 +135,10 @@ def render_view() -> None:
             textposition="inside",
         )
         apply_ferti_theme(fig_bar, height=360, show_legend=False)
-        st.plotly_chart(fig_bar, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_bar, width="stretch", config=get_default_plotly_config())
 
     with col_tbl:
-        st.markdown("##### 📊 Detalhamento e Market Share (%)")
+        st.subheader("📊 Detalhamento e Market Share (%)")
         display_tbl = filtered[["rank_position", "country_name", "standard_quantity_mt", "global_market_share_pct"]].sort_values(by="rank_position")
         st.dataframe(
             display_tbl.rename(columns={
@@ -159,13 +160,13 @@ def render_view() -> None:
                     format="%d MT",
                 ),
             },
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
-        render_download_csv_button(display_tbl, filename=f"producao_global_{selected_year}.csv")
+        render_download_csv_button(display_tbl, filename=f"producao_global_{selected_year}.csv", key="dl_p03_tbl")
 
     render_source_badge("FAOSTAT (Food and Agriculture Organization of the UN)", "Anual")
 
 
 if __name__ == "__main__":
-    render_view()
+    render_page()

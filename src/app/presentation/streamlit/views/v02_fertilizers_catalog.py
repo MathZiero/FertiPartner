@@ -137,5 +137,5 @@ def render_view() -> None:
     render_source_badge("Catálogo Mapeado FertiPartner • Base 4NF", "Cadastral")
 
 
-if __name__ == "__main__" or "render_view" in globals():
+if __name__ == "__main__":
     render_view()
