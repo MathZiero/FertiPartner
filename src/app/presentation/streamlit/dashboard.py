@@ -24,7 +24,28 @@ st.set_page_config(
 # Injeção das regras de design do tema AgTech
 inject_custom_styles()
 
-PAGES_DIR = Path(__file__).resolve().parent / "pages"
+def _find_pages_dir() -> Path:
+    """Localiza o diretório de páginas do Streamlit independentemente de como o script foi invocado."""
+    candidates = [
+        Path(__file__).resolve().parent / "pages",
+        Path(__file__).resolve().parent / "src" / "app" / "presentation" / "streamlit" / "pages",
+        Path.cwd() / "src" / "app" / "presentation" / "streamlit" / "pages",
+    ]
+    for candidate in candidates:
+        if candidate.is_dir() and (candidate / "01_visao_geral.py").is_file():
+            return candidate.resolve()
+
+    current = Path(__file__).resolve().parent
+    while current.parent != current:
+        candidate = current / "src" / "app" / "presentation" / "streamlit" / "pages"
+        if candidate.is_dir() and (candidate / "01_visao_geral.py").is_file():
+            return candidate.resolve()
+        current = current.parent
+
+    raise FileNotFoundError("Diretório de páginas do Streamlit não encontrado.")
+
+
+PAGES_DIR = _find_pages_dir()
 
 # Estrutura moderna de navegação por arquivos de página isolados (Streamlit 1.36+)
 pages = {

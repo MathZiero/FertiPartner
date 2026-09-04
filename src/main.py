@@ -24,7 +24,9 @@ if is_streamlit:
     dashboard_path = root_dir / "src" / "app" / "presentation" / "streamlit" / "dashboard.py"
     with open(dashboard_path, "r", encoding="utf-8") as f:
         code = compile(f.read(), str(dashboard_path), "exec")
-        exec(code, globals())
+        exec_globals = globals()
+        exec_globals["__file__"] = str(dashboard_path)
+        exec(code, exec_globals)
 else:
     def main() -> None:
         if "--dashboard" in sys.argv or "dashboard" in sys.argv:
