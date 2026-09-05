@@ -104,6 +104,22 @@ pages = {
             url_path="analises-comparativas",
         ),
     ],
+    "🌱 Sazonalidade & Safras": [
+        st.Page(
+            str(PAGES_DIR / "10_sazonalidade.py"),
+            title="Sazonalidade das Safras",
+            icon=":material/calendar_month:",
+            url_path="sazonalidade",
+        ),
+    ],
+    "💡 Inteligência & Alertas": [
+        st.Page(
+            str(PAGES_DIR / "11_insights_mercado.py"),
+            title="Insights de Mercado",
+            icon=":material/lightbulb:",
+            url_path="insights-mercado",
+        ),
+    ],
     "⚙️ Infraestrutura": [
         st.Page(
             str(PAGES_DIR / "09_auditoria_sistema.py"),

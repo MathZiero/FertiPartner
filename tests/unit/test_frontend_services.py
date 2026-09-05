@@ -138,3 +138,32 @@ def test_views_have_render_view_callable():
     for v in views:
         assert hasattr(v, "render_view"), f"{v.__name__} não possui render_view"
         assert callable(v.render_view), f"{v.__name__}.render_view não é chamável"
+
+
+def test_data_service_seasonality_patterns():
+    """Valida retorno do DataFrame de padrões de sazonalidade das safras (RF10)."""
+    df = FertiDataService.get_seasonality_patterns()
+    assert isinstance(df, pd.DataFrame)
+    assert not df.empty
+    assert "month" in df.columns
+    assert "month_name" in df.columns
+    assert "average_volume_mt" in df.columns
+    assert "seasonality_index" in df.columns
+    assert "crop_calendar_phase" in df.columns
+    assert len(df) == 12
+
+
+def test_data_service_market_insights():
+    """Valida retorno de insights de mercado automáticos (RF23)."""
+    insights = FertiDataService.get_market_insights()
+    assert isinstance(insights, list)
+    assert len(insights) > 0
+    first = insights[0]
+    assert isinstance(first, dict)
+    assert "title" in first
+    assert "category" in first
+    assert "severity" in first
+    assert "recommended_action" in first
+
+
+

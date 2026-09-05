@@ -28,3 +28,30 @@ Migrar o front-end do FertiPartner de uma estrutura de views com execuções pre
 - **Testes Unitários**:
   - `tests/unit/test_frontend_pages.py` com 21 novos testes cobrindo existência, compilação e callables.
   - Total de 81 testes passando com 100% de sucesso.
+
+---
+
+# Plano Concluído: Implementação dos Requisitos Faltantes e Arquitetura Clean/DDD
+
+Consulte o relatório detalhado em: [plans/completed/comprehensive_requirements_plan.md](file:///c:/Users/MICRO/Desktop/FertiPartner/plans/completed/comprehensive_requirements_plan.md)
+
+## 1. Objetivo
+Auditar todos os requisitos documentados em `docs/product/requirements.md`, `docs/product/vision.md` e `docs/engineering/conventions.md`, implementar os requisitos faltantes (RF10 e RF23) e estabelecer a arquitetura limpa (DDD / Clean Architecture) nas camadas `src/app/domain/` e `src/app/application/`.
+
+## 2. O que foi implementado
+- **RF10 (Sazonalidade das Safras e Ciclos de Mercado)**:
+  - Casos de uso e calculadores de índice sazonal mensal (Base 100).
+  - Mapeamento das janelas do agronegócio brasileiro (Safra de Verão e Safrinha).
+  - Página Streamlit `pages/10_sazonalidade.py` com curvas sazonais, distribuição de compras e exportação CSV.
+- **RF23 (Sistema de Insights Automáticos e Alertas de Mercado)**:
+  - Motor de regras analíticas determinísticas em `domain/insights.py`.
+  - Detecção de anomalias de preço (MoM > +8% ou < -5%), risco de abastecimento (> 85% dependência externa) e janelas de plantio.
+  - Página Streamlit `pages/11_insights_mercado.py` com cards categorizados e recomendações operacionais.
+- **Camadas de Domínio & Aplicação (Clean Architecture & DDD)**:
+  - `src/app/domain/entities.py`, `calculators.py`, `insights.py`, `validators.py`.
+  - `src/app/application/dtos.py`, `use_cases/calculate_seasonality.py`, `use_cases/generate_insights.py`.
+- **Navegação & UI**:
+  - Atualização do `dashboard.py` com 11 páginas distribuídas em categorias lógicas.
+- **Garantia de Qualidade e TDD**:
+  - 101 testes unitários passando com 100% de sucesso.
+

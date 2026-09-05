@@ -345,3 +345,45 @@ class FertiDataService:
             except Exception as exc:
                 logger.warning("Falha ao buscar data_collection_runs: %s", exc)
         return pd.DataFrame(MOCK_AUDIT_RUNS)
+
+    @classmethod
+    @st.cache_data(ttl=300, show_spinner=False)
+    def get_seasonality_patterns(cls, fertilizer_name: str = "Todos") -> pd.DataFrame:
+        """Obtém curvas e índices de sazonalidade mensal utilizando o caso de uso (RF10)."""
+        from app.application.use_cases.calculate_seasonality import CalculateSeasonalityUseCase
+        use_case = CalculateSeasonalityUseCase()
+        patterns = use_case.execute(fertilizer_name=fertilizer_name)
+        return pd.DataFrame([
+            {
+                "month": p.month,
+                "month_name": p.month_name,
+                "average_volume_mt": p.average_volume_mt,
+                "seasonality_index": p.seasonality_index,
+                "peak_status": p.peak_status,
+                "crop_calendar_phase": p.crop_calendar_phase,
+            }
+            for p in patterns
+        ])
+
+    @classmethod
+    @st.cache_data(ttl=300, show_spinner=False)
+    def get_market_insights(cls) -> list[dict[str, Any]]:
+        """Gera e retorna os alertas e insights analíticos de inteligência de mercado (RF23)."""
+        from app.application.use_cases.generate_insights import GenerateMarketInsightsUseCase
+        use_case = GenerateMarketInsightsUseCase()
+        insights = use_case.execute()
+        return [
+            {
+                "id": i.id,
+                "title": i.title,
+                "category": i.category,
+                "severity": i.severity,
+                "message": i.message,
+                "metric_name": i.metric_name,
+                "metric_value": i.metric_value,
+                "baseline_value": i.baseline_value,
+                "recommended_action": i.recommended_action,
+                "is_critical": i.is_critical,
+            }
+            for i in insights
+        ]
