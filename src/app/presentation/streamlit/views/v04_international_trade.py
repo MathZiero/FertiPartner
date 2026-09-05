@@ -1,4 +1,4 @@
-"""Comércio Internacional: Importações e Exportações Globais (RF04, RF05)."""
+"""Comércio Internacional: Importações e Exportações Globais."""
 
 import streamlit as st
 import plotly.express as px

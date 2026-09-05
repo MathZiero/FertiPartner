@@ -1,4 +1,4 @@
-"""Página 7: Mercado Brasileiro, Consumo Aparente e Dependência Externa (RF13, RF14)."""
+"""Página 7: Mercado Brasileiro, Consumo Aparente e Dependência Estratégica."""
 
 import sys
 import streamlit as st
@@ -11,7 +11,6 @@ from app.presentation.streamlit.components.ui import (
     render_header,
     render_kpi_card,
     render_source_badge,
-    render_download_csv_button,
 )
 from app.presentation.streamlit.theme import (
     apply_ferti_theme,
@@ -25,7 +24,7 @@ def render_page() -> None:
     render_header(
         title="Mercado Brasileiro & Dependência Estratégica",
         subtitle="Panorama nacional do suprimento de fertilizantes: consumo aparente, capacidade industrial interna, taxa de dependência e distribuição estadual.",
-        badge_text="Brasil Focus",
+        badge_text="Mercado Brasil",
         badge_type="blue",
     )
 
@@ -89,7 +88,7 @@ def render_page() -> None:
             value=f"{dep_rate:.1f}%",
             delta="Alerta Estratégico",
             delta_positive=False if dep_rate > 70 else True,
-            help_text="Meta Plano Nac. Fertilizantes: <50%",
+            help_text="Meta Plano Nacional de Fertilizantes: <50%",
         )
 
     st.write("")
@@ -111,14 +110,19 @@ def render_page() -> None:
                 barmode="group",
                 labels={"value": "Volume (MT)", "fertilizer_name": "Produto", "variable": "Tipo de Oferta"},
                 color_discrete_map={
-                    "national_production_mt": "#10B981",
-                    "total_imports_mt": "#3B82F6",
+                    "national_production_mt": "#2D6A4F",
+                    "total_imports_mt": "#2563EB",
                 },
             )
             fig_bal.for_each_trace(lambda t: t.update(
                 name="Produção Nacional" if "national_production" in t.name else "Importações"
             ))
-            apply_ferti_theme(fig_bal, height=360)
+            apply_ferti_theme(
+                fig_bal,
+                height=360,
+                x_title="Fertilizante",
+                y_title="Volume Físico (Toneladas Métricas)",
+            )
             st.plotly_chart(fig_bal, width="stretch", config=get_default_plotly_config())
 
         with c_dep_ind:
@@ -129,12 +133,18 @@ def render_page() -> None:
                 y="fertilizer_name",
                 orientation="h",
                 color="external_dependency_pct",
-                color_continuous_scale=["#10B981", "#F59E0B", "#F43F5E"],
+                color_continuous_scale=["#2D6A4F", "#D97706", "#DC2626"],
                 range_color=[50, 100],
                 labels={"external_dependency_pct": "Dependência (%)", "fertilizer_name": "Produto"},
             )
             fig_gauge.update_traces(texttemplate="%{x:.1f}%", textposition="inside")
-            apply_ferti_theme(fig_gauge, height=360, show_legend=False)
+            apply_ferti_theme(
+                fig_gauge,
+                height=360,
+                show_legend=False,
+                x_title="Taxa de Dependência Externa (%)",
+                y_title="Fertilizante",
+            )
             st.plotly_chart(fig_gauge, width="stretch", config=get_default_plotly_config())
 
     with tab_geo:
@@ -153,7 +163,13 @@ def render_page() -> None:
                     color_continuous_scale="Viridis",
                 )
                 fig_uf.update_traces(texttemplate="%{x:.1f}%", textposition="inside")
-                apply_ferti_theme(fig_uf, height=380, show_legend=False)
+                apply_ferti_theme(
+                    fig_uf,
+                    height=380,
+                    show_legend=False,
+                    x_title="Participação Estimada no Consumo (%)",
+                    y_title="Unidade Federativa (UF)",
+                )
                 st.plotly_chart(fig_uf, width="stretch", config=get_default_plotly_config())
             else:
                 st.info("Distribuição por UF não disponível.")
@@ -228,7 +244,6 @@ def render_page() -> None:
         width="stretch",
         hide_index=True,
     )
-    render_download_csv_button(filtered, filename="dependencia_brasil.csv", key="dl_p07_br")
 
     render_source_badge("MDIC Comex Stat • ANDA • FAOSTAT", "Mensal")
 

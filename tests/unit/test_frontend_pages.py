@@ -18,7 +18,7 @@ PAGE_FILES = [
     "06_precos_benchmarks.py",
     "07_mercado_brasil.py",
     "08_analises_comparativas.py",
-    "09_auditoria_sistema.py",
+    "09_observabilidade.py",
 ]
 
 

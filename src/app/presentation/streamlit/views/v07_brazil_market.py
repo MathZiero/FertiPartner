@@ -1,4 +1,4 @@
-"""Mercado Brasileiro, Consumo Aparente e Dependência Externa (RF13, RF14)."""
+"""Mercado Brasileiro, Consumo Aparente e Dependência Estratégica."""
 
 import streamlit as st
 import plotly.express as px

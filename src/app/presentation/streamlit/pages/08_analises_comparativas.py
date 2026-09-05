@@ -1,4 +1,4 @@
-"""Página 8: Análise Comparativa e Correlações entre Fertilizantes e Países (RF11, RF12)."""
+"""Página 8: Análise Comparativa e Correlações entre Fertilizantes e Países."""
 
 import sys
 import streamlit as st
@@ -10,7 +10,6 @@ from app.presentation.streamlit.services.data_service import FertiDataService
 from app.presentation.streamlit.components.ui import (
     render_header,
     render_source_badge,
-    render_download_csv_button,
 )
 from app.presentation.streamlit.theme import (
     apply_ferti_theme,
@@ -23,7 +22,7 @@ def render_page() -> None:
     render_header(
         title="Análise Comparativa & Correlações",
         subtitle="Mecanismo de inteligência para benchmark comparativo entre múltiplos fertilizantes ou países (produção, preços e participação de mercado).",
-        badge_text="Cross-Analytics",
+        badge_text="Análise Comparada",
         badge_type="purple",
     )
 
@@ -58,7 +57,12 @@ def render_page() -> None:
                 markers=True,
                 labels={"price_date": "Data", "standard_price_usd_per_mt": "Preço (USD/MT)", "benchmark_name": "Benchmark"},
             )
-            apply_ferti_theme(fig_p_comp, height=380)
+            apply_ferti_theme(
+                fig_p_comp,
+                height=380,
+                x_title="Data da Cotação",
+                y_title="Preço de Referência (USD / MT)",
+            )
             st.plotly_chart(fig_p_comp, width="stretch", config=get_default_plotly_config())
         else:
             st.info("Preços indisponíveis para os fertilizantes selecionados.")
@@ -98,7 +102,12 @@ def render_page() -> None:
                 barmode="group",
                 labels={"standard_quantity_mt": "Produção (MT)", "country_name": "País", "fertilizer_name": "Fertilizante"},
             )
-            apply_ferti_theme(fig_country, height=400)
+            apply_ferti_theme(
+                fig_country,
+                height=400,
+                x_title="País de Origem",
+                y_title="Volume de Produção (Toneladas Métricas)",
+            )
             st.plotly_chart(fig_country, width="stretch", config=get_default_plotly_config())
 
             st.dataframe(
@@ -116,9 +125,8 @@ def render_page() -> None:
                 width="stretch",
                 hide_index=True,
             )
-            render_download_csv_button(country_df, filename="comparativo_paises.csv", key="dl_p08_countries")
 
-    render_source_badge("Séries Normalizadas FertiPartner", "Consolidado")
+    render_source_badge("Séries Oficiais Homologadas", "Consolidado")
 
 
 if __name__ == "__main__":

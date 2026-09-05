@@ -1,4 +1,4 @@
-"""Página 3: Produção Global e Ranking Mundial de Produtores (RF03, RF15)."""
+"""Página 3: Produção Global e Ranking Mundial de Produtores."""
 
 import sys
 import streamlit as st
@@ -10,7 +10,6 @@ from app.presentation.streamlit.components.ui import (
     render_header,
     render_kpi_card,
     render_source_badge,
-    render_download_csv_button,
 )
 from app.presentation.streamlit.theme import apply_ferti_theme, get_default_plotly_config, FERTI_COLORS
 
@@ -19,7 +18,7 @@ def render_page() -> None:
     render_header(
         title="Produção Global & Ranking Mundial",
         subtitle="Mapeamento geográfico da produção mundial de fertilizantes, volume de síntese/extração e concentração de mercado.",
-        badge_text="FAOSTAT RFB/RFN",
+        badge_text="FAOSTAT",
         badge_type="emerald",
     )
 
@@ -72,14 +71,14 @@ def render_page() -> None:
         render_kpi_card(
             title="Polos Produtores Mapeados",
             value=f"{n_countries} Países",
-            delta="Alta Concentração",
-            delta_positive=False,
+            delta="Concentração Global",
+            delta_positive=None,
             help_text="Diversificação de oferta",
         )
 
     st.write("")
 
-    # Mapa Mundi Coroplético
+    # Mapa Mundi Coroplético (ajustado para Light Mode)
     st.subheader("🌍 Mapa Global de Produção (Toneladas Métricas)")
     if not filtered.empty:
         fig_map = px.choropleth(
@@ -103,15 +102,15 @@ def render_page() -> None:
             geo=dict(
                 showframe=False,
                 showcoastlines=True,
-                coastlinecolor="rgba(255,255,255,0.2)",
+                coastlinecolor="#CBD5E1",
                 bgcolor="rgba(0,0,0,0)",
-                lakecolor="#0B0F19",
-                landcolor="#1A2438",
+                lakecolor="#F1F5F9",
+                landcolor="#EDF3EF",
             ),
             margin=dict(l=0, r=0, t=10, b=10),
             height=460,
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#F1F5F9"),
+            font=dict(color="#1F2937"),
         )
         st.plotly_chart(fig_map, width="stretch", config=get_default_plotly_config())
 
@@ -134,23 +133,29 @@ def render_page() -> None:
             texttemplate="%{x:,.0f} MT",
             textposition="inside",
         )
-        apply_ferti_theme(fig_bar, height=360, show_legend=False)
+        apply_ferti_theme(
+            fig_bar,
+            height=360,
+            show_legend=False,
+            x_title="Volume de Produção (Toneladas Métricas)",
+            y_title="País Fabricante",
+        )
         st.plotly_chart(fig_bar, width="stretch", config=get_default_plotly_config())
 
     with col_tbl:
-        st.subheader("📊 Detalhamento e Market Share (%)")
+        st.subheader("📊 Detalhamento e Participação (%)")
         display_tbl = filtered[["rank_position", "country_name", "standard_quantity_mt", "global_market_share_pct"]].sort_values(by="rank_position")
         st.dataframe(
             display_tbl.rename(columns={
                 "rank_position": "Posição",
                 "country_name": "País",
                 "standard_quantity_mt": "Volume (MT)",
-                "global_market_share_pct": "Market Share",
+                "global_market_share_pct": "Participação Global",
             }),
             column_config={
-                "Market Share": st.column_config.ProgressColumn(
+                "Participação Global": st.column_config.ProgressColumn(
                     "Participação Global (%)",
-                    help="Percentual do volume total",
+                    help="Percentual do volume total mundial",
                     format="%.2f%%",
                     min_value=0,
                     max_value=100,
@@ -163,7 +168,6 @@ def render_page() -> None:
             width="stretch",
             hide_index=True,
         )
-        render_download_csv_button(display_tbl, filename=f"producao_global_{selected_year}.csv", key="dl_p03_tbl")
 
     render_source_badge("FAOSTAT (Food and Agriculture Organization of the UN)", "Anual")
 

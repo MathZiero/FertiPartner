@@ -1,4 +1,4 @@
-"""Produção Global e Ranking Mundial de Produtores (RF03, RF15)."""
+"""Produção Global e Ranking Mundial de Produtores."""
 
 import streamlit as st
 import plotly.express as px
@@ -18,7 +18,7 @@ def render_view() -> None:
     render_header(
         title="Produção Global & Ranking Mundial",
         subtitle="Mapeamento geográfico da produção mundial de fertilizantes, volume de síntese/extração e concentração de mercado.",
-        badge_text="FAOSTAT RFB/RFN",
+        badge_text="FAOSTAT",
         badge_type="emerald",
     )
 

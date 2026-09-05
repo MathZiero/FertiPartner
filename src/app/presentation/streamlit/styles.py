@@ -1,4 +1,4 @@
-"""Estilos CSS personalizados e design system AgTech para o FertiPartner."""
+"""Estilos CSS personalizados e design system AgTech (Light Mode) para o FertiPartner."""
 
 import streamlit as st
 
@@ -7,132 +7,137 @@ CUSTOM_CSS = """
 /* Importação de fontes modernas do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
-/* Regras globais de tipografia */
+/* Regras globais de tipografia em Modo Claro */
 html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: #F1F5F9;
+    color: #1F2937;
 }
 
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif !important;
     font-weight: 700 !important;
     letter-spacing: -0.02em;
+    color: #1B4332;
 }
 
-/* Redução sutil de margem do topo da página */
+/* Centralização obrigatória de todos os títulos principais */
+h1, .stApp h1, [data-testid="stHeader"] h1 {
+    text-align: center !important;
+    width: 100% !important;
+}
+
+/* Espaçamento e layout do container principal */
 .block-container {
-    padding-top: 2rem !important;
+    padding-top: 1.75rem !important;
     padding-bottom: 3rem !important;
     max-width: 96% !important;
 }
 
-/* Barra lateral estilizada */
-section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0D1424 0%, #080D18 100%) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+/* Forçar Modo Claro na Barra Lateral e em todos os seus containers internos */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div,
+[data-testid="stSidebarContent"],
+[data-testid="stSidebarUserContent"],
+[data-testid="stSidebarHeader"] {
+    background-color: #F3F6F4 !important;
+    background: #F3F6F4 !important;
+    border-right: 1px solid #E2E8F0 !important;
+    color: #1F2937 !important;
 }
 
-/* Header estilizado */
+/* Logo no cabeçalho nativo da sidebar */
+[data-testid="stSidebarHeader"] {
+    padding-top: 1.25rem !important;
+    padding-bottom: 0.75rem !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+
+[data-testid="stSidebarHeader"] img {
+    max-height: 48px !important;
+    width: auto !important;
+}
+
+/* Textos e ícones da navegação na barra lateral */
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] div {
+    color: #1F2937 !important;
+}
+
+/* Itens da navegação */
+[data-testid="stSidebarNavItems"] a {
+    color: #374151 !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    padding: 0.4rem 0.75rem !important;
+}
+
+[data-testid="stSidebarNavItems"] a:hover {
+    background-color: #E5EAE7 !important;
+    color: #1B4332 !important;
+}
+
+[data-testid="stSidebarNavItems"] a[aria-current="page"] {
+    background-color: #D8F3DC !important;
+    color: #1B4332 !important;
+    font-weight: 700 !important;
+}
+
+/* Separadores de seção da sidebar */
+[data-testid="stSidebarNavSeparator"] {
+    border-color: #E2E8F0 !important;
+    margin: 0.5rem 0 !important;
+}
+
+/* Títulos de categorias da barra lateral */
+[data-testid="stSidebarNavItems"] span[data-testid="stSidebarNavHeader"] {
+    color: #52796F !important;
+    font-size: 0.76rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+}
+
+/* Header estilizado centralizado */
 .fp-header-container {
-    background: linear-gradient(135deg, rgba(19, 28, 46, 0.7) 0%, rgba(16, 185, 129, 0.08) 100%);
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: linear-gradient(135deg, #FFFFFF 0%, #F0F7F3 100%);
+    border: 1px solid #D8F3DC;
     border-radius: 16px;
     padding: 1.5rem 2rem;
     margin-bottom: 1.5rem;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    text-align: center;
 }
 
 .fp-header-title {
     font-size: 2.2rem;
     font-weight: 800;
     margin: 0;
-    background: linear-gradient(90deg, #FFFFFF 0%, #E2E8F0 60%, #10B981 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #1B4332 !important;
+    text-align: center !important;
 }
 
 .fp-header-subtitle {
     font-size: 0.95rem;
-    color: #94A3B8;
+    color: #4B5563 !important;
     margin-top: 0.4rem;
     margin-bottom: 0;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center !important;
 }
 
-/* Cards de Métricas Premium */
-.fp-kpi-card {
-    background: linear-gradient(145deg, #131C2E 0%, #0E1626 100%);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 14px;
-    padding: 1.25rem 1.4rem;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.25s ease-in-out;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+/* Cards e containers com borda em Modo Claro */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background-color: #FFFFFF !important;
+    border-radius: 12px !important;
+    border: 1px solid #E5EAE7 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
 }
 
-.fp-kpi-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(16, 185, 129, 0.4);
-    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.12);
-}
-
-.fp-kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: linear-gradient(180deg, #10B981 0%, #059669 100%);
-    border-radius: 4px 0 0 4px;
-}
-
-.fp-kpi-title {
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #94A3B8;
-    margin-bottom: 0.5rem;
-}
-
-.fp-kpi-value {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.85rem;
-    font-weight: 800;
-    color: #F8FAFC;
-    line-height: 1.1;
-    margin-bottom: 0.4rem;
-}
-
-.fp-kpi-footer {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-}
-
-.fp-delta-positive {
-    color: #10B981;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-}
-
-.fp-delta-negative {
-    color: #F43F5E;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-}
-
-.fp-delta-neutral {
-    color: #94A3B8;
-    font-weight: 500;
-}
-
-/* Badges e Tags */
+/* Badges e Pílulas */
 .fp-badge {
     display: inline-block;
     padding: 0.25rem 0.65rem;
@@ -144,117 +149,60 @@ section[data-testid="stSidebar"] {
 }
 
 .fp-badge-emerald {
-    background: rgba(16, 185, 129, 0.15);
-    color: #34D399;
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background: #D8F3DC;
+    color: #2D6A4F;
+    border: 1px solid #B7E4C7;
 }
 
 .fp-badge-blue {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60A5FA;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: #DBEAFE;
+    color: #1D4ED8;
+    border: 1px solid #BFDBFE;
 }
 
 .fp-badge-amber {
-    background: rgba(245, 158, 11, 0.15);
-    color: #FBBF24;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: #FEF3C7;
+    color: #B45309;
+    border: 1px solid #FDE68A;
 }
 
 .fp-badge-purple {
-    background: rgba(139, 92, 246, 0.15);
-    color: #A78BFA;
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    background: #EDE9FE;
+    color: #6D28D9;
+    border: 1px solid #DDD6FE;
 }
 
-/* Estilo para containers de gráficos */
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background-color: #111827 !important;
-    border-radius: 14px !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-}
-
-/* Customização de Tabs */
+/* Tabs modernas em fundo claro */
 .stTabs [data-baseweb="tab-list"] {
     gap: 8px;
-    background-color: #0E1626;
+    background-color: #EDF3EF;
     padding: 6px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid #E2E8F0;
 }
 
 .stTabs [data-baseweb="tab"] {
     border-radius: 8px;
-    color: #94A3B8 !important;
+    color: #4B5563 !important;
     font-weight: 500;
     padding: 8px 16px;
     transition: all 0.2s ease;
 }
 
 .stTabs [aria-selected="true"] {
-    background-color: #1E293B !important;
-    color: #10B981 !important;
+    background-color: #FFFFFF !important;
+    color: #2D6A4F !important;
     font-weight: 700 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
-/* Estilização da marca no sidebar */
-.fp-brand-container {
-    padding: 1rem 0.5rem 1.5rem 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    margin-bottom: 1rem;
-}
-
-.fp-brand-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: #FFFFFF;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.fp-brand-accent {
-    color: #10B981;
-}
-
-.fp-brand-tagline {
-    font-size: 0.75rem;
-    color: #64748B;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 0.2rem;
-}
-
-/* Status Pill */
-.fp-status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    padding: 3px 10px;
-    border-radius: 12px;
-    background: rgba(16, 185, 129, 0.1);
-    color: #34D399;
-    border: 1px solid rgba(16, 185, 129, 0.25);
-    margin-top: 0.5rem;
-}
-
-.fp-status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: #10B981;
-    box-shadow: 0 0 8px #10B981;
-}
-
-/* Rodapé elegante */
+/* Rodapé sutil */
 .fp-footer {
     text-align: center;
-    font-size: 0.78rem;
-    color: #64748B;
+    font-size: 0.8rem;
+    color: #6B7280;
     padding: 2rem 0 1rem 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid #E5EAE7;
     margin-top: 3rem;
 }
 </style>
@@ -262,5 +210,5 @@ section[data-testid="stSidebar"] {
 
 
 def inject_custom_styles() -> None:
-    """Injeta as regras CSS do design system AgTech na página atual."""
+    """Injeta as regras CSS do design system AgTech (Modo Claro) na aplicação."""
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)

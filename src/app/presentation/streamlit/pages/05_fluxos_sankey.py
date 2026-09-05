@@ -1,4 +1,4 @@
-"""Página 5: Fluxos Comerciais Bilaterais com Diagrama Sankey Interativo (RF06)."""
+"""Página 5: Fluxos Comerciais Bilaterais com Diagrama Sankey Interativo."""
 
 import sys
 import streamlit as st
@@ -9,7 +9,6 @@ from app.presentation.streamlit.services.data_service import FertiDataService
 from app.presentation.streamlit.components.ui import (
     render_header,
     render_source_badge,
-    render_download_csv_button,
 )
 from app.presentation.streamlit.theme import (
     apply_ferti_theme,
@@ -24,7 +23,7 @@ def render_page() -> None:
     render_header(
         title="Fluxos Comerciais Bilaterais (Diagrama Sankey)",
         subtitle="Mapeamento visual dinâmico dos fluxos de suprimento internacional conectando polos exportadores aos mercados consumidores.",
-        badge_text="Sankey Flow",
+        badge_text="Corredores Logísticos",
         badge_type="emerald",
     )
 
@@ -80,11 +79,11 @@ def render_page() -> None:
     node_colors = []
     for i, name in enumerate(node_labels):
         if i < len(exporters):
-            node_colors.append("#3B82F6")  # Azul para Exportadores
+            node_colors.append("#2563EB")  # Azul para Exportadores
         else:
-            node_colors.append("#10B981")  # Verde para Importadores
+            node_colors.append("#2D6A4F")  # Verde para Importadores
 
-    link_colors = ["rgba(59, 130, 246, 0.35)" for _ in values]
+    link_colors = ["rgba(37, 99, 235, 0.22)" for _ in values]
 
     fig_sankey = go.Figure(
         data=[
@@ -92,7 +91,7 @@ def render_page() -> None:
                 node=dict(
                     pad=18,
                     thickness=20,
-                    line=dict(color="rgba(255,255,255,0.2)", width=0.5),
+                    line=dict(color="#CBD5E1", width=0.5),
                     label=[f"{name} ({'Origem' if i < len(exporters) else 'Destino'})" for i, name in enumerate(node_labels)],
                     color=node_colors,
                 ),
@@ -141,9 +140,8 @@ def render_page() -> None:
         width="stretch",
         hide_index=True,
     )
-    render_download_csv_button(routes_sorted, filename=f"rotas_sankey_{selected_year}.csv", key="dl_p05_sankey")
 
-    render_source_badge("UN Comtrade & MDIC Comex Stat", "Mensal")
+    render_source_badge("UN Comtrade • MDIC Comex Stat", "Mensal")
 
 
 if __name__ == "__main__":

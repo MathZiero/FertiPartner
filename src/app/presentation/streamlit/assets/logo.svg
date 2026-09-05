@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 60" width="280" height="60">
+  <defs>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B4332"/>
+      <stop offset="100%" stop-color="#40916C"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle badge -->
+  <circle cx="28" cy="30" r="22" fill="#D8F3DC"/>
+  <!-- Sprout emblem -->
+  <path d="M28 42 C28 31 22 23 15 21 C15 29 21 37 28 42 Z" fill="url(#leafGrad)"/>
+  <path d="M28 42 C28 29 36 21 43 19 C43 27 37 36 28 42 Z" fill="#52B788"/>
+  <circle cx="28" cy="42" r="2.5" fill="#1B4332"/>
+  <!-- Wordmark -->
+  <text x="58" y="33" font-family="'Outfit', 'Inter', sans-serif" font-size="23" font-weight="800" fill="#1B4332" letter-spacing="-0.5">Ferti<tspan fill="#2D6A4F">Partner</tspan></text>
+  <text x="60" y="47" font-family="'Inter', sans-serif" font-size="8.5" font-weight="700" fill="#40916C" letter-spacing="1.2">INTELIGÊNCIA NPK</text>
+</svg>

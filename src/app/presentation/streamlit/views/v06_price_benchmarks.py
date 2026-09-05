@@ -1,4 +1,4 @@
-"""Tendências de Preços e Benchmarks Internacionais (RF07, RF09)."""
+"""Tendências de Preços e Benchmarks Internacionais."""
 
 import streamlit as st
 import plotly.express as px

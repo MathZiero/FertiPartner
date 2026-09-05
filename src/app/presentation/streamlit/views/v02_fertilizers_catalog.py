@@ -1,4 +1,4 @@
-"""Catálogo e Perfil Detalhado de Fertilizantes (RF01, RF02, RF21)."""
+"""Catálogo e Perfil Detalhado de Fertilizantes."""
 
 import streamlit as st
 import plotly.express as px
@@ -19,7 +19,7 @@ def render_view() -> None:
     render_header(
         title="Catálogo & Perfil dos Fertilizantes",
         subtitle="Especificações físico-químicas, concentração nutricional (N, P2O5, K2O, S), códigos aduaneiros (NCM/HS) e sinônimos de mercado.",
-        badge_text="4NF Catalog",
+        badge_text="Catálogo Oficial",
         badge_type="blue",
     )
 
@@ -132,10 +132,10 @@ def render_view() -> None:
         use_container_width=True,
         hide_index=True,
     )
-    render_download_csv_button(df_table, filename="catalogo_completo.csv")
 
-    render_source_badge("Catálogo Mapeado FertiPartner • Base 4NF", "Cadastral")
+    render_source_badge("Catálogo Mapeado FertiPartner", "Cadastral")
 
 
 if __name__ == "__main__":
     render_view()
+

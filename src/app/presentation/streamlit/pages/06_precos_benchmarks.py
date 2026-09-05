@@ -1,4 +1,4 @@
-"""Página 6: Tendências de Preços e Benchmarks Internacionais (RF07, RF09)."""
+"""Página 6: Tendências de Preços e Benchmarks Internacionais."""
 
 import sys
 import streamlit as st
@@ -11,7 +11,6 @@ from app.presentation.streamlit.components.ui import (
     render_header,
     render_kpi_card,
     render_source_badge,
-    render_download_csv_button,
 )
 from app.presentation.streamlit.theme import (
     apply_ferti_theme,
@@ -149,7 +148,13 @@ def render_page() -> None:
             labels={"price_date": "Data", "month_over_month_pct_change": "Variação MoM (%)"},
         )
         fig_mom.update_traces(texttemplate="%{y:+.1f}%", textposition="outside")
-        apply_ferti_theme(fig_mom, height=280, show_legend=False)
+        apply_ferti_theme(
+            fig_mom,
+            height=280,
+            show_legend=False,
+            x_title="Mês / Ano",
+            y_title="Variação Mensal (%)",
+        )
         st.plotly_chart(fig_mom, width="stretch", config=get_default_plotly_config())
 
     st.subheader("📋 Histórico Numérico de Cotações")
@@ -174,10 +179,10 @@ def render_page() -> None:
         width="stretch",
         hide_index=True,
     )
-    render_download_csv_button(filtered, filename="historico_precos.csv", key="dl_p06_prices")
 
     render_source_badge("FRED (Federal Reserve) • Banco Mundial Commodity Markets", "Mensal")
 
 
 if __name__ == "__main__":
     render_page()
+

@@ -1,4 +1,4 @@
-"""Análise Comparativa e Correlações entre Fertilizantes e Países (RF11, RF12)."""
+"""Análise Comparativa e Correlações entre Fertilizantes e Países."""
 
 import streamlit as st
 import plotly.express as px

@@ -1,4 +1,4 @@
-"""Fluxos Comerciais Bilaterais com Diagrama Sankey Interativo (RF06)."""
+"""Fluxos Comerciais Bilaterais com Diagrama Sankey Interativo."""
 
 import streamlit as st
 import plotly.graph_objects as go

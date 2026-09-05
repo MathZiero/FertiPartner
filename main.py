@@ -28,6 +28,15 @@ except Exception:
 
 if is_streamlit:
     # Execução direta via `streamlit run main.py`
+    # Recarrega módulos de apresentação para refletir alterações sem reiniciar o processo
+    import importlib
+    for m in list(sys.modules.keys()):
+        if m.startswith("app.presentation.streamlit"):
+            try:
+                importlib.reload(sys.modules[m])
+            except Exception:
+                pass
+
     dashboard_path = src_dir / "app" / "presentation" / "streamlit" / "dashboard.py"
     with open(dashboard_path, "r", encoding="utf-8") as f:
         code = compile(f.read(), str(dashboard_path), "exec")

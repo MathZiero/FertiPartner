@@ -1,4 +1,4 @@
-"""Status das Fontes, Auditoria e Saúde da Arquitetura 4NF (RF17, RF19, RF20)."""
+"""Status das Fontes, Auditoria e Observabilidade Operacional."""
 
 import streamlit as st
 import pandas as pd
@@ -14,9 +14,9 @@ from app.presentation.streamlit.components.ui import (
 
 def render_view() -> None:
     render_header(
-        title="Auditoria, Fontes & Infraestrutura 4NF",
-        subtitle="Monitoramento das rotinas de ingestão de dados, integridade dos pipelines, auditoria SHA-256 e conformidade da modelagem em Quarta Forma Normal.",
-        badge_text="System Health",
+        title="Observabilidade & Fontes de Dados",
+        subtitle="Monitoramento operacional das rotinas de ingestão de dados, integridade dos pipelines e auditoria de fontes oficiais.",
+        badge_text="Observabilidade",
         badge_type="emerald",
     )
 
@@ -27,10 +27,10 @@ def render_view() -> None:
     with c1:
         render_kpi_card(
             title="Conexão Supabase / PostgreSQL",
-            value="Operacional" if is_connected else "Fallback / Local",
-            delta="Online (RLS Ativo)" if is_connected else "Modo Resiliente",
+            value="Operacional" if is_connected else "Modo Resiliente",
+            delta="Online (Segurança RLS)" if is_connected else "Modo Resiliente",
             delta_positive=True if is_connected else False,
-            help_text="Banco de dados em nuvem 4NF",
+            help_text="Banco de dados em nuvem",
         )
     with c2:
         render_kpi_card(
@@ -45,7 +45,7 @@ def render_view() -> None:
         render_kpi_card(
             title="Rotinas de Ingestão Monitoradas",
             value=f"{total_runs} Execuções",
-            delta="Auditoria Contínua (RNF02)",
+            delta="Auditoria Contínua",
             delta_positive=True,
             help_text="Logs em data_collection_runs",
         )
@@ -55,7 +55,7 @@ def render_view() -> None:
     tab_runs, tab_sources, tab_arch = st.tabs([
         "⏱️ Histórico de Coletas & Ingestões",
         "📡 Fontes de Dados Mapeadas",
-        "🛡️ Arquitetura 4NF & Garantias Técnicas",
+        "🛡️ Integridade & Governança",
     ])
 
     with tab_runs:
@@ -77,7 +77,6 @@ def render_view() -> None:
                 use_container_width=True,
                 hide_index=True,
             )
-            render_download_csv_button(df_runs, filename="auditoria_coletas.csv")
         else:
             st.info("Nenhum log de execução encontrado.")
 
@@ -92,16 +91,15 @@ def render_view() -> None:
         st.dataframe(pd.DataFrame(sources_data), use_container_width=True, hide_index=True)
 
     with tab_arch:
-        st.markdown("##### 🏗️ Garantias de Arquitetura em Quarta Forma Normal (4NF)")
+        st.markdown("##### 🏗️ Garantias de Integridade de Dados")
         st.markdown(
             """
-            - **Eliminação de Dependências Multivaloradas**: Todas as tabelas de fatos (`trade_records`, `production_records`, `price_records`, `brazil_trade_details`) isolam estritamente cada dimensão de negócio.
-            - **Idempotência e Auditoria Completa (RNF02)**: O repositório `raw_data` armazena os payloads brutos integrais com chave de verificação criptográfica SHA-256 (`payload_hash`), prevenindo duplicações e garantindo auditoria forense.
+            - **Eliminação de Redundâncias**: Todas as tabelas de fatos isolam estritamente cada dimensão de negócio.
+            - **Idempotência e Auditoria Completa**: O repositório armazena os payloads brutos integrais com chave de verificação criptográfica SHA-256 (`payload_hash`), prevenindo duplicações e garantindo auditoria forense.
             - **Segurança Nativa via Row Level Security (RLS)**: Políticas ativas para leitura pública (`anon`, `authenticated`) e restrição de escrita apenas para `service_role`.
             - **Controle de Resiliência de Requisições HTTP**: Rate limiting dedicado por provedor com estratégia de *exponential backoff* e *jitter* contra HTTP 429.
             """
         )
-
     render_source_badge("Logs de Execução & Auditoria FertiPartner", "Tempo Real")
 
 

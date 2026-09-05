@@ -1,4 +1,4 @@
-"""Página 4: Comércio Internacional: Importações e Exportações Globais (RF04, RF05)."""
+"""Página 4: Comércio Internacional: Importações e Exportações Globais."""
 
 import sys
 import streamlit as st
@@ -10,7 +10,6 @@ from app.presentation.streamlit.components.ui import (
     render_header,
     render_kpi_card,
     render_source_badge,
-    render_download_csv_button,
 )
 from app.presentation.streamlit.theme import (
     apply_ferti_theme,
@@ -25,7 +24,7 @@ def render_page() -> None:
     render_header(
         title="Comércio Internacional (Importações & Exportações)",
         subtitle="Movimentação transfronteiriça de fertilizantes, valores aduaneiros (FOB/CIF) e preços médios praticados por corredor comercial.",
-        badge_text="UN Comtrade & Comex",
+        badge_text="Comércio Global",
         badge_type="purple",
     )
 
@@ -68,23 +67,23 @@ def render_page() -> None:
             value=format_metric_tons(total_qty),
             delta=f"Ano {selected_year}",
             delta_positive=True,
-            help_text="Volume físico total",
+            help_text="Volume físico total transacionado",
         )
     with k2:
         render_kpi_card(
-            title="Valor Ad-Valorem Total",
+            title="Valor Aduaneiro Total",
             value=format_currency_usd(total_val),
             delta="Moeda Corrente",
             delta_positive=True,
-            help_text="Valor CIF/FOB declarado",
+            help_text="Valor FOB/CIF declarado",
         )
     with k3:
         render_kpi_card(
             title="Preço Médio Ponderado",
             value=f"$ {avg_price:,.2f} / MT",
-            delta="Benchmark Global",
+            delta="Média por Tonelada",
             delta_positive=None,
-            help_text="Valor / Volume",
+            help_text="Valor Total / Volume Total",
         )
 
     st.write("")
@@ -104,7 +103,13 @@ def render_page() -> None:
             color_continuous_scale="Blues",
         )
         fig_exp.update_traces(texttemplate="%{x:,.0f} MT", textposition="inside")
-        apply_ferti_theme(fig_exp, height=340, show_legend=False)
+        apply_ferti_theme(
+            fig_exp,
+            height=340,
+            show_legend=False,
+            x_title="Volume Físico Exportado (MT)",
+            y_title="País de Origem",
+        )
         st.plotly_chart(fig_exp, width="stretch", config=get_default_plotly_config())
 
     with col_dest:
@@ -121,7 +126,13 @@ def render_page() -> None:
             color_continuous_scale="Teal",
         )
         fig_imp.update_traces(texttemplate="%{x:,.0f} MT", textposition="inside")
-        apply_ferti_theme(fig_imp, height=340, show_legend=False)
+        apply_ferti_theme(
+            fig_imp,
+            height=340,
+            show_legend=False,
+            x_title="Volume Físico Importado (MT)",
+            y_title="País de Destino",
+        )
         st.plotly_chart(fig_imp, width="stretch", config=get_default_plotly_config())
 
     st.subheader("📑 Relações Comerciais Detalhadas")
@@ -144,7 +155,6 @@ def render_page() -> None:
         width="stretch",
         hide_index=True,
     )
-    render_download_csv_button(filtered, filename=f"comercio_internacional_{selected_year}.csv", key="dl_p04_table")
 
     render_source_badge("UN Comtrade • MDIC Comex Stat", "Mensal")
 

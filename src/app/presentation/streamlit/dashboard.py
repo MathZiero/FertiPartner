@@ -1,6 +1,7 @@
-"""Aplicação Principal Streamlit do FertiPartner com navegação moderna e estrutura de páginas."""
+"""Aplicação Principal Streamlit do FertiPartner com navegação moderna e tema AgTech Light Mode."""
 
 import sys
+import importlib
 from pathlib import Path
 
 # Garante que a pasta src esteja no sys.path para resolução consistente dos módulos da aplicação
@@ -8,10 +9,17 @@ _src_dir = str(Path(__file__).resolve().parents[3])
 if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
 
+# Força recarregamento dinâmico dos módulos de apresentação para aplicar imediatamente CSS, temas e componentes
+for mod_name in list(sys.modules.keys()):
+    if mod_name.startswith("app.presentation.streamlit.") and not mod_name.endswith(".dashboard"):
+        try:
+            importlib.reload(sys.modules[mod_name])
+        except Exception:
+            pass
+
 import streamlit as st
 
 from app.presentation.streamlit.styles import inject_custom_styles
-from app.presentation.streamlit.services.data_service import FertiDataService
 
 # Configuração global da página
 st.set_page_config(
@@ -21,8 +29,14 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Injeção das regras de design do tema AgTech
+# Injeção das regras de design do tema AgTech (Modo Claro)
 inject_custom_styles()
+
+# Logo oficial no topo da barra lateral (como o logo de um site)
+LOGO_PATH = Path(__file__).resolve().parent / "assets" / "logo.svg"
+if LOGO_PATH.is_file():
+    st.logo(str(LOGO_PATH), size="large")
+
 
 def _find_pages_dir() -> Path:
     """Localiza o diretório de páginas do Streamlit independentemente de como o script foi invocado."""
@@ -47,7 +61,7 @@ def _find_pages_dir() -> Path:
 
 PAGES_DIR = _find_pages_dir()
 
-# Estrutura moderna de navegação por arquivos de página isolados (Streamlit 1.36+)
+# Estrutura moderna de navegação organizada por domínios de negócio
 pages = {
     "🌐 Mercado & Visão Geral": [
         st.Page(
@@ -106,10 +120,10 @@ pages = {
     ],
     "⚙️ Infraestrutura": [
         st.Page(
-            str(PAGES_DIR / "09_auditoria_sistema.py"),
-            title="Auditoria & Fontes 4NF",
-            icon=":material/dns:",
-            url_path="auditoria-sistema",
+            str(PAGES_DIR / "09_observabilidade.py"),
+            title="Observabilidade",
+            icon=":material/monitoring:",
+            url_path="observabilidade",
         ),
     ],
 }
@@ -117,21 +131,10 @@ pages = {
 # Inicialização da navegação
 pg = st.navigation(pages)
 
-# Renderização da barra lateral com branding e status nativo
+# Rodapé minimalista da barra lateral
 with st.sidebar:
-    st.title("🌱 FertiPartner")
-    st.caption("Inteligência de Mercado NPK")
     st.divider()
-
-    # Status de conectividade com o Supabase
-    is_connected = FertiDataService.check_connection()
-    if is_connected:
-        st.success("🟢 Supabase 4NF Conectado", icon="✅")
-    else:
-        st.warning("🟠 Modo Resiliente Ativo", icon="⚠️")
-
-    st.divider()
-    st.caption("FertiPartner v0.1.0 • Streamlit 1.63 • 4NF")
+    st.caption("FertiPartner • Inteligência de Mercado Agrícola")
 
 # Execução da página selecionada
 pg.run()
