@@ -46,6 +46,8 @@ def render_page() -> None:
 
     with c_time:
         time_window = st.segmented_control("Janela Temporal", ["1A", "3A", "5A", "Tudo"], default="Tudo", key="p06_time_ctrl")
+        if not time_window:
+            time_window = "Tudo"
 
     # Filtragem
     filtered = df_prices.copy()
@@ -60,7 +62,7 @@ def render_page() -> None:
 
     # Filtro temporal
     filtered = filtered.sort_values(by="price_date")
-    if time_window != "Tudo" and "price_date" in filtered.columns:
+    if time_window and time_window != "Tudo" and "price_date" in filtered.columns:
         max_date = filtered["price_date"].max()
         years_back = int(time_window.replace("A", ""))
         min_date = max_date - pd.DateOffset(years=years_back)

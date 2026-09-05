@@ -32,6 +32,8 @@ def render_view() -> None:
     # Seletor moderno de categoria via segmented_control
     categories = ["Todas"] + sorted(df_fert["category_name"].dropna().unique().tolist())
     selected_cat = st.segmented_control("Filtrar por Categoria", categories, default="Todas")
+    if not selected_cat:
+        selected_cat = "Todas"
 
     filtered_df = df_fert if selected_cat == "Todas" else df_fert[df_fert["category_name"] == selected_cat]
 

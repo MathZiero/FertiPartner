@@ -39,6 +39,8 @@ def render_page() -> None:
     with c_flow:
         flow_options = ["Todos", "IMPORT", "EXPORT"]
         selected_flow = st.segmented_control("Sentido do Fluxo", flow_options, default="Todos", key="p04_flow_ctrl")
+        if not selected_flow:
+            selected_flow = "Todos"
 
     with c_fert:
         fert_options = ["Todos"] + sorted(df_trade["fertilizer_name"].dropna().unique().tolist())
