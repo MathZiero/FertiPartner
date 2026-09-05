@@ -10,6 +10,7 @@ from app.presentation.streamlit.components import ui
 PAGES_DIR = Path(__file__).resolve().parents[2] / "src" / "app" / "presentation" / "streamlit" / "pages"
 
 PAGE_FILES = [
+    "01_inicio.py",
     "01_visao_geral.py",
     "02_catalogo.py",
     "03_producao_global.py",

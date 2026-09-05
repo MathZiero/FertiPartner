@@ -76,7 +76,16 @@ def render_view() -> None:
             help_text="Diversificação de oferta",
         )
 
-    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
+    st.divider()
+
+    # Nota conceitual metodológica: Produtor vs Exportador
+    with st.expander("💡 Entenda a Diferença Técnica: País Produtor vs País Exportador", expanded=False):
+        st.markdown(
+            """
+            - **País Produtor (FAOSTAT / IFA)**: Mede o volume físico total sintetizado industrialmente (ex: síntese de amônia pelo método Haber-Bosch) ou extraído mineralmente (ex: mineração de rocha fosfática ou silvinita) no território nacional. Países como a **China** e a **Índia** figuram no topo da produção global de fertilizantes nitrogenados e fosfatados, mas a esmagadora maioria desse volume é consumida por seus próprios mercados agrícolas internos.
+            - **País Exportador (UN Comtrade / MDIC)**: Registra os fluxos que efetivamente transpõem as aduanas internacionais. Polos com excedente líquido exportador estrutural (como **Rússia**, **Canadá**, **Marrocos** e **Belarus**) lideram o fornecimento no comércio transfronteiriço global.
+            """
+        )
 
     # Mapa Mundi Coroplético
     st.markdown("##### 🌍 Mapa Global de Produção (Toneladas Métricas)")
@@ -113,6 +122,8 @@ def render_view() -> None:
             font=dict(color="#F1F5F9"),
         )
         st.plotly_chart(fig_map, use_container_width=True, config=get_default_plotly_config())
+
+    st.divider()
 
     # Gráfico de Barras do Ranking
     col_chart, col_tbl = st.columns([6, 6])
@@ -164,6 +175,7 @@ def render_view() -> None:
         )
         render_download_csv_button(display_tbl, filename=f"producao_global_{selected_year}.csv")
 
+    st.divider()
     render_source_badge("FAOSTAT (Food and Agriculture Organization of the UN)", "Anual")
 
 

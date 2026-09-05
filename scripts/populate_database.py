@@ -48,12 +48,15 @@ def run_comex() -> None:
     print(f"Importações: {res_imp['records_inserted']} fatos inseridos a partir de {res_imp['records_fetched']} linhas brutas.")
 
 
-def run_comtrade() -> None:
+def run_comtrade(period: int = 2023, top_n: int = 10, auto_top: bool = True) -> None:
     print("\n" + "=" * 60)
-    print("FASE 3: UN COMTRADE - Fluxos Mundiais de Comércio Bilateral")
+    print(f"FASE 3: UN COMTRADE - Fluxos Globais de Comércio Bilateral (Top {top_n})")
     print("=" * 60)
     collector = UNComtradeCollector()
-    result = collector.run(period=2023)
+    if auto_top:
+        result = collector.run_auto_top_flows(period=period, top_n=top_n)
+    else:
+        result = collector.run(period=period)
     print(f"Comtrade: {result['records_inserted']} fluxos inseridos a partir de {result['records_fetched']} linhas brutas.")
 
 
@@ -70,6 +73,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Povoamento do Banco de Dados FertiPartner (4NF)")
     parser.add_argument("--source", choices=["fred", "comex", "comtrade", "faostat"], help="Executa fonte específica")
     parser.add_argument("--all", action="store_true", help="Executa todas as fontes na ordem recomendada")
+    parser.add_argument("--top-n", type=int, default=10, help="Top N exportadores e importadores para UN Comtrade (padrão: 10)")
+    parser.add_argument("--year", type=int, default=2023, help="Ano de referência para UN Comtrade (padrão: 2023)")
+    parser.add_argument("--brazil-only", action="store_true", help="Limita UN Comtrade apenas ao declarante Brasil")
 
     args = parser.parse_args()
 
@@ -81,7 +87,7 @@ def main() -> None:
         time.sleep(2.0)
         run_comex()
         time.sleep(2.0)
-        run_comtrade()
+        run_comtrade(period=args.year, top_n=args.top_n, auto_top=not args.brazil_only)
         time.sleep(2.0)
         run_faostat()
     elif args.source == "fred":
@@ -89,7 +95,7 @@ def main() -> None:
     elif args.source == "comex":
         run_comex()
     elif args.source == "comtrade":
-        run_comtrade()
+        run_comtrade(period=args.year, top_n=args.top_n, auto_top=not args.brazil_only)
     elif args.source == "faostat":
         run_faostat()
 

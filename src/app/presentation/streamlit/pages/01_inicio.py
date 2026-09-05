@@ -1,10 +1,10 @@
-"""Página 1: Início (compatibilidade com 01_visao_geral.py)."""
+"""Página 1: Início - Ponto de partida da plataforma FertiPartner."""
 
 from app.presentation.streamlit.views.v01_inicio import render_view
 
 
 def render_page() -> None:
-    """Renderiza a página Início delegando para v01_inicio."""
+    """Renderiza a página Início delegando para a view v01."""
     render_view()
 
 

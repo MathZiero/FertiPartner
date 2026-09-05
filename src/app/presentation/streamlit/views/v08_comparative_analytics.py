@@ -30,6 +30,8 @@ def render_view() -> None:
     df_prod = FertiDataService.get_global_production_rankings()
     df_prices = FertiDataService.get_price_benchmark_trends()
 
+    st.divider()
+
     tab_fert_comp, tab_country_comp = st.tabs([
         "🌱 Comparador de Fertilizantes (NPK)",
         "🌐 Comparador entre Países",
@@ -61,6 +63,8 @@ def render_view() -> None:
             st.plotly_chart(fig_p_comp, use_container_width=True, config=get_default_plotly_config())
         else:
             st.info("Preços indisponíveis para os fertilizantes selecionados.")
+
+        st.divider()
 
         # Tabela comparativa de especificações
         st.markdown("###### 📊 Comparativo Técnico de Composição")
@@ -100,6 +104,8 @@ def render_view() -> None:
             apply_ferti_theme(fig_country, height=400)
             st.plotly_chart(fig_country, use_container_width=True, config=get_default_plotly_config())
 
+            st.divider()
+
             st.dataframe(
                 country_df[["country_name", "fertilizer_name", "production_year", "standard_quantity_mt", "global_market_share_pct"]].rename(columns={
                     "country_name": "País",
@@ -117,6 +123,7 @@ def render_view() -> None:
             )
             render_download_csv_button(country_df, filename="comparativo_paises.csv")
 
+    st.divider()
     render_source_badge("Séries Normalizadas FertiPartner", "Consolidado")
 
 

@@ -46,13 +46,13 @@ def _find_pages_dir() -> Path:
         Path.cwd() / "src" / "app" / "presentation" / "streamlit" / "pages",
     ]
     for candidate in candidates:
-        if candidate.is_dir() and (candidate / "01_visao_geral.py").is_file():
+        if candidate.is_dir() and ((candidate / "01_inicio.py").is_file() or (candidate / "01_visao_geral.py").is_file()):
             return candidate.resolve()
 
     current = Path(__file__).resolve().parent
     while current.parent != current:
         candidate = current / "src" / "app" / "presentation" / "streamlit" / "pages"
-        if candidate.is_dir() and (candidate / "01_visao_geral.py").is_file():
+        if candidate.is_dir() and ((candidate / "01_inicio.py").is_file() or (candidate / "01_visao_geral.py").is_file()):
             return candidate.resolve()
         current = current.parent
 
@@ -61,15 +61,15 @@ def _find_pages_dir() -> Path:
 
 PAGES_DIR = _find_pages_dir()
 
-# Estrutura moderna de navegação organizada por domínios de negócio
+# Estrutura moderna de navegação organizada por categorias singulares
 pages = {
-    "🌐 Mercado & Visão Geral": [
+    "🌐 Visão Geral": [
         st.Page(
-            str(PAGES_DIR / "01_visao_geral.py"),
-            title="Visão Geral",
-            icon=":material/dashboard:",
+            str(PAGES_DIR / "01_inicio.py"),
+            title="Início",
+            icon=":material/home:",
             default=True,
-            url_path="visao-geral",
+            url_path="inicio",
         ),
         st.Page(
             str(PAGES_DIR / "02_catalogo.py"),
@@ -78,13 +78,15 @@ pages = {
             url_path="catalogo",
         ),
     ],
-    "🏭 Produção & Comércio": [
+    "🏭 Produção": [
         st.Page(
             str(PAGES_DIR / "03_producao_global.py"),
             title="Produção Global",
             icon=":material/factory:",
             url_path="producao-global",
         ),
+    ],
+    "🚢 Comércio": [
         st.Page(
             str(PAGES_DIR / "04_comercio_internacional.py"),
             title="Comércio Internacional",
@@ -97,6 +99,12 @@ pages = {
             icon=":material/swap_calls:",
             url_path="fluxos-sankey",
         ),
+        st.Page(
+            str(PAGES_DIR / "07_mercado_brasil.py"),
+            title="Mercado Brasileiro",
+            icon=":material/flag:",
+            url_path="mercado-brasil",
+        ),
     ],
     "📈 Preços & Inteligência": [
         st.Page(
@@ -104,12 +112,6 @@ pages = {
             title="Preços & Benchmarks",
             icon=":material/trending_up:",
             url_path="precos-benchmarks",
-        ),
-        st.Page(
-            str(PAGES_DIR / "07_mercado_brasil.py"),
-            title="Mercado Brasileiro",
-            icon=":material/flag:",
-            url_path="mercado-brasil",
         ),
         st.Page(
             str(PAGES_DIR / "08_analises_comparativas.py"),

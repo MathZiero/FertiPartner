@@ -55,7 +55,7 @@ def render_view() -> None:
     if selected_fert != "Todos":
         filtered = filtered[filtered["fertilizer_name"] == selected_fert]
 
-    # Agregação bilateral entre Exportador e Importador
+    # Agregação bilateral entre Exportador e Importador (todas as rotas)
     agg_col = "total_quantity_mt" if metric_choice == "Volume (MT)" else "total_value_usd"
     routes = filtered.groupby(["exporter_country", "importer_country"])[agg_col].sum().reset_index()
     routes = routes[routes[agg_col] > 0]
@@ -64,17 +64,24 @@ def render_view() -> None:
         st.info("Nenhum fluxo bilateral encontrado para os filtros selecionados.")
         return
 
-    # Construção das listas de nós e links para o Sankey
-    exporters = sorted(routes["exporter_country"].unique().tolist())
-    importers = sorted(routes["importer_country"].unique().tolist())
+    st.divider()
 
-    # Garantir nomes únicos se um país for ao mesmo tempo exportador e importador
+    # Otimização visual: Filtrar apenas os Top 10 maiores fluxos para o diagrama Sankey
+    sankey_routes = routes.sort_values(by=agg_col, ascending=False).head(10)
+
+    st.markdown("##### 🌊 Diagrama de Fluxos Bilaterais — Top 10 Maiores Corredores")
+    st.caption("Exibindo exclusivamente as **10 maiores rotas** no diagrama para evitar poluição visual e facilitar a leitura estratégica. A tabela abaixo lista a totalidade das interações comerciais.")
+
+    # Construção das listas de nós e links para o Sankey (Top 10)
+    exporters = sorted(sankey_routes["exporter_country"].unique().tolist())
+    importers = sorted(sankey_routes["importer_country"].unique().tolist())
+
     node_labels = exporters + importers
     node_indices = {name: i for i, name in enumerate(node_labels)}
 
-    sources = [node_indices[exp] for exp in routes["exporter_country"]]
-    targets = [node_indices[imp] for imp in routes["importer_country"]]
-    values = routes[agg_col].tolist()
+    sources = [node_indices[exp] for exp in sankey_routes["exporter_country"]]
+    targets = [node_indices[imp] for imp in sankey_routes["importer_country"]]
+    values = sankey_routes[agg_col].tolist()
 
     # Cores personalizadas para nós e elos
     node_colors = []
@@ -84,9 +91,8 @@ def render_view() -> None:
         else:
             node_colors.append("#10B981")  # Verde para Importadores
 
-    link_colors = ["rgba(59, 130, 246, 0.35)" for _ in values]
+    link_colors = ["rgba(59, 130, 246, 0.40)" for _ in values]
 
-    # Criação da figura Sankey
     fig_sankey = go.Figure(
         data=[
             go.Sankey(
@@ -118,16 +124,19 @@ def render_view() -> None:
 
     apply_ferti_theme(
         fig_sankey,
-        title=f"Fluxos de Comércio ({selected_fert} - {selected_year})",
-        height=540,
+        title=f"Top 10 Fluxos Internacionais ({selected_fert} - {selected_year})",
+        height=520,
         show_legend=False,
     )
     fig_sankey.update_layout(margin=dict(l=20, r=20, t=60, b=20))
 
     st.plotly_chart(fig_sankey, use_container_width=True, config=get_default_plotly_config())
 
-    # Tabela detalhada das rotas comerciais
-    st.markdown("##### 🧭 Resumo das Rotas Comerciais Mais Ativas")
+    st.divider()
+
+    # Tabela detalhada com TODAS as rotas comerciais
+    st.markdown("##### 🧭 Resumo Geral de Todas as Rotas Comerciais Registradas")
+    st.caption(f"Detalhamento completo de todas as {len(routes)} conexões bilaterais identificadas para o filtro selecionado.")
     routes_sorted = routes.sort_values(by=agg_col, ascending=False)
     st.dataframe(
         routes_sorted.rename(columns={
@@ -143,8 +152,9 @@ def render_view() -> None:
         use_container_width=True,
         hide_index=True,
     )
-    render_download_csv_button(routes_sorted, filename=f"rotas_sankey_{selected_year}.csv")
+    render_download_csv_button(routes_sorted, filename=f"rotas_comerciais_{selected_year}.csv")
 
+    st.divider()
     render_source_badge("UN Comtrade & MDIC Comex Stat", "Mensal")
 
 

@@ -88,7 +88,7 @@ def render_view() -> None:
             help_text="Valor / Volume",
         )
 
-    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
+    st.divider()
 
     col_orig, col_dest = st.columns([6, 6])
     with col_orig:
@@ -125,6 +125,8 @@ def render_view() -> None:
         apply_ferti_theme(fig_imp, height=340, show_legend=False)
         st.plotly_chart(fig_imp, use_container_width=True, config=get_default_plotly_config())
 
+    st.divider()
+
     st.markdown("##### 📑 Relações Comerciais Detalhadas")
     display_cols = ["fertilizer_name", "flow_type", "exporter_country", "importer_country", "total_quantity_mt", "total_value_usd", "avg_usd_per_mt"]
     st.dataframe(
@@ -145,9 +147,10 @@ def render_view() -> None:
         use_container_width=True,
         hide_index=True,
     )
-    render_download_csv_button(filtered, filename=f"comercio_internacional_{selected_year}.csv")
+    render_download_csv_button(filtered[display_cols], filename=f"comercio_internacional_{selected_year}.csv")
 
-    render_source_badge("UN Comtrade • MDIC Comex Stat", "Mensal")
+    st.divider()
+    render_source_badge("UN Comtrade & MDIC Comex Stat", "Mensal")
 
 
 if __name__ == "__main__":

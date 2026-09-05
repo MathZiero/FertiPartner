@@ -91,7 +91,15 @@ def render_view() -> None:
             help_text="Meta Plano Nac. Fertilizantes: <50%",
         )
 
-    st.markdown("<div style='height: 1.2rem;'></div>", unsafe_allow_html=True)
+    st.divider()
+
+    # Alerta se houver dados pendentes de consolidação no ano selecionado
+    if not filtered.empty and "is_consolidated" in filtered.columns:
+        incomplete_items = filtered[~filtered["is_consolidated"]]
+        if not incomplete_items.empty:
+            st.info(
+                f"ℹ️ **Aviso Metodológico ({selected_year}):** Existem produtos aguardando consolidação final de censo de produção nacional (FAO/ANDA). A dependência externa e o consumo aparente são calculados exclusivamente sobre séries consolidadas para evitar distorções."
+            )
 
     tab_balance, tab_geo, tab_suppliers = st.tabs([
         "⚖️ Balanço Oferta & Demanda",
@@ -102,12 +110,22 @@ def render_view() -> None:
     with tab_balance:
         c_bar, c_dep_ind = st.columns([7, 5])
         with c_bar:
-            st.markdown("##### 📦 Balanço Físico: Produção vs. Importações (MT)")
+            c_b_title, c_b_opt = st.columns([7, 5])
+            with c_b_title:
+                st.markdown("##### 📦 Balanço Físico: Produção vs. Importações")
+            with c_b_opt:
+                bar_mode = st.radio(
+                    "Exibição:",
+                    ["Empilhado", "Lado a Lado"],
+                    horizontal=True,
+                    key="p07_barmode_toggle",
+                )
+
             fig_bal = px.bar(
                 filtered,
                 x="fertilizer_name",
                 y=["national_production_mt", "total_imports_mt"],
-                barmode="group",
+                barmode="stack" if bar_mode == "Empilhado" else "group",
                 labels={"value": "Volume (MT)", "fertilizer_name": "Produto", "variable": "Tipo de Oferta"},
                 color_discrete_map={
                     "national_production_mt": "#10B981",
@@ -122,19 +140,24 @@ def render_view() -> None:
 
         with c_dep_ind:
             st.markdown("##### 🚨 Taxa de Dependência Externa por Fertilizante (%)")
-            fig_gauge = px.bar(
-                filtered,
-                x="external_dependency_pct",
-                y="fertilizer_name",
-                orientation="h",
-                color="external_dependency_pct",
-                color_continuous_scale=["#10B981", "#F59E0B", "#F43F5E"],
-                range_color=[50, 100],
-                labels={"external_dependency_pct": "Dependência (%)", "fertilizer_name": "Produto"},
-            )
-            fig_gauge.update_traces(texttemplate="%{x:.1f}%", textposition="inside")
-            apply_ferti_theme(fig_gauge, height=360, show_legend=False)
-            st.plotly_chart(fig_gauge, use_container_width=True, config=get_default_plotly_config())
+            # Filtra apenas registros consolidados com dependência válida
+            filtered_dep = filtered.dropna(subset=["external_dependency_pct"])
+            if not filtered_dep.empty:
+                fig_gauge = px.bar(
+                    filtered_dep,
+                    x="external_dependency_pct",
+                    y="fertilizer_name",
+                    orientation="h",
+                    color="external_dependency_pct",
+                    color_continuous_scale=["#10B981", "#F59E0B", "#F43F5E"],
+                    range_color=[50, 100],
+                    labels={"external_dependency_pct": "Dependência (%)", "fertilizer_name": "Produto"},
+                )
+                fig_gauge.update_traces(texttemplate="%{x:.1f}%", textposition="inside")
+                apply_ferti_theme(fig_gauge, height=360, show_legend=False)
+                st.plotly_chart(fig_gauge, use_container_width=True, config=get_default_plotly_config())
+            else:
+                st.info("Taxa de dependência não calculada para os filtros selecionados (aguardando dados consolidados de produção).")
 
     with tab_geo:
         st.markdown("##### 🚜 Participação dos Estados no Consumo / Internalização de Fertilizantes")
@@ -201,7 +224,7 @@ def render_view() -> None:
         else:
             st.info("Registros de fornecedores do Brasil não encontrados.")
 
-    st.markdown("---")
+    st.divider()
     st.markdown("##### 📋 Tabela Consolidada de Dependência Comercial")
     st.dataframe(
         filtered.rename(columns={
@@ -229,6 +252,7 @@ def render_view() -> None:
     )
     render_download_csv_button(filtered, filename="dependencia_brasil.csv")
 
+    st.divider()
     render_source_badge("MDIC Comex Stat • ANDA • FAOSTAT", "Mensal")
 
 

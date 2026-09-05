@@ -158,25 +158,46 @@ br_prod AS (
     FROM public.production_records pr, br_country br
     WHERE pr.country_id = br.id AND pr.period_type = 'YEAR'
     GROUP BY pr.fertilizer_id, EXTRACT(YEAR FROM pr.period_start_date)::INT
+),
+combined_periods AS (
+    SELECT fertilizer_id, ref_year FROM br_imports
+    UNION
+    SELECT fertilizer_id, ref_year FROM br_exports
+    UNION
+    SELECT fertilizer_id, ref_year FROM br_prod
 )
 SELECT 
     f.id AS fertilizer_id,
     f.canonical_name AS fertilizer_name,
-    COALESCE(i.ref_year, p.ref_year, e.ref_year) AS ref_year,
-    COALESCE(p.prod_mt, 0) AS national_production_mt,
+    cp.ref_year,
+    p.prod_mt AS national_production_mt,
     COALESCE(i.import_mt, 0) AS total_imports_mt,
     COALESCE(e.export_mt, 0) AS total_exports_mt,
-    (COALESCE(p.prod_mt, 0) + COALESCE(i.import_mt, 0) - COALESCE(e.export_mt, 0)) AS apparent_consumption_mt,
-    ROUND(
-        (COALESCE(i.import_mt, 0) / 
-        NULLIF(COALESCE(p.prod_mt, 0) + COALESCE(i.import_mt, 0) - COALESCE(e.export_mt, 0), 0)) * 100, 
-        2
-    ) AS external_dependency_pct
-FROM public.fertilizers f
-LEFT JOIN br_imports i ON f.id = i.fertilizer_id
-LEFT JOIN br_exports e ON f.id = e.fertilizer_id AND i.ref_year = e.ref_year
-LEFT JOIN br_prod p ON f.id = p.fertilizer_id AND COALESCE(i.ref_year, e.ref_year) = p.ref_year
-WHERE COALESCE(i.ref_year, p.ref_year, e.ref_year) IS NOT NULL;
+    CASE 
+        WHEN p.prod_mt IS NOT NULL THEN (p.prod_mt + COALESCE(i.import_mt, 0) - COALESCE(e.export_mt, 0))
+        ELSE NULL 
+    END AS apparent_consumption_mt,
+    CASE 
+        WHEN p.prod_mt IS NOT NULL AND (p.prod_mt + COALESCE(i.import_mt, 0) - COALESCE(e.export_mt, 0)) > 0 
+        THEN ROUND(
+            (COALESCE(i.import_mt, 0) / 
+            (p.prod_mt + COALESCE(i.import_mt, 0) - COALESCE(e.export_mt, 0))) * 100, 
+            2
+        )
+        ELSE NULL 
+    END AS external_dependency_pct,
+    CASE
+        WHEN p.prod_mt IS NOT NULL AND i.import_mt IS NOT NULL THEN 'CONSOLIDATED'
+        WHEN p.prod_mt IS NULL AND i.import_mt IS NOT NULL THEN 'PENDING_PRODUCTION'
+        WHEN p.prod_mt IS NOT NULL AND i.import_mt IS NULL THEN 'PENDING_TRADE'
+        ELSE 'INSUFFICIENT_DATA'
+    END AS data_status,
+    (p.prod_mt IS NOT NULL AND i.import_mt IS NOT NULL) AS is_consolidated
+FROM combined_periods cp
+JOIN public.fertilizers f ON cp.fertilizer_id = f.id
+LEFT JOIN br_imports i ON cp.fertilizer_id = i.fertilizer_id AND cp.ref_year = i.ref_year
+LEFT JOIN br_exports e ON cp.fertilizer_id = e.fertilizer_id AND cp.ref_year = e.ref_year
+LEFT JOIN br_prod p ON cp.fertilizer_id = p.fertilizer_id AND cp.ref_year = p.ref_year;
 
 -- 3.5. v_price_benchmark_trends
 CREATE OR REPLACE VIEW public.v_price_benchmark_trends

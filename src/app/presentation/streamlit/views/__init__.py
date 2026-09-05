@@ -1,6 +1,7 @@
 """Vistas e páginas analíticas do FertiPartner."""
 
 from app.presentation.streamlit.views import (
+    v01_inicio as view_inicio,
     v01_market_overview as view_market_overview,
     v02_fertilizers_catalog as view_fertilizers_catalog,
     v03_global_production as view_global_production,
@@ -13,6 +14,7 @@ from app.presentation.streamlit.views import (
 )
 
 __all__ = [
+    "view_inicio",
     "view_market_overview",
     "view_fertilizers_catalog",
     "view_global_production",
