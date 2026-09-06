@@ -22,6 +22,10 @@ NUTRIENT_COLORS = {
     "P2O5": "#2563EB",
     "K2O": "#D97706",
     "S": "#CA8A04",
+    "Ca": "#0284C7",
+    "Mg": "#10B981",
+    "Zn": "#06B6D4",
+    "B": "#8B5CF6",
     "OUTROS": "#6B7280",
 }
 
@@ -29,6 +33,7 @@ CATEGORY_COLORS = {
     "Fertilizantes Nitrogenados": "#2D6A4F",
     "Fertilizantes Fosfatados": "#2563EB",
     "Fertilizantes Potássicos": "#D97706",
+    "Macronutrientes Secundários": "#CA8A04",
     "Misturas e Complexos NPK": "#7C3AED",
     "Micronutrientes": "#DB2777",
 }
@@ -150,6 +155,18 @@ def format_metric_tons(val: float | None) -> str:
     return f"{val:,.1f} MT"
 
 
+def format_metric_tons_full(val: float | None) -> str:
+    """Formata valor numérico com a unidade por extenso em parênteses."""
+    if val is None or val == 0:
+        return "0 Toneladas Métricas (MT)"
+    abs_val = abs(val)
+    if abs_val >= 1_000_000:
+        return f"{val / 1_000_000:,.2f} Milhões de Toneladas Métricas (M MT)"
+    if abs_val >= 1_000:
+        return f"{val / 1_000:,.1f} Mil Toneladas Métricas (k MT)"
+    return f"{val:,.1f} Toneladas Métricas (MT)"
+
+
 def format_currency_usd(val: float | None) -> str:
     """Formata valor numérico em dólares com sufixo amigável."""
     if val is None or val == 0:
@@ -162,3 +179,17 @@ def format_currency_usd(val: float | None) -> str:
     if abs_val >= 1_000:
         return f"$ {val / 1_000:,.1f} k"
     return f"$ {val:,.2f}"
+
+
+def format_currency_usd_full(val: float | None) -> str:
+    """Formata valor numérico com menção explícita de Dólares Americanos (USD)."""
+    if val is None or val == 0:
+        return "$ 0,00 USD"
+    abs_val = abs(val)
+    if abs_val >= 1_000_000_000:
+        return f"$ {val / 1_000_000_000:,.2f} Bilhões de Dólares (B USD)"
+    if abs_val >= 1_000_000:
+        return f"$ {val / 1_000_000:,.2f} Milhões de Dólares (M USD)"
+    if abs_val >= 1_000:
+        return f"$ {val / 1_000:,.1f} Mil Dólares (k USD)"
+    return f"$ {val:,.2f} USD"

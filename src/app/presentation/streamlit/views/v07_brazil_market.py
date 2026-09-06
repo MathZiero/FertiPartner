@@ -11,6 +11,7 @@ from app.presentation.streamlit.components.ui import (
     render_kpi_card,
     render_source_badge,
     render_download_csv_button,
+    render_units_legend,
 )
 from app.presentation.streamlit.theme import (
     apply_ferti_theme,
@@ -64,7 +65,7 @@ def render_view() -> None:
             value=format_metric_tons(apparent_cons),
             delta=f"Ano {selected_year}",
             delta_positive=True,
-            help_text="Entrega ao mercado nacional",
+            help_text="Consumo aparente em Toneladas Métricas (MT = 1.000 kg)",
         )
     with k2:
         render_kpi_card(
@@ -72,7 +73,7 @@ def render_view() -> None:
             value=format_metric_tons(total_import),
             delta=f"{total_import/apparent_cons*100:.1f}% da oferta" if apparent_cons > 0 else None,
             delta_positive=False,
-            help_text="Volume internalizado",
+            help_text="Volume total internalizado em Toneladas Métricas (MT)",
         )
     with k3:
         render_kpi_card(
@@ -80,7 +81,7 @@ def render_view() -> None:
             value=format_metric_tons(total_prod),
             delta=f"{total_prod/apparent_cons*100:.1f}% da oferta" if apparent_cons > 0 else None,
             delta_positive=True,
-            help_text="Síntese e extração no país",
+            help_text="Produção industrial brasileira em Toneladas Métricas (MT)",
         )
     with k4:
         render_kpi_card(
@@ -253,6 +254,7 @@ def render_view() -> None:
     render_download_csv_button(filtered, filename="dependencia_brasil.csv")
 
     st.divider()
+    render_units_legend()
     render_source_badge("MDIC Comex Stat • ANDA • FAOSTAT", "Mensal")
 
 

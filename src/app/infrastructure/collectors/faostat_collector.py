@@ -14,10 +14,17 @@ FAOSTAT_SOURCE_ID = 2  # FAOSTAT_RFB
 
 # Item code to canonical fertilizer ID mapping
 FAO_ITEM_FERTILIZER_MAP = {
-    "4001": 1,  # Urea
-    "4023": 2,  # MAP
-    "4022": 3,  # DAP
-    "4016": 4,  # Potassium chloride (muriate of potash / MOP / KCl)
+    "4001": 1,   # Urea
+    "4023": 2,   # Monoammonium phosphate (MAP)
+    "4022": 3,   # Diammonium phosphate (DAP)
+    "4016": 4,   # Potassium chloride (muriate of potash / MOP / KCl)
+    "4007": 5,   # Ammonia, anhydrous
+    "4003": 6,   # Ammonium nitrate (AN)
+    "4002": 7,   # Ammonium sulphate
+    "4013": 8,   # Superphosphates, other (Single Superphosphate / SSP)
+    "4012": 9,   # Superphosphates above 35% (Triple Superphosphate / TSP)
+    "4011": 10,  # Phosphate rock
+    "4017": 11,  # Potassium sulphate (sulphate of potash / SOP)
 }
 
 # FAO Area Code to Country ISO2
@@ -58,6 +65,7 @@ class FAOSTATCollector(BaseCollector):
         self,
         year: int = 2022,
         area_codes: list[str] | None = None,
+        fertilizer_id: int | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Execute FAOSTAT collection for specified year and areas.
@@ -65,6 +73,7 @@ class FAOSTATCollector(BaseCollector):
         Args:
             year: Reference year (e.g. 2022).
             area_codes: FAOSTAT area codes. Defaults to top strategic producers/consumers.
+            fertilizer_id: Optional fertilizer ID to filter.
 
         Returns:
             dict with execution summary.
@@ -73,11 +82,15 @@ class FAOSTATCollector(BaseCollector):
         token = self.auth_manager.get_token()
 
         run_id = self.start_collection_run(
+            source_id=self.source_id,
             trigger_type="MANUAL",
-            metadata={"year": year, "areas_count": len(areas)},
+            metadata={"year": year, "areas_count": len(areas), "fertilizer_id": fertilizer_id},
         )
 
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+        }
         total_fetched = 0
         total_inserted = 0
 
@@ -118,6 +131,8 @@ class FAOSTATCollector(BaseCollector):
                     item_code = str(item.get("Item Code", "")).strip()
                     fert_id = FAO_ITEM_FERTILIZER_MAP.get(item_code)
                     if not fert_id:
+                        continue
+                    if fertilizer_id is not None and fert_id != fertilizer_id:
                         continue
 
                     element = str(item.get("Element", "")).strip()

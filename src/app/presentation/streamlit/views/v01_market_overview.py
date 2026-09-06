@@ -11,6 +11,7 @@ from app.presentation.streamlit.components.ui import (
     render_kpi_card,
     render_source_badge,
     render_download_csv_button,
+    render_units_legend,
 )
 from app.presentation.streamlit.theme import apply_ferti_theme, get_default_plotly_config, FERTI_COLORS
 
@@ -44,7 +45,7 @@ def render_view() -> None:
             value=f"{total_br_import / 1e6:,.1f} M MT",
             delta="+5.4% YoY",
             delta_positive=True,
-            help_text="Volume total internalizado",
+            help_text="Volume total em Milhões de Toneladas Métricas (M MT = 1.000.000 t)",
         )
     with c2:
         render_kpi_card(
@@ -52,7 +53,7 @@ def render_view() -> None:
             value=f"{avg_br_dep:.1f}%",
             delta="+1.2 p.p.",
             delta_positive=False,
-            help_text="Importações / Consumo Aparente",
+            help_text="Importações / Consumo Aparente (% de dependência nacional)",
         )
     with c3:
         render_kpi_card(
@@ -60,15 +61,15 @@ def render_view() -> None:
             value=f"{total_global_prod / 1e6:,.1f} M MT",
             delta="+2.8% YoY",
             delta_positive=True,
-            help_text="Principais polos globais",
+            help_text="Principais polos globais em Milhões de Toneladas Métricas (M MT)",
         )
     with c4:
         render_kpi_card(
             title="Preço Médio de Referência",
-            value=f"$ {latest_price:,.1f}",
+            value=f"$ {latest_price:,.1f} / MT",
             delta="-3.2% MoM",
             delta_positive=True,
-            help_text="USD por Tonelada Métrica",
+            help_text="Dólares Americanos por Tonelada Métrica (USD/MT)",
         )
 
     st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
@@ -83,50 +84,43 @@ def render_view() -> None:
     with tab_overview:
         col_left, col_right = st.columns([6, 5])
         with col_left:
-            st.markdown("##### 🇧🇷 Demanda e Importações Brasileiras por Fertilizante (MT)")
+            st.markdown("##### 🇧🇷 Composição do Consumo Aparente Brasileiro (Oferta vs Dependência)")
             if not df_dep.empty:
-                fig_dep = px.bar(
+                fig_bar = px.bar(
                     df_dep,
                     x="fertilizer_name",
-                    y=["total_imports_mt", "national_production_mt"],
+                    y=["national_production_mt", "total_imports_mt"],
                     barmode="stack",
-                    labels={"value": "Volume (Toneladas Métricas)", "fertilizer_name": "Fertilizante", "variable": "Fluxo"},
-                    color_discrete_map={
-                        "total_imports_mt": "#3B82F6",
-                        "national_production_mt": "#10B981",
+                    color_discrete_sequence=["#2D6A4F", "#2563EB"],
+                    labels={
+                        "fertilizer_name": "Fertilizante",
+                        "value": "Quantidade em Toneladas Métricas (MT)",
+                        "variable": "Componente da Oferta",
                     },
                 )
-                fig_dep.for_each_trace(lambda t: t.update(
-                    name="Importações (MT)" if "total_imports" in t.name else "Produção Nacional (MT)"
-                ))
-                apply_ferti_theme(fig_dep, height=360)
-                st.plotly_chart(fig_dep, use_container_width=True, config=get_default_plotly_config())
+                apply_ferti_theme(fig_bar, height=350, x_title="Fertilizante", y_title="Volume em Toneladas Métricas (MT)")
+                st.plotly_chart(fig_bar, use_container_width=True, config=get_default_plotly_config())
             else:
                 st.info("Dados de dependência não disponíveis.")
 
         with col_right:
-            st.markdown("##### 🌐 Participação na Produção Mundial por País")
+            st.markdown("##### 🌍 Top Produtores Mundiais (Market Share Global %)")
             if not df_prod.empty:
-                prod_by_country = df_prod.groupby("country_name")["standard_quantity_mt"].sum().reset_index()
                 fig_pie = px.pie(
-                    prod_by_country,
+                    df_prod.groupby("country_name")["standard_quantity_mt"].sum().reset_index(),
                     names="country_name",
                     values="standard_quantity_mt",
-                    hole=0.55,
+                    hole=0.45,
                     color_discrete_sequence=FERTI_COLORS,
                 )
-                fig_pie.update_traces(
-                    textposition="inside",
-                    textinfo="percent+label",
-                    marker=dict(line=dict(color="#0B0F19", width=2)),
-                )
-                apply_ferti_theme(fig_pie, height=360, show_legend=False)
+                fig_pie.update_traces(textposition="inside", textinfo="percent+label")
+                apply_ferti_theme(fig_pie, height=350, show_legend=False)
                 st.plotly_chart(fig_pie, use_container_width=True, config=get_default_plotly_config())
             else:
                 st.info("Dados de produção não disponíveis.")
 
     with tab_prices:
-        st.markdown("##### 📉 Séries Históricas de Preços Internacionais (FOB / CFR - USD/MT)")
+        st.markdown("##### 📈 Evolução Recente dos Preços Internacionais (FOB e CFR em USD/MT)")
         if not df_prices.empty:
             fig_prices = px.line(
                 df_prices,
@@ -134,10 +128,14 @@ def render_view() -> None:
                 y="standard_price_usd_per_mt",
                 color="benchmark_name",
                 markers=True,
-                labels={"price_date": "Data", "standard_price_usd_per_mt": "Preço (USD/MT)", "benchmark_name": "Benchmark"},
+                color_discrete_sequence=FERTI_COLORS,
+                labels={
+                    "price_date": "Data da Cotação",
+                    "standard_price_usd_per_mt": "Preço em Dólares por Tonelada Métrica (USD/MT)",
+                    "benchmark_name": "Benchmark Internacional",
+                },
             )
-            fig_prices.update_traces(line=dict(width=2.5))
-            apply_ferti_theme(fig_prices, height=400, x_title="Período", y_title="USD / MT")
+            apply_ferti_theme(fig_prices, height=400, x_title="Data da Cotação", y_title="Preço em Dólares por Tonelada Métrica (USD/MT)")
             st.plotly_chart(fig_prices, use_container_width=True, config=get_default_plotly_config())
         else:
             st.info("Séries de preços não disponíveis.")
@@ -160,6 +158,7 @@ def render_view() -> None:
             )
             render_download_csv_button(df_fert, filename="catalogo_fertilizantes.csv")
 
+    render_units_legend()
     render_source_badge("MDIC Comex Stat • FAOSTAT • Banco Mundial / FRED", "Mensal & Anual")
 
 

@@ -10,6 +10,7 @@ from app.presentation.streamlit.components.ui import (
     render_kpi_card,
     render_source_badge,
     render_download_csv_button,
+    render_units_legend,
 )
 from app.presentation.streamlit.theme import (
     apply_ferti_theme,
@@ -69,7 +70,7 @@ def render_view() -> None:
             value=format_metric_tons(total_qty),
             delta=f"Ano {selected_year}",
             delta_positive=True,
-            help_text="Volume físico total",
+            help_text="Volume físico total em Toneladas Métricas (MT = 1.000 kg)",
         )
     with k2:
         render_kpi_card(
@@ -77,7 +78,7 @@ def render_view() -> None:
             value=format_currency_usd(total_val),
             delta="Moeda Corrente",
             delta_positive=True,
-            help_text="Valor CIF/FOB declarado",
+            help_text="Valor total aduaneiro declarado em Dólares Americanos (USD)",
         )
     with k3:
         render_kpi_card(
@@ -85,7 +86,7 @@ def render_view() -> None:
             value=f"$ {avg_price:,.2f} / MT",
             delta="Benchmark Global",
             delta_positive=None,
-            help_text="Valor / Volume",
+            help_text="Preço médio ponderado em Dólares por Tonelada Métrica (USD/MT)",
         )
 
     st.divider()
@@ -100,7 +101,7 @@ def render_view() -> None:
             x="total_quantity_mt",
             y="exporter_country",
             orientation="h",
-            labels={"total_quantity_mt": "Volume (MT)", "exporter_country": "País Exportador"},
+            labels={"total_quantity_mt": "Volume em Toneladas Métricas (MT)", "exporter_country": "País Exportador"},
             color="total_quantity_mt",
             color_continuous_scale="Blues",
         )
@@ -117,7 +118,7 @@ def render_view() -> None:
             x="total_quantity_mt",
             y="importer_country",
             orientation="h",
-            labels={"total_quantity_mt": "Volume (MT)", "importer_country": "País Importador"},
+            labels={"total_quantity_mt": "Volume em Toneladas Métricas (MT)", "importer_country": "País Importador"},
             color="total_quantity_mt",
             color_continuous_scale="Teal",
         )
@@ -135,14 +136,14 @@ def render_view() -> None:
             "flow_type": "Fluxo",
             "exporter_country": "Origem",
             "importer_country": "Destino",
-            "total_quantity_mt": "Volume (MT)",
-            "total_value_usd": "Valor ($ USD)",
-            "avg_usd_per_mt": "Preço Médio ($/MT)",
+            "total_quantity_mt": "Volume em Toneladas Métricas (MT)",
+            "total_value_usd": "Valor em Dólares (USD)",
+            "avg_usd_per_mt": "Preço Médio (USD/MT)",
         }),
         column_config={
-            "Volume (MT)": st.column_config.NumberColumn(format="%d MT"),
-            "Valor ($ USD)": st.column_config.NumberColumn(format="$ %d"),
-            "Preço Médio ($/MT)": st.column_config.NumberColumn(format="$ %.2f"),
+            "Volume em Toneladas Métricas (MT)": st.column_config.NumberColumn(format="%d MT"),
+            "Valor em Dólares (USD)": st.column_config.NumberColumn(format="$ %d"),
+            "Preço Médio (USD/MT)": st.column_config.NumberColumn(format="$ %.2f"),
         },
         use_container_width=True,
         hide_index=True,
@@ -150,6 +151,7 @@ def render_view() -> None:
     render_download_csv_button(filtered[display_cols], filename=f"comercio_internacional_{selected_year}.csv")
 
     st.divider()
+    render_units_legend()
     render_source_badge("UN Comtrade & MDIC Comex Stat", "Mensal")
 
 

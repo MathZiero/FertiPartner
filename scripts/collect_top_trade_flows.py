@@ -16,7 +16,20 @@ import sys
 import time
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+# Garante execução no ambiente virtual do projeto (.venv) mesmo se chamado com o python global do sistema
+venv_python = PROJECT_ROOT / ".venv" / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+if venv_python.is_file() and Path(sys.executable).resolve() != venv_python.resolve():
+    import subprocess
+    sys.exit(subprocess.call([str(venv_python)] + sys.argv))
+
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(PROJECT_ROOT / ".env")
+except ImportError:
+    pass
 
 from app.infrastructure.collectors.comtrade_collector import UNComtradeCollector
 
@@ -35,6 +48,12 @@ def main() -> None:
     parser.add_argument("--top-n", type=int, default=10, help="Quantidade de países no ranking por fluxo (padrão: 10)")
     parser.add_argument("--hs", type=str, default=None, help="Código HS específico (ex: 310210 para Ureia)")
     parser.add_argument(
+        "--fertilizer-id",
+        type=int,
+        default=None,
+        help="ID do fertilizante específico para filtrar código HS",
+    )
+    parser.add_argument(
         "--discover-only",
         action="store_true",
         help="Apenas exibe os rankings dos maiores países sem gravar fluxos no banco",
@@ -48,7 +67,12 @@ def main() -> None:
     print("=" * 70)
 
     collector = UNComtradeCollector()
-    cmd_codes = [args.hs] if args.hs else list(collector.hs_fertilizer_map.keys())
+    if args.hs:
+        cmd_codes = [args.hs]
+    elif args.fertilizer_id:
+        cmd_codes = [c for c, f_id in collector.hs_fertilizer_map.items() if f_id == args.fertilizer_id]
+    else:
+        cmd_codes = list(collector.hs_fertilizer_map.keys())
 
     print(f"\nFertilizantes cadastrados para processamento: {len(cmd_codes)}")
     for code in cmd_codes:

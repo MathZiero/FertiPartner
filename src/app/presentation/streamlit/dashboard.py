@@ -78,15 +78,13 @@ pages = {
             url_path="catalogo",
         ),
     ],
-    "🏭 Produção": [
+    "⚖️ Oferta e Demanda": [
         st.Page(
             str(PAGES_DIR / "03_producao_global.py"),
             title="Produção Global",
             icon=":material/factory:",
             url_path="producao-global",
         ),
-    ],
-    "🚢 Comércio": [
         st.Page(
             str(PAGES_DIR / "04_comercio_internacional.py"),
             title="Comércio Internacional",
@@ -106,13 +104,15 @@ pages = {
             url_path="mercado-brasil",
         ),
     ],
-    "📈 Preços & Inteligência": [
+    "📈 Preços": [
         st.Page(
             str(PAGES_DIR / "06_precos_benchmarks.py"),
             title="Preços & Benchmarks",
             icon=":material/trending_up:",
             url_path="precos-benchmarks",
         ),
+    ],
+    "💡 Inteligência": [
         st.Page(
             str(PAGES_DIR / "08_analises_comparativas.py"),
             title="Análises & Comparações",

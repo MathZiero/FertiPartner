@@ -8,13 +8,14 @@ from app.presentation.streamlit.components.ui import (
     render_header,
     render_source_badge,
     show_fertilizer_details_modal,
+    render_units_legend,
 )
 
 
 def render_view() -> None:
     render_header(
         title="Catálogo de Fertilizantes",
-        subtitle="Especificações e garantias nutricionais dos fertilizantes homologados. Acesse a ficha técnica completa para detalhes fiscais e laboratoriais.",
+        subtitle="Especificações agronômicas, laboratoriais e garantias nutricionais dos fertilizantes homologados.",
         badge_text="Catálogo Oficial",
         badge_type="emerald",
     )
@@ -25,64 +26,101 @@ def render_view() -> None:
         st.warning("Nenhum fertilizante cadastrado no catálogo.")
         return
 
-    # Lista de categorias disponíveis
-    raw_categories = sorted(df_fert["category_name"].dropna().unique().tolist())
-    if not raw_categories:
-        st.warning("Nenhuma categoria identificada.")
-        return
+    # Ordem lógica preferencial das categorias de fertilizantes (inclui secundários e micronutrientes)
+    preferred_order = [
+        "Fertilizantes Nitrogenados",
+        "Fertilizantes Fosfatados",
+        "Fertilizantes Potássicos",
+        "Macronutrientes Secundários",
+        "Misturas e Complexos NPK",
+        "Micronutrientes",
+    ]
+    all_cats = sorted(df_fert["category_name"].dropna().unique().tolist())
+    ordered_cats = [c for c in preferred_order if c in all_cats] + [c for c in all_cats if c not in preferred_order]
 
-    selected_cat = st.segmented_control(
-        "Selecione a Categoria de Fertilizantes:",
-        raw_categories,
-        default=raw_categories[0],
-        key="p02_cat_filter",
-    )
-    if not selected_cat:
-        selected_cat = raw_categories[0]
+    category_icons = {
+        "Fertilizantes Nitrogenados": "🌱",
+        "Fertilizantes Fosfatados": "🌾",
+        "Fertilizantes Potássicos": "🌿",
+        "Macronutrientes Secundários": "🟡",
+        "Misturas e Complexos NPK": "🧪",
+        "Micronutrientes": "🔬",
+    }
 
-    filtered_df = df_fert[df_fert["category_name"] == selected_cat].copy()
+    cols_per_row = 3
 
-    st.divider()
-    st.markdown(f"#### 📦 Fertilizantes em *{selected_cat}* ({len(filtered_df)} itens)")
+    for cat_idx, category in enumerate(ordered_cats):
+        cat_df = df_fert[df_fert["category_name"] == category].copy()
+        if cat_df.empty:
+            continue
 
-    if filtered_df.empty:
-        st.info("Nenhum produto cadastrado nesta categoria.")
-        return
+        icon = category_icons.get(category, "📦")
+        st.markdown(f"### {icon} {category} ({len(cat_df)} produtos)")
 
-    # Exibição simplificada e limpa: Nome, Descrição, Garantia Nutricional e Botão Ficha Técnica
-    for idx, row in filtered_df.iterrows():
-        fert_dict = row.to_dict()
-        canonical_name = fert_dict.get("canonical_name", "Fertilizante")
-        description = fert_dict.get("description", "Sem descrição disponível.")
-        nutrients = fert_dict.get("typical_nutrients") or {}
+        records = cat_df.to_dict("records")
+        for i in range(0, len(records), cols_per_row):
+            batch = records[i : i + cols_per_row]
+            cols = st.columns(cols_per_row)
 
-        with st.container(border=True):
-            col_main, col_side = st.columns([7, 5])
+            for col_idx, fert_dict in enumerate(batch):
+                with cols[col_idx]:
+                    canonical_name = fert_dict.get("canonical_name", "Fertilizante")
+                    description = fert_dict.get("description", "Sem descrição cadastrada.")
+                    nutrients = fert_dict.get("typical_nutrients") or {}
+                    chem = fert_dict.get("chemical_formula")
+                    fert_id = fert_dict.get("id", f"{cat_idx}_{i}_{col_idx}")
 
-            with col_main:
-                st.markdown(f"<h3 style='margin-top: 0; color: #1B4332; font-size: 1.35rem;'>{canonical_name}</h3>", unsafe_allow_html=True)
-                st.markdown(description)
-
-            with col_side:
-                st.markdown("**Garantia Nutricional:**")
-                if isinstance(nutrients, dict) and nutrients:
-                    nut_items = []
-                    for nut, val in nutrients.items():
-                        nut_items.append(
-                            f"<div style='display: flex; justify-content: space-between; background-color: #F8FAF9; border: 1px solid #E5EAE7; border-radius: 6px; padding: 0.3rem 0.6rem; margin-bottom: 0.3rem;'>"
-                            f"<span style='font-weight: 600; color: #1B4332;'>{nut}</span>"
-                            f"<span style='font-weight: 700; color: #2D6A4F;'>{val}%</span>"
-                            f"</div>"
+                    with st.container(border=True):
+                        # Nome do fertilizante
+                        st.markdown(
+                            f"<div style='min-height: 2.8rem; display: flex; align-items: center;'>"
+                            f"<h4 style='margin: 0; color: #1B4332; font-size: 1.15rem; font-weight: 700; line-height: 1.3;'>{canonical_name}</h4>"
+                            f"</div>",
+                            unsafe_allow_html=True,
                         )
-                    st.markdown("".join(nut_items), unsafe_allow_html=True)
-                else:
-                    st.caption("Garantia nutricional não declarada")
 
-                st.write("")
-                if st.button("📋 Ficha Técnica", key=f"btn_modal_{idx}_{fert_dict.get('id', idx)}", use_container_width=True):
-                    show_fertilizer_details_modal(fert_dict)
+                        # Fórmula química quando existente
+                        if chem:
+                            st.markdown(
+                                f"<div style='margin-bottom: 0.4rem;'>"
+                                f"<span style='background-color: #E8F5E9; color: #2D6A4F; font-size: 0.78rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; border: 1px solid #C8E6C9;'>{chem}</span>"
+                                f"</div>",
+                                unsafe_allow_html=True,
+                            )
+                        else:
+                            st.markdown("<div style='height: 1.4rem;'></div>", unsafe_allow_html=True)
 
-    st.divider()
+                        # Descrição com alinhamento visual
+                        st.markdown(
+                            f"<p style='color: #4B5563; font-size: 0.88rem; margin: 0.4rem 0 0.8rem 0; min-height: 3.4rem; line-height: 1.4;'>"
+                            f"{description}"
+                            f"</p>",
+                            unsafe_allow_html=True,
+                        )
+
+                        # Garantia Nutricional em Badges
+                        st.markdown("<p style='font-size: 0.82rem; font-weight: 600; color: #1B4332; margin-bottom: 0.3rem;'>Garantia Nutricional:</p>", unsafe_allow_html=True)
+                        if isinstance(nutrients, dict) and nutrients:
+                            nut_badges = []
+                            for nut, val in nutrients.items():
+                                nut_badges.append(
+                                    f"<span style='display: inline-block; background-color: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; font-weight: 600; font-size: 0.82rem; padding: 0.2rem 0.55rem; border-radius: 6px; margin-right: 0.3rem; margin-bottom: 0.3rem;'>"
+                                    f"<strong>{nut}:</strong> {val}%"
+                                    f"</span>"
+                                )
+                            st.markdown(f"<div style='min-height: 2.2rem;'>{''.join(nut_badges)}</div>", unsafe_allow_html=True)
+                        else:
+                            st.markdown("<div style='min-height: 2.2rem;'><span style='color: #9CA3AF; font-size: 0.82rem;'>Não declarada</span></div>", unsafe_allow_html=True)
+
+                        st.write("")
+                        # Botão da Ficha Técnica no card
+                        btn_key = f"btn_card_ficha_{fert_id}"
+                        if st.button("📋 Ficha Técnica", key=btn_key, use_container_width=True):
+                            show_fertilizer_details_modal(fert_dict)
+
+        st.divider()
+
+    render_units_legend()
     render_source_badge("Catálogo Mapeado FertiPartner", "Cadastro Homologado")
 
 

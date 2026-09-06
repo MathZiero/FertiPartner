@@ -10,6 +10,7 @@ from app.presentation.streamlit.components.ui import (
     render_header,
     render_source_badge,
     render_download_csv_button,
+    render_units_legend,
 )
 from app.presentation.streamlit.theme import (
     apply_ferti_theme,
@@ -124,6 +125,7 @@ def render_view() -> None:
             render_download_csv_button(country_df, filename="comparativo_paises.csv")
 
     st.divider()
+    render_units_legend()
     render_source_badge("Séries Normalizadas FertiPartner", "Consolidado")
 
 

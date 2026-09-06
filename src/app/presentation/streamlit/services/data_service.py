@@ -14,92 +14,10 @@ logger = logging.getLogger(__name__)
 # FALLBACK MOCK DATA (Garante funcionamento offline e em testes sem conexão)
 # ==============================================================================
 
-MOCK_FERTILIZERS = [
-    {
-        "id": 1,
-        "slug": "ureia",
-        "canonical_name": "Ureia",
-        "category_name": "Fertilizantes Nitrogenados",
-        "chemical_formula": "CO(NH2)2",
-        "cas_rn": "57-13-6",
-        "description": "Fertilizante nitrogenado sólido de mais alta concentração (46% N), amplamente utilizado no mundo e no Brasil.",
-        "typical_nutrients": {"N": 46.0},
-        "synonyms": ["Carbamide", "Urea", "Ureia 46%"],
-        "hs_ncm_codes": ["310210", "31021010"],
-    },
-    {
-        "id": 2,
-        "slug": "map",
-        "canonical_name": "Fosfato Monoamônico (MAP)",
-        "category_name": "Fertilizantes Fosfatados",
-        "chemical_formula": "NH4H2PO4",
-        "cas_rn": "7722-76-1",
-        "description": "Fertilizante fosfatado concentrado fornecendo Nitrogênio (11%) e Fósforo (52% P2O5).",
-        "typical_nutrients": {"N": 11.0, "P2O5": 52.0},
-        "synonyms": ["MAP", "Monoammonium Phosphate"],
-        "hs_ncm_codes": ["310540", "31054000"],
-    },
-    {
-        "id": 3,
-        "slug": "dap",
-        "canonical_name": "Fosfato Diamônico (DAP)",
-        "category_name": "Fertilizantes Fosfatados",
-        "chemical_formula": "(NH4)2HPO4",
-        "cas_rn": "7783-28-0",
-        "description": "Fertilizante fosfatado de alta solubilidade contendo 18% N e 46% P2O5.",
-        "typical_nutrients": {"N": 18.0, "P2O5": 46.0},
-        "synonyms": ["DAP", "Diammonium Phosphate"],
-        "hs_ncm_codes": ["310530", "31053000"],
-    },
-    {
-        "id": 4,
-        "slug": "cloreto-de-potassio",
-        "canonical_name": "Cloreto de Potássio (KCl / MOP)",
-        "category_name": "Fertilizantes Potássicos",
-        "chemical_formula": "KCl",
-        "cas_rn": "7447-40-7",
-        "description": "Fonte potássica predominante mundialmente, garantindo 60% de K2O solúvel em água.",
-        "typical_nutrients": {"K2O": 60.0},
-        "synonyms": ["KCl", "MOP", "Muriate of Potash"],
-        "hs_ncm_codes": ["310420", "31042090"],
-    },
-    {
-        "id": 5,
-        "slug": "amonia-anidra",
-        "canonical_name": "Amônia Anidra",
-        "category_name": "Fertilizantes Nitrogenados",
-        "chemical_formula": "NH3",
-        "cas_rn": "7664-41-7",
-        "description": "Matéria-prima básica fundamental para quase todos os fertilizantes nitrogenados (82% N).",
-        "typical_nutrients": {"N": 82.0},
-        "synonyms": ["Anhydrous Ammonia"],
-        "hs_ncm_codes": ["281410"],
-    },
-    {
-        "id": 6,
-        "slug": "nitrato-de-amonio",
-        "canonical_name": "Nitrato de Amônio",
-        "category_name": "Fertilizantes Nitrogenados",
-        "chemical_formula": "NH4NO3",
-        "cas_rn": "6484-52-2",
-        "description": "Fertilizante nitrogenado com ação rápida e residual (33% a 34% N).",
-        "typical_nutrients": {"N": 34.0},
-        "synonyms": ["Ammonium Nitrate"],
-        "hs_ncm_codes": ["310230"],
-    },
-    {
-        "id": 7,
-        "slug": "sulfato-de-amonio",
-        "canonical_name": "Sulfato de Amônio",
-        "category_name": "Fertilizantes Nitrogenados",
-        "chemical_formula": "(NH4)2SO4",
-        "cas_rn": "7783-20-2",
-        "description": "Fonte sólida combinada de Nitrogênio (21% N) e Enxofre (24% S).",
-        "typical_nutrients": {"N": 21.0, "S": 24.0},
-        "synonyms": ["Ammonium Sulphate"],
-        "hs_ncm_codes": ["310221"],
-    },
-]
+from domain.fertilizers import FERTILIZERS_CATALOG
+
+# Alias para manter total retrocompatibilidade
+MOCK_FERTILIZERS = FERTILIZERS_CATALOG
 
 MOCK_GLOBAL_PRODUCTION = [
     {"fertilizer_id": 1, "fertilizer_name": "Ureia", "country_id": 2, "country_name": "China", "country_iso3": "CHN", "production_year": 2023, "standard_quantity_mt": 58200000.0, "global_total_mt": 79100000.0, "global_market_share_pct": 73.58, "rank_position": 1},

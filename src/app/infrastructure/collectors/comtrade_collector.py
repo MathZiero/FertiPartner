@@ -20,11 +20,20 @@ COMTRADE_SOURCE_ID = 3  # UN_COMTRADE in data_sources
 
 # Mapeamento canônico padrão (usado como fallback seguro se o banco estiver indisponível)
 DEFAULT_HS_FERTILIZER_MAP: dict[str, int] = {
-    "310210": 1,  # Ureia
-    "310540": 2,  # MAP
-    "310520": 2,  # MAP / NPK
-    "310530": 3,  # DAP
-    "310420": 4,  # Cloreto de Potássio (KCl / MOP)
+    "310210": 1,   # Ureia
+    "310540": 2,   # MAP
+    "310520": 2,   # MAP / NPK
+    "310530": 3,   # DAP
+    "310420": 4,   # Cloreto de Potássio (KCl / MOP)
+    "281410": 5,   # Amônia Anidra
+    "310230": 6,   # Nitrato de Amônio
+    "310221": 7,   # Sulfato de Amônio
+    "310319": 8,   # Superfosfato Simples (SSP)
+    "310311": 9,   # Superfosfato Triplo (TSP)
+    "251010": 10,  # Rocha Fosfática Concentrada
+    "251020": 10,  # Rocha Fosfática Descalcificada
+    "310430": 11,  # Sulfato de Potássio (SOP)
+    "250300": 12,  # Enxofre Elementar
 }
 
 

@@ -18,9 +18,19 @@ COMEX_EXP_SOURCE_ID = 5  # COMEXSTAT_EXP
 # Canonical NCM to Fertilizer ID mapping
 NCM_FERTILIZER_MAP = {
     "31021010": 1,  # Ureia
-    "31052000": 2,  # MAP
-    "31053000": 3,  # DAP
-    "31042090": 4,  # Cloreto de Potássio (KCl)
+    "31054000": 2,  # Fosfato Monoamônico (MAP)
+    "31052000": 2,  # MAP / Formulações fosfatadas
+    "31053000": 3,  # Fosfato Diamônico (DAP)
+    "31042090": 4,  # Cloreto de Potássio (KCl / MOP)
+    "28141000": 5,  # Amônia Anidra
+    "31023000": 6,  # Nitrato de Amônio
+    "31022100": 7,  # Sulfato de Amônio
+    "31031900": 8,  # Superfosfato Simples (SSP)
+    "31031100": 9,  # Superfosfato Triplo (TSP)
+    "25101010": 10, # Rocha Fosfática Concentrada
+    "25102010": 10, # Rocha Fosfática Descalcificada
+    "31043000": 11, # Sulfato de Potássio (SOP)
+    "25030090": 12, # Enxofre Elementar Pastilhado / Industrial
 }
 
 # Brazilian State Name to UF code
@@ -119,6 +129,8 @@ class ComexStatCollector(BaseCollector):
         month_start: int = 1,
         month_end: int = 3,
         flow: str = "import",
+        ncms: list[str] | None = None,
+        fertilizer_id: int | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Execute Comex Stat collection for fertilizers.
@@ -128,6 +140,8 @@ class ComexStatCollector(BaseCollector):
             month_start: Initial month (1-12).
             month_end: Final month (1-12).
             flow: 'import' or 'export'.
+            ncms: Optional list of specific NCM codes to filter.
+            fertilizer_id: Optional fertilizer ID to filter NCM codes.
 
         Returns:
             dict with execution metrics.
@@ -138,17 +152,29 @@ class ComexStatCollector(BaseCollector):
         period_from = f"{year}-{month_start:02d}"
         period_to = f"{year}-{month_end:02d}"
 
+        if ncms:
+            active_ncms = ncms
+        elif fertilizer_id:
+            active_ncms = [n for n, fid in NCM_FERTILIZER_MAP.items() if fid == fertilizer_id]
+        else:
+            active_ncms = list(NCM_FERTILIZER_MAP.keys())
+
         run_id = self.start_collection_run(
             source_id=source_id,
             trigger_type="MANUAL",
-            metadata={"year": year, "period": f"{period_from} to {period_to}", "flow": flow},
+            metadata={
+                "year": year,
+                "period": f"{period_from} to {period_to}",
+                "flow": flow,
+                "ncms": active_ncms,
+            },
         )
 
         payload = {
             "flow": flow,
             "monthDetail": True,
             "period": {"from": period_from, "to": period_to},
-            "filters": [{"filter": "ncm", "values": list(NCM_FERTILIZER_MAP.keys())}],
+            "filters": [{"filter": "ncm", "values": active_ncms}],
             "details": ["ncm", "country", "state"],
             "metrics": ["metricFOB", "metricKG"],
         }

@@ -10,6 +10,7 @@ from app.presentation.streamlit.components.ui import (
     render_kpi_card,
     render_source_badge,
     render_download_csv_button,
+    render_units_legend,
 )
 from app.presentation.streamlit.theme import apply_ferti_theme, get_default_plotly_config, FERTI_COLORS
 
@@ -54,7 +55,7 @@ def render_view() -> None:
             value=f"{total_prod / 1e6:,.2f} M MT",
             delta=f"Ano Base {selected_year}",
             delta_positive=True,
-            help_text="Volume físico equivalente",
+            help_text="Volume físico total em Milhões de Toneladas Métricas (M MT = 1.000.000 t)",
         )
     with c2:
         top_name = top_producer["country_name"] if top_producer is not None else "N/A"
@@ -107,19 +108,30 @@ def render_view() -> None:
             color_continuous_scale="Viridis",
             projection="natural earth",
         )
+        fig_map.update_geos(
+            showcountries=True,
+            countrycolor="#000000",
+            countrywidth=0.8,
+            showcoastlines=True,
+            coastlinecolor="#000000",
+            coastlinewidth=0.8,
+            showland=True,
+            landcolor="#E9ECEF",  # Fundo leve e nítido para países sem produção registrada
+            showocean=True,
+            oceancolor="#F8FAFC",  # Fundo sutil para o oceano
+            showlakes=True,
+            lakecolor="#F8FAFC",
+            showframe=True,
+            framecolor="#000000",  # Contorno em preto delimitando o globo
+            framewidth=1.2,
+            bgcolor="rgba(0,0,0,0)",
+        )
         fig_map.update_layout(
-            geo=dict(
-                showframe=False,
-                showcoastlines=True,
-                coastlinecolor="rgba(255,255,255,0.2)",
-                bgcolor="rgba(0,0,0,0)",
-                lakecolor="#0B0F19",
-                landcolor="#1A2438",
-            ),
             margin=dict(l=0, r=0, t=10, b=10),
-            height=460,
+            height=480,
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#F1F5F9"),
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#1B4332"),
         )
         st.plotly_chart(fig_map, use_container_width=True, config=get_default_plotly_config())
 
@@ -136,7 +148,7 @@ def render_view() -> None:
             y="country_name",
             orientation="h",
             text="standard_quantity_mt",
-            labels={"standard_quantity_mt": "Produção (MT)", "country_name": "País"},
+            labels={"standard_quantity_mt": "Produção em Toneladas Métricas (MT)", "country_name": "País"},
             color="standard_quantity_mt",
             color_continuous_scale="Teal",
         )
@@ -154,7 +166,7 @@ def render_view() -> None:
             display_tbl.rename(columns={
                 "rank_position": "Posição",
                 "country_name": "País",
-                "standard_quantity_mt": "Volume (MT)",
+                "standard_quantity_mt": "Volume em Toneladas Métricas (MT)",
                 "global_market_share_pct": "Market Share",
             }),
             column_config={
@@ -165,7 +177,7 @@ def render_view() -> None:
                     min_value=0,
                     max_value=100,
                 ),
-                "Volume (MT)": st.column_config.NumberColumn(
+                "Volume em Toneladas Métricas (MT)": st.column_config.NumberColumn(
                     "Volume (MT)",
                     format="%d MT",
                 ),
@@ -176,6 +188,7 @@ def render_view() -> None:
         render_download_csv_button(display_tbl, filename=f"producao_global_{selected_year}.csv")
 
     st.divider()
+    render_units_legend()
     render_source_badge("FAOSTAT (Food and Agriculture Organization of the UN)", "Anual")
 
 

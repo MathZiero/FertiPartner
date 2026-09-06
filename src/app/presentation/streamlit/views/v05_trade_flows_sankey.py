@@ -9,6 +9,7 @@ from app.presentation.streamlit.components.ui import (
     render_header,
     render_source_badge,
     render_download_csv_button,
+    render_units_legend,
 )
 from app.presentation.streamlit.theme import (
     apply_ferti_theme,
@@ -46,7 +47,7 @@ def render_view() -> None:
     with c3:
         metric_choice = st.radio(
             "Ponderação das Rotas:",
-            ["Volume (MT)", "Valor ($ USD)"],
+            ["Volume em Toneladas Métricas (MT)", "Valor em Dólares (USD)"],
             horizontal=True,
         )
 
@@ -56,7 +57,7 @@ def render_view() -> None:
         filtered = filtered[filtered["fertilizer_name"] == selected_fert]
 
     # Agregação bilateral entre Exportador e Importador (todas as rotas)
-    agg_col = "total_quantity_mt" if metric_choice == "Volume (MT)" else "total_value_usd"
+    agg_col = "total_quantity_mt" if "Volume" in metric_choice else "total_value_usd"
     routes = filtered.groupby(["exporter_country", "importer_country"])[agg_col].sum().reset_index()
     routes = routes[routes[agg_col] > 0]
 
@@ -155,6 +156,7 @@ def render_view() -> None:
     render_download_csv_button(routes_sorted, filename=f"rotas_comerciais_{selected_year}.csv")
 
     st.divider()
+    render_units_legend()
     render_source_badge("UN Comtrade & MDIC Comex Stat", "Mensal")
 
 

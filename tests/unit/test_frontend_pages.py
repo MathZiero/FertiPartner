@@ -61,6 +61,7 @@ def test_ui_components_exist_and_callable():
         "render_source_badge",
         "render_download_csv_button",
         "show_fertilizer_details_modal",
+        "render_units_legend",
     ]
     for func_name in expected_funcs:
         assert hasattr(ui, func_name), f"ui.{func_name} não encontrado"
@@ -73,3 +74,18 @@ def test_root_main_exists_and_compiles():
     assert root_main.exists(), "Arquivo main.py na raiz não encontrado"
     compiled = py_compile.compile(str(root_main), doraise=True)
     assert compiled is not None
+
+
+def test_dashboard_compiles_and_contains_updated_categories():
+    """Garante que o dashboard.py compila e define as novas categorias de navegação."""
+    dashboard_path = Path(__file__).resolve().parents[2] / "src" / "app" / "presentation" / "streamlit" / "dashboard.py"
+    assert dashboard_path.exists(), "dashboard.py não encontrado"
+    compiled = py_compile.compile(str(dashboard_path), doraise=True)
+    assert compiled is not None
+
+    content = dashboard_path.read_text(encoding="utf-8")
+    assert "⚖️ Oferta e Demanda" in content, "Categoria '⚖️ Oferta e Demanda' não encontrada no dashboard"
+    assert "📈 Preços" in content, "Categoria '📈 Preços' não encontrada no dashboard"
+    assert "💡 Inteligência" in content, "Categoria '💡 Inteligência' não encontrada no dashboard"
+    assert "03_producao_global.py" in content, "Página de Produção Global não encontrada no dashboard"
+

@@ -11,6 +11,7 @@ from app.presentation.streamlit.components.ui import (
     render_kpi_card,
     render_source_badge,
     render_download_csv_button,
+    render_units_legend,
 )
 from app.presentation.streamlit.theme import (
     apply_ferti_theme,
@@ -82,7 +83,7 @@ def render_view() -> None:
             value=f"$ {latest_price:,.2f} / MT",
             delta=f"{mom_change:+.2f}% MoM" if pd.notnull(mom_change) else None,
             delta_positive=(mom_change >= 0) if pd.notnull(mom_change) else None,
-            help_text=f"Hub: {hub_name}",
+            help_text=f"Hub: {hub_name} (USD/MT = Dólares por Tonelada Métrica)",
         )
     with k2:
         render_kpi_card(
@@ -90,7 +91,7 @@ def render_view() -> None:
             value=f"$ {moving_avg:,.2f} / MT" if pd.notnull(moving_avg) else "N/A",
             delta="Tendência Suavizada",
             delta_positive=None,
-            help_text="Média dos últimos 3 meses",
+            help_text="Média dos últimos 3 meses em Dólares por Tonelada Métrica (USD/MT)",
         )
     with k3:
         price_spread = (filtered["standard_price_usd_per_mt"].max() - filtered["standard_price_usd_per_mt"].min())
@@ -99,7 +100,7 @@ def render_view() -> None:
             value=f"$ {price_spread:,.2f} / MT",
             delta=f"Min: ${filtered['standard_price_usd_per_mt'].min():,.0f} | Max: ${filtered['standard_price_usd_per_mt'].max():,.0f}",
             delta_positive=None,
-            help_text="Variação máx - mín",
+            help_text="Variação máx - mín no período (USD/MT)",
         )
 
     st.markdown("<div style='height: 1.2rem;'></div>", unsafe_allow_html=True)
@@ -185,6 +186,7 @@ def render_view() -> None:
     render_download_csv_button(filtered, filename="historico_precos.csv")
 
     st.divider()
+    render_units_legend()
     render_source_badge("FRED (Federal Reserve) • Banco Mundial Commodity Markets", "Mensal")
 
 

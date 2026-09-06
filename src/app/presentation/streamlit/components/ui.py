@@ -85,50 +85,101 @@ def render_source_badge(source_name: str, frequency: str = "Mensal") -> None:
     st.caption(f"ℹ️ **Fonte:** {source_name} • **Frequência:** {frequency} • **Status:** Oficial / Homologado")
 
 
-@st.dialog("Ficha Técnica do Fertilizante")
+@st.dialog("Ficha Técnica do Fertilizante", width="large")
 def show_fertilizer_details_modal(fert: dict[str, Any]) -> None:
-    """Abre um modal nativo moderno (st.dialog) com especificações técnicas e agronômicas."""
-    st.subheader(f"{fert.get('canonical_name', 'Fertilizante')}")
-    st.caption(f"Categoria: {fert.get('category_name', 'N/A')} | Fórmula Química: `{fert.get('chemical_formula', 'N/A')}`")
+    """Abre um modal nativo moderno (st.dialog) com especificações agronômicas, laboratoriais e fiscais completas."""
+    canonical_name = fert.get("canonical_name", "Fertilizante")
+    category = fert.get("category_name", "N/A")
+    chem_formula = fert.get("chemical_formula", "N/A")
+    cas_rn = fert.get("cas_rn", "N/A")
+    slug = fert.get("slug", "N/A")
 
-    st.write(f"**Descrição e Aplicação Agrícola:** {fert.get('description', 'Sem descrição cadastrada.')}")
+    st.markdown(f"### {canonical_name}")
+    st.caption(f"🏷️ **Categoria:** {category} | 🧪 **Fórmula Química:** `{chem_formula}` | 🔢 **CAS RN:** `{cas_rn}`")
 
-    c1, c2 = st.columns(2)
-    with c1:
+    # Abas organizadas de especificações
+    tab_agro, tab_chem, tab_storage, tab_customs = st.tabs([
+        "🌱 Aplicação Agronômica",
+        "🔬 Propriedades Físico-Químicas",
+        "📦 Armazenagem & Manuseio",
+        "📑 Fiscal & Aduaneiro",
+    ])
+
+    with tab_agro:
+        st.markdown("**Descrição Geral do Insumo:**")
+        st.write(fert.get("detailed_description") or fert.get("description", "Sem descrição cadastrada."))
+
+        st.markdown("**Aplicação Agronômica & Dinâmica no Solo:**")
+        st.info(fert.get("agronomic_usage") or "Aplicação agronômica de acordo com recomendação de análise de solo e engenheiro agrônomo responsável.")
+
+    with tab_chem:
+        c1, c2 = st.columns(2)
+        with c1:
+            with st.container(border=True):
+                st.markdown("**Garantia Nutricional Típica (% em peso / p/p):**")
+                nutrients = fert.get("typical_nutrients") or {}
+                if isinstance(nutrients, dict) and nutrients:
+                    for nut, val in nutrients.items():
+                        st.markdown(f"- **{nut}:** `{val}%`")
+                else:
+                    st.write("Garantias nutricionais não declaradas.")
+
+        with c2:
+            with st.container(border=True):
+                st.markdown("**Propriedades Físicas & Aspecto:**")
+                st.write(fert.get("physical_properties") or "Grânulos sólidos uniformes com alta fluidez mecânica para dosadores.")
+
+    with tab_storage:
         with st.container(border=True):
-            st.markdown("**Identificação:**")
-            st.markdown(f"- **CAS RN:** `{fert.get('cas_rn', 'N/A')}`")
-            st.markdown(f"- **Código Interno:** `{fert.get('slug', 'N/A')}`")
+            st.markdown("**Recomendações de Armazenamento & Manuseio Seguro:**")
+            st.write(fert.get("handling_storage") or "Armazenar em local seco, coberto, arejado e sobre estrados de madeira protegidos de umidade excessiva.")
 
-    with c2:
-        with st.container(border=True):
-            st.markdown("**Garantia Nutricional Típica:**")
-            nutrients = fert.get("typical_nutrients") or {}
-            if isinstance(nutrients, dict) and nutrients:
-                for nut, val in nutrients.items():
-                    st.markdown(f"- **{nut}:** `{val}%`")
-            else:
-                st.write("Garantias nutricionais não declaradas.")
+    with tab_customs:
+        c_ncm, c_syn = st.columns(2)
+        with c_ncm:
+            with st.container(border=True):
+                st.markdown("**Classificações Fiscais (NCM / HS Code):**")
+                codes = fert.get("hs_ncm_codes") or []
+                if codes:
+                    st.markdown(" ".join([f"`{c}`" for c in codes]))
+                else:
+                    st.write("Nenhum código aduaneiro associado.")
+                st.caption("NCM (8 dígitos Mercosul / Brasil) • HS Code (6 dígitos Sistema Harmonizado)")
 
-    st.divider()
-    c3, c4 = st.columns(2)
-    with c3:
-        with st.container(border=True):
-            st.markdown("**Classificações Fiscais e Aduaneiras (NCM / HS):**")
-            codes = fert.get("hs_ncm_codes") or []
-            if codes:
-                st.markdown(" ".join([f"`{c}`" for c in codes]))
-            else:
-                st.write("Nenhum código aduaneiro associado.")
+        with c_syn:
+            with st.container(border=True):
+                st.markdown("**Sinônimos Comerciais & Internacionais:**")
+                synonyms = fert.get("synonyms") or []
+                if synonyms:
+                    st.markdown(", ".join(synonyms))
+                else:
+                    st.write("Nenhum sinônimo cadastrado.")
+                st.markdown(f"**Identificador Interno (Slug):** `{slug}`")
 
-    with c4:
-        with st.container(border=True):
-            st.markdown("**Sinônimos Comerciais:**")
-            synonyms = fert.get("synonyms") or []
-            if synonyms:
-                st.markdown(", ".join(synonyms))
-            else:
-                st.write("Nenhum sinônimo comercial cadastrado.")
+
+def render_units_legend() -> None:
+    """Renderiza legenda explicativa das unidades de medida físicas, agronômicas e termos aduaneiros utilizados."""
+    with st.expander("ℹ️ Legenda de Unidades de Medida e Termos Aduaneiros Utilizados", expanded=False):
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("""
+            **Unidades Físicas, Agronômicas e Financeiras:**
+            - **MT ou t:** Toneladas Métricas ($1.000\\text{ kg}$ ou $1\\text{ milhão de gramas}$).
+            - **k MT:** Milhares de Toneladas Métricas ($1.000\\text{ MT} = 1.000.000\\text{ kg}$).
+            - **M MT (ou Mi t):** Milhões de Toneladas Métricas ($1.000.000\\text{ MT}$).
+            - **kg ou g/ha:** Quilogramas ou Gramas por hectare (usados em micronutrientes e corretivos).
+            - **USD/MT (ou $/t):** Dólares Americanos por Tonelada Métrica de produto físico.
+            - **% p/p (Garantia Nutricional):** Porcentagem em massa do nutriente garantido no fertilizante (ex.: Ureia $46\\%\\text{ N}$).
+            """)
+        with c2:
+            st.markdown("""
+            **Incoterms Comerciais e Classificações Aduaneiras:**
+            - **FOB (Free On Board):** Preço da mercadoria entregue a bordo do navio no porto de origem/embarque (não inclui frete marítimo internacional).
+            - **CFR (Cost and Freight):** Preço da mercadoria com frete marítimo internacional incluso até o porto de desembarque no Brasil.
+            - **NCM (8 dígitos):** Nomenclatura Comum do Mercosul (classificação fiscal oficial brasileira utilizada pela Receita Federal e MDIC).
+            - **HS Code (6 dígitos):** Sistema Harmonizado da Organização Mundial das Alfândegas (utilizado na ONU Comtrade).
+            - **CAS RN:** Chemical Abstracts Service Registry Number (identificador químico global único).
+            """)
 
 
 def render_download_csv_button(
