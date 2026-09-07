@@ -61,16 +61,16 @@ def render_view() -> None:
 
     st.divider()
 
-    tab_runs, tab_sources, tab_consistency, tab_arch = st.tabs([
-        "⏱️ Histórico de Coletas & Ingestões",
-        "📡 Fontes de Dados Mapeadas",
-        "📊 Matriz de Consistência Temporal",
-        "🛡️ Integridade & Governança",
+    tab_runs, tab_sources, tab_consistency, tab_sla = st.tabs([
+        "Histórico de Coletas & Ingestões",
+        "Fontes de Dados Mapeadas",
+        "Matriz de Consistência Temporal",
+        "Políticas Operacionais & SLAs",
     ])
 
     with tab_runs:
-        st.markdown("##### 📜 Execuções Recentes do Pipeline de Dados")
-        st.caption("Histórico detalhado de cada pipeline disparado, com os parâmetros/escopos requisitados e tempo de execução.")
+        st.markdown("##### Execuções Recentes do Pipeline de Dados")
+        st.caption("Histórico detalhado de cada rotina disparada, com os parâmetros/escopos requisitados e tempo de execução.")
         if not df_runs.empty:
             cols_show = ["source_name", "requested_data", "status", "records_count", "records_fetched", "started_at", "execution_time_sec"]
             existing_cols = [c for c in cols_show if c in df_runs.columns]
@@ -103,8 +103,8 @@ def render_view() -> None:
             st.info("Nenhum log de execução encontrado.")
 
     with tab_sources:
-        st.markdown("##### 🌐 Fontes Oficiais Estruturadas no Ecossistema")
-        st.caption("Data e hora da última ingestão bem-sucedida e parâmetros requisitados de cada fonte externa.")
+        st.markdown("##### Fontes Oficiais Estruturadas no Ecossistema")
+        st.caption("Data e hora da última ingestão bem-sucedida e parâmetros requisitados de cada conector externo.")
         if not df_sources.empty:
             df_src_display = df_sources.copy()
             if "last_ingestion" in df_src_display.columns:
@@ -137,9 +137,9 @@ def render_view() -> None:
             st.info("Nenhuma fonte cadastrada.")
 
     with tab_consistency:
-        st.markdown("##### 🔍 Auditoria de Consistência & Assimetria Temporal")
+        st.markdown("##### Auditoria de Consistência & Assimetria Temporal")
         st.caption("Monitoramento do pareamento entre fontes com calendários de divulgação distintos (Comércio Aduaneiro vs Censo de Produção vs Séries de Preços).")
-        
+
         df_matrix = FertiDataService.get_database_consistency_matrix()
         if not df_matrix.empty:
             # Cards de resumo
@@ -156,10 +156,10 @@ def render_view() -> None:
 
             st.write("")
             status_labels = {
-                "FULLY_SYNCHRONIZED": "🟢 Totalmente Sincronizado",
-                "AWAITING_PRODUCTION_SURVEY": "🟡 Aguardando Censo Produção (FAO/IFA)",
-                "AWAITING_TRADE_DATA": "🔵 Aguardando Aduana (Comex/Comtrade)",
-                "PARTIAL_DATA": "⚪ Parcial / Histórico",
+                "FULLY_SYNCHRONIZED": "Totalmente Sincronizado",
+                "AWAITING_PRODUCTION_SURVEY": "Aguardando Censo Produção (FAO/IFA)",
+                "AWAITING_TRADE_DATA": "Aguardando Aduana (Comex/Comtrade)",
+                "PARTIAL_DATA": "Parcial / Histórico",
             }
             df_m_disp = df_matrix.copy()
             if "synchronization_status" in df_m_disp.columns:
@@ -181,15 +181,17 @@ def render_view() -> None:
         else:
             st.info("Matriz de consistência não disponível.")
 
-    with tab_arch:
-        st.markdown("##### 🏗️ Garantias de Integridade do Banco de Dados")
+    with tab_sla:
+        st.markdown("##### Políticas de Coleta & SLAs Operacionais")
         st.markdown(
             """
-            - **Eliminação Sistêmica de Redundâncias (4NF)**: Todas as tabelas de fatos isolam estritamente cada dimensão de negócio em relações atômicas.
-            - **Proteção Contra Falsos Nulos / Zeros**: Views e regras de negócio agora tratam a ausência de censo anual de produção explicitamente (`NULL`/`PENDING_PRODUCTION`), evitando que a dependência externa seja calculada como 100% ou a produção nacional seja zerada por mera defasagem de publicação da FAO/IFA.
-            - **Idempotência e Auditoria Completa**: O repositório armazena os payloads brutos integrais com chave de verificação criptográfica SHA-256 (`payload_hash`), prevenindo duplicações e garantindo rastreabilidade forense.
-            - **Segurança Nativa via Row Level Security (RLS)**: Políticas ativas para leitura pública (`anon`, `authenticated`) e restrição de escrita apenas para `service_role`.
-            - **Controle de Resiliência HTTP**: Rate limiting dedicado por provedor com estratégia de *exponential backoff* e *jitter* contra HTTP 429.
+            - **MDIC Comex Stat**: Atualização mensal até o 10º dia útil de cada mês com dados consolidados da balança comercial brasileira.
+            - **UN Comtrade**: Atualização mensal das matrizes bilaterais globais para fluxos de importação e exportação.
+            - **FAOSTAT / IFA**: Sincronização anual de dados consolidados de capacidade industrial e balanço aparente de safras.
+            - **FRED / Banco Mundial**: Séries históricas de benchmarks internacionais (Ureia Black Sea, MAP US Gulf, KCl Vancouver).
+            - **Google News RSS Feed**: Captura contínua de publicações setoriais com janela temporal estrita de 7 dias (168 horas).
+            
+            Para consultar a arquitetura completa do sistema, modelagem 4NF e especificações técnicas de código, acesse a página **Software** no menu lateral.
             """
         )
 

@@ -119,6 +119,12 @@ p_observabilidade = st.Page(
     icon=":material/monitoring:",
     url_path="observabilidade",
 )
+p_software = st.Page(
+    str(PAGES_DIR / "12_software.py"),
+    title="Software",
+    icon=":material/code:",
+    url_path="software",
+)
 
 # Agrupamento estruturado por tipo de nutriente
 nitrogenados_pages = [p_ureia, p_amonia, p_nitrato, p_sulfato_amonio]
@@ -138,7 +144,7 @@ pages = {
         *micronutrientes_pages,
     ],
     "💡 Inteligência": [p_analises, p_noticias, p_ai],
-    "⚙️ Infraestrutura": [p_observabilidade],
+    "⚙️ Infraestrutura": [p_observabilidade, p_software],
 }
 
 # Inicialização da navegação oculta para controle total da hierarquia com submenus na barra lateral
@@ -210,6 +216,7 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.page_link(p_observabilidade, label="Observabilidade", icon=":material/monitoring:", width="stretch")
+    st.page_link(p_software, label="Software", icon=":material/code:", width="stretch")
 
     st.divider()
     st.caption("FertiPartner • Inteligência de Mercado Agrícola")

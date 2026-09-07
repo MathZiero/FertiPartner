@@ -20,6 +20,8 @@ PAGE_FILES = [
     "08_analises_comparativas.py",
     "09_observabilidade.py",
     "10_noticias_mercado.py",
+    "11_assistente_ia.py",
+    "12_software.py",
     "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/ureia.py",
     "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/amonia_anidra.py",
     "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/nitrato_de_amonio.py",
@@ -107,6 +109,12 @@ def test_dashboard_compiles_and_contains_updated_categories():
     assert "💡 Inteligência" in content, "Categoria '💡 Inteligência' não encontrada no dashboard"
     assert "10_noticias_mercado.py" in content, "Página 10_noticias_mercado.py não encontrada no dashboard"
     assert "Radar de Notícias NPK" in content, "Radar de Notícias NPK não encontrado no dashboard"
+    assert "11_assistente_ia.py" in content, "Página 11_assistente_ia.py não encontrada no dashboard"
+    assert "FertiPartner.AI" in content, "FertiPartner.AI não encontrado no dashboard"
+    assert "⚙️ Infraestrutura" in content, "Categoria '⚙️ Infraestrutura' não encontrada no dashboard"
+    assert "09_observabilidade.py" in content, "Página 09_observabilidade.py não encontrada no dashboard"
+    assert "12_software.py" in content, "Página 12_software.py não encontrada no dashboard"
+    assert "Software" in content, "Página Software não encontrada no dashboard"
     assert "catalogo_de_fertilizantes" in content, "Pasta catalogo_de_fertilizantes não referenciada no dashboard"
     assert "macronutrientes_primarios" in content, "Pasta macronutrientes_primarios não referenciada no dashboard"
     assert "nitrogenados" in content, "Subpasta nitrogenados não referenciada no dashboard"

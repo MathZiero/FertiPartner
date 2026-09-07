@@ -25,7 +25,7 @@ def render_view() -> None:
         - 🏭 **Produção**: Visualize o mapeamento da **Produção Global** e o ranking mundial de síntese e mineração via FAOSTAT.
         - 🚢 **Comércio**: Explore as trocas no **Comércio Internacional**, os corredores logísticos no diagrama **Fluxos Sankey** e o balanço do **Mercado Brasileiro**.
         - 📈 **Preços & Inteligência**: Acompanhe as cotações de mercado em **Preços & Benchmarks** e realize **Análises Comparativas**.
-        - ⚙️ **Infraestrutura**: Monitore os pipelines de ingestão e a consistência do banco de dados em **Observabilidade**.
+        - ⚙️ **Infraestrutura**: Monitore as rotinas operacionais em **Observabilidade** e consulte a arquitetura da plataforma em **Software**.
         """
     )
 

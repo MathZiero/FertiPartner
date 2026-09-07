@@ -11,6 +11,9 @@ from app.presentation.streamlit.views import (
     v07_brazil_market as view_brazil_market,
     v08_comparative_analytics as view_comparative_analytics,
     v09_system_health as view_system_health,
+    v10_market_news as view_market_news,
+    v11_fertipartner_ai as view_fertipartner_ai,
+    v12_software_architecture as view_software_architecture,
 )
 
 __all__ = [
@@ -24,4 +27,7 @@ __all__ = [
     "view_brazil_market",
     "view_comparative_analytics",
     "view_system_health",
+    "view_market_news",
+    "view_fertipartner_ai",
+    "view_software_architecture",
 ]
