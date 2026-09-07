@@ -172,8 +172,8 @@ class FertiDataService:
                         "country_id": cid,
                         "country_name": c_name,
                         "country_iso3": c_iso3,
-                        "production_year": int(y),
-                        "standard_quantity_mt": float(qty),
+                        "production_year": y,
+                        "standard_quantity_mt": qty,
                     })
             if rows:
                 df = pd.DataFrame(rows)
@@ -283,24 +283,29 @@ class FertiDataService:
                 res_pr = client.table("price_records").select("fertilizer_id, price_date").execute()
                 res_f = client.table("fertilizers").select("id, canonical_name").execute()
 
-                fert_map = {f["id"]: f["canonical_name"] for f in (res_f.data or [])}
+                raw_t = cast(list[dict[str, Any]], res_t.data or [])
+                raw_p = cast(list[dict[str, Any]], res_p.data or [])
+                raw_pr = cast(list[dict[str, Any]], res_pr.data or [])
+                raw_f = cast(list[dict[str, Any]], res_f.data or [])
+
+                fert_map = {f["id"]: f["canonical_name"] for f in raw_f if "id" in f and "canonical_name" in f}
                 years = {2022, 2023, 2024}
-                for t in (res_t.data or []):
+                for t in raw_t:
                     if t.get("period_start_date"):
                         years.add(int(str(t["period_start_date"])[:4]))
-                for p in (res_p.data or []):
+                for p in raw_p:
                     if p.get("period_start_date"):
                         years.add(int(str(p["period_start_date"])[:4]))
-                for pr in (res_pr.data or []):
+                for pr in raw_pr:
                     if pr.get("price_date"):
                         years.add(int(str(pr["price_date"])[:4]))
 
                 rows = []
                 for y in sorted(years):
                     for fid, fname in fert_map.items():
-                        t_count = sum(1 for t in (res_t.data or []) if t.get("fertilizer_id") == fid and str(t.get("period_start_date", ""))[:4] == str(y))
-                        p_recs = [p for p in (res_p.data or []) if p.get("fertilizer_id") == fid and str(p.get("period_start_date", ""))[:4] == str(y)]
-                        pr_count = sum(1 for pr in (res_pr.data or []) if pr.get("fertilizer_id") == fid and str(pr.get("price_date", ""))[:4] == str(y))
+                        t_count = sum(1 for t in raw_t if t.get("fertilizer_id") == fid and str(t.get("period_start_date", ""))[:4] == str(y))
+                        p_recs = [p for p in raw_p if p.get("fertilizer_id") == fid and str(p.get("period_start_date", ""))[:4] == str(y)]
+                        pr_count = sum(1 for pr in raw_pr if pr.get("fertilizer_id") == fid and str(pr.get("price_date", ""))[:4] == str(y))
 
                         prod_count = len(p_recs)
                         prod_countries = len({p.get("country_id") for p in p_recs if p.get("country_id")})
@@ -469,10 +474,10 @@ class FertiDataService:
                 res_sources = client.table("data_sources").select("id, code, name, update_frequency, is_active").execute()
                 res_runs = client.table("data_collection_runs").select("*").order("started_at", desc=True).limit(50).execute()
 
-                sources = res_sources.data or []
-                runs = res_runs.data or []
+                sources = cast(list[dict[str, Any]], res_sources.data or [])
+                runs = cast(list[dict[str, Any]], res_runs.data or [])
 
-                latest_by_source: dict[int, dict[str, Any]] = {}
+                latest_by_source: dict[Any, dict[str, Any]] = {}
                 for r in runs:
                     sid = r.get("source_id")
                     if sid and sid not in latest_by_source:
@@ -481,7 +486,7 @@ class FertiDataService:
                 status_list = []
                 for s in sources:
                     sid = s.get("id")
-                    last_run = latest_by_source.get(sid)
+                    last_run: dict[str, Any] | None = latest_by_source.get(sid)
                     last_time = last_run.get("started_at") if last_run else None
                     status = last_run.get("status") if last_run else ("Ativo" if s.get("is_active") else "Inativo")
                     inserted = last_run.get("records_inserted", 0) if last_run else 0

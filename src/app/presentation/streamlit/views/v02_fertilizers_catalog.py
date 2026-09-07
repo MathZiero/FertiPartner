@@ -6,6 +6,7 @@ Organizado em três macrocategorias agronômicas:
 3. Micronutrientes (Zinco, Boro, Cobre, Manganês, Molibdênio e Cobalto)
 """
 
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 
@@ -18,10 +19,12 @@ from app.presentation.streamlit.components.ui import (
     render_units_legend,
 )
 
+_PAGES_DIR = Path(__file__).resolve().parent.parent / "pages"
+
 
 def _classify_macro_category(cat_name: str) -> str:
     """Classifica as categorias canônicas nas 3 macrocategorias da aplicação."""
-    cat_lower = str(cat_name).lower()
+    cat_lower = cat_name.lower()
     if any(k in cat_lower for k in ["nitrogenad", "fosfatad", "potássic", "npk"]):
         return "🌱 Macronutrientes Primários"
     if any(k in cat_lower for k in ["secundár", "enxofre"]):
@@ -114,7 +117,7 @@ def render_view() -> None:
                     with c_btn:
                         st.write("")
                         try:
-                            st.page_link("pages/fert_micronutrientes.py", label="👉 Abrir Painel de Micronutrientes", icon=":material/biotech:", use_container_width=True)
+                            st.page_link(str(_PAGES_DIR / "fert_micronutrientes.py"), label="👉 Abrir Painel de Micronutrientes", icon=":material/biotech:", use_container_width=True)
                         except Exception:
                             st.info("Acesse 'Micronutrientes' na barra lateral.")
             else:
@@ -174,11 +177,11 @@ def render_view() -> None:
 
                         st.write("")
                         # Link direto para a página individual do fertilizante
-                        page_filename = f"pages/fert_{slug.replace('-', '_')}.py"
+                        page_file = str(_PAGES_DIR / f"fert_{slug.replace('-', '_')}.py")
                         try:
-                            st.page_link(page_filename, label=f"📊 Acessar Painel do Produto", use_container_width=True)
+                            st.page_link(page_file, label="📊 Acessar Painel do Produto", use_container_width=True)
                         except Exception:
-                            # Fallback para url_path
+                            # Fallback para aviso
                             st.caption(f"Acesse '{canonical_name}' na sidebar.")
 
                         # Botão da Ficha Técnica modal

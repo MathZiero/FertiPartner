@@ -47,17 +47,8 @@ def main() -> None:
     parser.add_argument("--year", type=int, default=2023, help="Ano de referência (padrão: 2023)")
     parser.add_argument("--top-n", type=int, default=10, help="Quantidade de países no ranking por fluxo (padrão: 10)")
     parser.add_argument("--hs", type=str, default=None, help="Código HS específico (ex: 310210 para Ureia)")
-    parser.add_argument(
-        "--fertilizer-id",
-        type=int,
-        default=None,
-        help="ID do fertilizante específico para filtrar código HS",
-    )
-    parser.add_argument(
-        "--discover-only",
-        action="store_true",
-        help="Apenas exibe os rankings dos maiores países sem gravar fluxos no banco",
-    )
+    parser.add_argument("--fertilizer-id", type=int, default=None, help="ID do fertilizante específico para filtrar código HS")
+    parser.add_argument("--discover-only", action="store_true", help="Apenas exibe os rankings dos maiores países sem gravar fluxos no banco")
 
     args = parser.parse_args()
 
