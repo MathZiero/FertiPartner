@@ -135,3 +135,12 @@ def test_analyze_sentiment_by_topic_returns_structured_metrics():
         assert s["badge_color"] in ["emerald", "blue", "amber"]
         assert len(s["status_label"]) > 0
         assert "notícias" in s["status_label"] or len(s["driver"]) > 0
+
+
+def test_fetch_fertilizer_news_is_sorted_by_recency():
+    """Garante que as notícias são ordenadas decrescentemente (mais recentes no topo)."""
+    df = GoogleNewsService.fetch_fertilizer_news()
+    assert not df.empty
+    dates = pd.to_datetime(df["published_at"], utc=True)
+    assert dates.is_monotonic_decreasing, "Notícias devem estar ordenadas das mais recentes para as mais antigas"
+

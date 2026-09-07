@@ -307,12 +307,13 @@ class GoogleNewsService:
         else:
             df = pd.DataFrame(cls.get_fallback_news())
 
-        # Corte rigoroso de 7 dias (máximo 168 horas atrás)
+        # Corte rigoroso de 7 dias (máximo 168 horas atrás) e ordenação decrescente pelas mais recentes
         if not df.empty and "published_at" in df.columns:
             now_utc = datetime.now(timezone.utc)
             cutoff = now_utc - timedelta(days=7)
             df["_dt_chk"] = pd.to_datetime(df["published_at"], errors="coerce", utc=True)
-            df = df[df["_dt_chk"].isna() | (df["_dt_chk"] >= cutoff)].drop(columns=["_dt_chk"])
+            df = df[df["_dt_chk"].isna() | (df["_dt_chk"] >= cutoff)]
+            df = df.sort_values(by="_dt_chk", ascending=False).drop(columns=["_dt_chk"]).reset_index(drop=True)
 
         return df
 

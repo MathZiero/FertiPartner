@@ -10,9 +10,8 @@ from app.presentation.streamlit.components.ui import (
 )
 from app.presentation.streamlit.services.news_service import GoogleNewsService
 
-
-def _create_gauge_indicator(short_name: str, score_val: float, classification: str) -> go.Figure:
-    """Gera um barômetro semicircular interativo via Plotly Indicator para análise de sentimento setorial."""
+def _create_gauge_indicator(score_val: float, classification: str) -> go.Figure:
+    """Gera um barômetro semicircular compacto interativo via Plotly Indicator para análise de sentimento setorial."""
     if score_val >= 1.5:
         bar_color = "#10B981"  # Emerald / Melhorando
     elif score_val <= -1.5:
@@ -26,12 +25,8 @@ def _create_gauge_indicator(short_name: str, score_val: float, classification: s
             value=score_val,
             number={
                 "valueformat": "+.1f" if score_val > 0 else ".1f",
-                "font": {"size": 22, "color": "#1B4332", "family": "Inter, sans-serif"},
+                "font": {"size": 17, "color": "#1B4332", "family": "Inter, sans-serif"},
                 "suffix": " pts",
-            },
-            title={
-                "text": f"<b>{short_name}</b>",
-                "font": {"size": 13, "color": "#1B4332", "family": "Inter, sans-serif"},
             },
             gauge={
                 "axis": {
@@ -39,10 +34,10 @@ def _create_gauge_indicator(short_name: str, score_val: float, classification: s
                     "tickmode": "array",
                     "tickvals": [-10, -5, 0, 5, 10],
                     "ticktext": ["-10", "-5", "0", "+5", "+10"],
-                    "tickfont": {"size": 9, "color": "#6B7280"},
+                    "tickfont": {"size": 7.5, "color": "#6B7280"},
                     "tickcolor": "#9CA3AF",
                 },
-                "bar": {"color": bar_color, "thickness": 0.26},
+                "bar": {"color": bar_color, "thickness": 0.24},
                 "bgcolor": "#FFFFFF",
                 "borderwidth": 1,
                 "bordercolor": "#E5E7EB",
@@ -52,7 +47,7 @@ def _create_gauge_indicator(short_name: str, score_val: float, classification: s
                     {"range": [1.5, 10], "color": "rgba(16, 185, 129, 0.18)"},
                 ],
                 "threshold": {
-                    "line": {"color": "#111827", "width": 3},
+                    "line": {"color": "#111827", "width": 2.5},
                     "thickness": 0.8,
                     "value": score_val,
                 },
@@ -61,8 +56,8 @@ def _create_gauge_indicator(short_name: str, score_val: float, classification: s
     )
 
     fig.update_layout(
-        height=175,
-        margin=dict(l=12, r=12, t=32, b=10),
+        height=125,
+        margin=dict(l=8, r=8, t=8, b=4),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font={"family": "Inter, sans-serif"},
@@ -107,9 +102,31 @@ def render_view() -> None:
     for idx, sent in enumerate(sentiments):
         with cols[idx]:
             with st.container(border=True):
-                # Barômetro real com ponteiro e faixas coloridas
+                # Título do tópico em HTML com suporte responsivo a quebra de linha sem cortes
+                st.markdown(
+                    f"""
+                    <div style="
+                        font-size: 0.80rem;
+                        font-weight: 700;
+                        color: #1B4332;
+                        text-align: center;
+                        text-transform: uppercase;
+                        letter-spacing: 0.02em;
+                        min-height: 2.3rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        line-height: 1.25;
+                        margin-bottom: 0.15rem;
+                    ">
+                        {sent['short_name']}
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                # Barômetro real compacto com ponteiro e faixas coloridas
                 fig_gauge = _create_gauge_indicator(
-                    short_name=sent["short_name"],
                     score_val=sent["score_val"],
                     classification=sent["classification"],
                 )
@@ -118,16 +135,16 @@ def render_view() -> None:
                 # Badge de status e diagnóstico contextual
                 st.markdown(
                     f"""
-                    <div style="text-align: center; margin-top: -0.2rem; margin-bottom: 0.5rem;">
-                        <span class="fp-badge fp-badge-{sent['badge_color']}" style="font-size: 0.72rem; padding: 0.2rem 0.65rem;">
+                    <div style="text-align: center; margin-top: -0.3rem; margin-bottom: 0.45rem;">
+                        <span class="fp-badge fp-badge-{sent['badge_color']}" style="font-size: 0.70rem; padding: 0.18rem 0.6rem;">
                             {sent['classification']}
                         </span>
                     </div>
-                    <div style="font-size: 0.76rem; color: #374151; font-weight: 600; line-height: 1.35; min-height: 2.2rem; text-align: center;">
+                    <div style="font-size: 0.75rem; color: #374151; font-weight: 600; line-height: 1.35; min-height: 2.1rem; text-align: center;">
                         {sent['status_label']}
                     </div>
-                    <div style="font-size: 0.72rem; color: #6B7280; margin-top: 0.4rem; border-top: 1px dashed #E2E8F0; padding-top: 0.4rem; text-align: center;">
-                        Volume: <b>{sent['news_count']}</b> matérias analisadas
+                    <div style="font-size: 0.70rem; color: #6B7280; margin-top: 0.35rem; border-top: 1px dashed #E2E8F0; padding-top: 0.35rem; text-align: center;">
+                        Volume: <b>{sent['news_count']}</b> matérias
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -195,7 +212,12 @@ def render_view() -> None:
         )
         df_filtered = df_filtered[mask]
 
-    st.markdown(f"<div style='color: #4B5563; font-size: 0.88rem; margin: 0.5rem 0 1rem 0;'>Exibindo <b>{len(df_filtered)}</b> matérias dos últimos 7 dias:</div>", unsafe_allow_html=True)
+    # Ordenação garantida: matérias mais recentes sempre exibidas no topo
+    if not df_filtered.empty and "published_at" in df_filtered.columns:
+        df_filtered["_sort_dt"] = pd.to_datetime(df_filtered["published_at"], errors="coerce", utc=True)
+        df_filtered = df_filtered.sort_values(by="_sort_dt", ascending=False).drop(columns=["_sort_dt"]).reset_index(drop=True)
+
+    st.markdown(f"<div style='color: #4B5563; font-size: 0.88rem; margin: 0.5rem 0 1rem 0;'>Exibindo <b>{len(df_filtered)}</b> matérias dos últimos 7 dias (mais recentes primeiro):</div>", unsafe_allow_html=True)
 
     # =========================================================================
     # CARDS DE NOTÍCIAS EM DUAS COLUNAS PARALELAS
