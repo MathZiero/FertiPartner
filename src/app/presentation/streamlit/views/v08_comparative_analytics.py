@@ -62,22 +62,19 @@ def render_view() -> None:
     with c_n:
         render_kpi_card(
             title="Ureia (N) • FOB Báltico",
-            value=f"${latest_n:,.1f}" if latest_n > 0 else "N/D",
-            unit="USD / MT",
+            value=f"${latest_n:,.1f} / MT" if latest_n > 0 else "N/D",
             help_text="Cotação de referência internacional para nitrogênio.",
         )
     with c_p:
         render_kpi_card(
             title="DAP / MAP (P) • FOB / CFR",
-            value=f"${latest_p:,.1f}" if latest_p > 0 else "N/D",
-            unit="USD / MT",
+            value=f"${latest_p:,.1f} / MT" if latest_p > 0 else "N/D",
             help_text="Cotação internacional de referência para fosfatados concentrados.",
         )
     with c_k:
         render_kpi_card(
             title="KCl (K) • CFR Brasil",
-            value=f"${latest_k:,.1f}" if latest_k > 0 else "N/D",
-            unit="USD / MT",
+            value=f"${latest_k:,.1f} / MT" if latest_k > 0 else "N/D",
             help_text="Cotação CFR Porto de Paranaguá para Cloreto de Potássio padrão.",
         )
     with c_ratio:
@@ -85,9 +82,7 @@ def render_view() -> None:
         render_kpi_card(
             title="Paridade DAP / Ureia",
             value=f"{ratio_val:.2f}x" if ratio_val > 0 else "N/D",
-            unit="Ratio Histórico",
             delta="Paridade típica: 1.40x - 1.60x",
-            delta_color="off",
             help_text="Relação de troca entre valor do fósforo e do nitrogênio.",
         )
 
@@ -328,7 +323,7 @@ def render_view() -> None:
             x=ratio_series.index,
             y=ratio_series.values,
             mode="lines+markers",
-            line=dict(color=FERTI_COLORS["primary"], width=2.5),
+            line=dict(color=FERTI_COLORS[0], width=2.5),
             marker=dict(size=5),
             name=ratio_label,
         ))

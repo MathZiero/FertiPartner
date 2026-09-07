@@ -55,7 +55,7 @@ def render_view() -> None:
             title="Últimas 24-48 Horas",
             value=f"{recent_count} frescas",
             delta="Fluxo contínuo",
-            delta_color="normal",
+            delta_positive=True,
             help_text="Notícias publicadas nas últimas 48 horas.",
         )
     with kpi_top:

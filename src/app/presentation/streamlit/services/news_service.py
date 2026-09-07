@@ -181,10 +181,17 @@ class GoogleNewsService:
         articles = []
 
         for item in root.findall(".//item"):
-            raw_title = item.find("title").text if item.find("title") is not None else "Notícia Setorial"
-            link = item.find("link").text if item.find("link") is not None else "https://news.google.com"
-            pub_date_str = item.find("pubDate").text if item.find("pubDate") is not None else ""
-            desc = item.find("description").text if item.find("description") is not None else ""
+            title_el = item.find("title")
+            raw_title = (title_el.text or "Notícia Setorial") if title_el is not None and title_el.text else "Notícia Setorial"
+            
+            link_el = item.find("link")
+            link = (link_el.text or "https://news.google.com") if link_el is not None and link_el.text else "https://news.google.com"
+            
+            pub_el = item.find("pubDate")
+            pub_date_str = (pub_el.text or "") if pub_el is not None and pub_el.text else ""
+            
+            desc_el = item.find("description")
+            desc = (desc_el.text or "") if desc_el is not None and desc_el.text else ""
 
             # Extração da fonte e limpeza do sufixo ' - Fonte' no título
             source_el = item.find("source")
