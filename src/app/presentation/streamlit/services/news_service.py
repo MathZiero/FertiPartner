@@ -281,9 +281,11 @@ class GoogleNewsService:
     @classmethod
     @st.cache_data(ttl=600, show_spinner=False)
     def fetch_fertilizer_news(cls, search_query: str | None = None) -> pd.DataFrame:
-        """Busca notícias do Google News RSS limitadas estritamente a no máximo 7 dias."""
-        base_term = "fertilizantes (produção OR consumo OR frete OR preços OR importação OR adubo OR ureia OR fosfato OR potassio)"
-        query = f"({base_term} {search_query}) when:7d" if search_query else f"({base_term}) when:7d"
+        """Busca notícias reais do Google News RSS limitadas estritamente a no máximo 7 dias."""
+        if search_query:
+            query = f"fertilizantes {search_query}"
+        else:
+            query = "fertilizantes OR adubos OR (frete fertilizantes) OR (preço fertilizantes)"
 
         encoded = urllib.parse.quote(query.strip())
         url = f"{cls.BASE_RSS_URL}?q={encoded}&hl=pt-BR&gl=BR&ceid=BR:pt-419"
@@ -294,7 +296,7 @@ class GoogleNewsService:
                 url,
                 headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 FertiPartner/1.0"},
             )
-            with urllib.request.urlopen(req, timeout=8) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 xml_data = resp.read()
                 articles = cls._parse_xml_feed(xml_data)
         except Exception as exc:
@@ -305,7 +307,7 @@ class GoogleNewsService:
         else:
             df = pd.DataFrame(cls.get_fallback_news())
 
-        # Corte rigoroso de 7 dias
+        # Corte rigoroso de 7 dias (máximo 168 horas atrás)
         if not df.empty and "published_at" in df.columns:
             now_utc = datetime.now(timezone.utc)
             cutoff = now_utc - timedelta(days=7)
@@ -316,56 +318,67 @@ class GoogleNewsService:
 
     @classmethod
     def analyze_sentiment_by_topic(cls, df_news: pd.DataFrame) -> list[dict[str, Any]]:
-        """Calcula a análise de sentimento dos últimos 7 dias por tópico estratégico com 3 classificações e pontuação."""
+        """Calcula a análise de sentimento funcional dos últimos 7 dias analisando o texto das notícias reais por tópico."""
+        import unicodedata
+
+        def _strip_accents(text: str) -> str:
+            nfkd = unicodedata.normalize('NFKD', text)
+            return ''.join([c for c in nfkd if not unicodedata.combining(c)]).lower()
+
         topics_config = [
             {
                 "topic": "FRETE / LOGÍSTICA",
-                "icon": "🚢",
+                "short_name": "Frete & Logística",
+                "keywords": ["frete", "porto", "paranagua", "santos", "itaqui", "barcarena", "navio", "fila", "espera", "maritimo", "logistica", "ferrovia", "cabotagem", "transporte", "embarque", "descarga", "graneis", "armazem", "estocagem"],
                 "positive_label": "Melhorando (Fluidez e Tarifas Competitivas)",
                 "neutral_label": "Estável (Fluxos e Portos Regulares)",
                 "negative_label": "Piorando (Gargalos e Tarifas em Alta)",
-                "pos_terms": ["queda de frete", "redução de frete", "desconto", "fluidez", "desobstrução", "ferrovia", "investimento", "eficiência", "alívio", "recorde de descarga", "capacidade estática"],
-                "neg_terms": ["alta com gargalos", "alta de frete", "aumento de frete", "gargalo", "gargalos", "fila", "espera", "demora", "sobretaxa", "custo elevado", "pressão", "greve", "parada"],
+                "pos_terms": ["queda de frete", "reducao de frete", "desconto", "fluidez", "desobstrucao", "ferrovia", "investimento", "eficiencia", "alivio", "capacidade", "agilidade", "normalizacao", "ampliacao"],
+                "neg_terms": ["alta com gargalos", "alta de frete", "aumento de frete", "gargalo", "gargalos", "fila", "espera", "demora", "sobretaxa", "custo elevado", "pressao", "greve", "parada", "bloqueio", "prejuizo"],
                 "driver": "Operação de berços nos portos de Santos/Paranaguá e tarifas intermodais.",
             },
             {
                 "topic": "PRODUÇÃO",
-                "icon": "🏭",
+                "short_name": "Produção & Indústria",
+                "keywords": ["producao", "fabrica", "planta", "capacidade", "industria", "petrobras", "gas natural", "ampliacao", "investimento", "fabricacao", "sintese", "heringer", "unigel", "nitrogenados", "fosfatados"],
                 "positive_label": "Melhorando (Capacidade e Oferta em Expansão)",
                 "neutral_label": "Estável (Plantas em Operação Contínua)",
                 "negative_label": "Piorando (Restrições e Paradas de Plantas)",
-                "pos_terms": ["expansão", "inauguração", "reabertura", "recorde", "aumento de produção", "investimento", "incentivo", "eficiência", "petrobras", "ampliação", "programa nacional"],
-                "neg_terms": ["parada", "fechamento", "corte", "queda de produção", "redução", "crise", "desabastecimento", "gás caro", "manutenção"],
+                "pos_terms": ["expansao", "inauguracao", "reabertura", "recorde", "aumento", "investimento", "incentivo", "eficiencia", "retomada", "hidrogenio verde", "recuperacao", "acordo", "programa nacional", "ampliacao"],
+                "neg_terms": ["parada", "fechamento", "corte", "queda de producao", "reducao", "crise", "desabastecimento", "gas caro", "manutencao", "extrajudicial", "divida", "falencia"],
                 "driver": "Nível de atividade fabril nacional e incentivos ao gás competitivo.",
             },
             {
                 "topic": "CONSUMO / DEMANDA",
-                "icon": "🌾",
-                "positive_label": "Melhorando (Demanda Forte para Safras)",
+                "short_name": "Consumo & Demanda",
+                "keywords": ["consumo", "demanda", "safra", "produtor", "plantio", "compra", "entrega", "escoamento", "soja", "milho", "estoque", "aplicacao", "adubacao"],
+                "positive_label": "Melhorando (Demanda Firme para Safras)",
                 "neutral_label": "Estável (Ritmo Médio e Previsível)",
                 "negative_label": "Piorando (Cautela e Atraso no Plantio)",
-                "pos_terms": ["aquecid", "forte", "recorde", "antecipa", "avanço", "plantio acelerado", "crescimento", "compra", "expansão de área", "produtividade"],
-                "neg_terms": ["atrasa ritmo", "atraso", "cautela", "desacelera", "retração", "queda de demanda", "insegurança", "baixa", "parada de compras", "estiagem"],
+                "pos_terms": ["aquecid", "forte", "recorde", "antecipa", "avanco", "plantio acelerado", "crescimento", "compra", "expansao de area", "produtividade", "alta demanda"],
+                "neg_terms": ["atrasa ritmo", "atraso", "cautela", "desacelera", "retracao", "queda de demanda", "inseguranca", "baixa", "parada de compras", "estiagem", "pisou no freio"],
                 "driver": "Apetite de compras do produtor rural para fechamento de pacotes na safra.",
             },
             {
                 "topic": "PREÇOS / MERCADO",
-                "icon": "📈",
-                "positive_label": "Melhorando (Cotações Acessíveis e Boa Margem)",
+                "short_name": "Preços & Mercado",
+                "keywords": ["preco", "cotacao", "cotacoes", "dolar", "fob", "cfr", "custo", "relacao de troca", "spread", "mercado", "valor", "tonelada"],
+                "positive_label": "Melhorando (Cotações Acessíveis / Margem)",
                 "neutral_label": "Estável (Paridades em Faixa Normal)",
-                "negative_label": "Piorando (Pressão de Custo e Encarecimento)",
-                "pos_terms": ["queda de preço", "desconto", "relação de troca", "alívio", "competitiv", "estável", "acessível", "barateamento"],
-                "neg_terms": ["alta de preços", "sobem no exterior", "escalada", "pressão", "disparada", "encarece", "inflação", "custo recorde"],
+                "negative_label": "Piorando (Pressão de Custos e Altas)",
+                "pos_terms": ["queda de preco", "desconto", "relacao de troca favoravel", "alivio", "competitiv", "estavel", "acessivel", "barateamento", "recuo"],
+                "neg_terms": ["alta de precos", "sobem no exterior", "escalada", "pressao", "disparada", "encarece", "inflacao", "custo recorde", "prejuizo", "alta"],
                 "driver": "Cotações CFR Paranaguá e paridade de troca grão vs adubo.",
             },
             {
                 "topic": "GEOPOLÍTICA / COMÉRCIO",
-                "icon": "🌐",
+                "short_name": "Geopolítica & Comércio",
+                "keywords": ["russia", "china", "belarus", "marrocos", "sancao", "sancoes", "tarifa", "mar vermelho", "guerra", "geopolitica", "restricao", "cota", "ormuz", "importacao", "exportacao", "conflito"],
                 "positive_label": "Melhorando (Abertura Comercial e Acordos)",
                 "neutral_label": "Estável (Fluxos e Relações Mantidas)",
                 "negative_label": "Piorando (Sanções, Cotas e Tensões)",
-                "pos_terms": ["acordo", "abertura", "isenção", "parceria", "embarque garantido", "distensão", "normalização", "cooperação", "mantêm liderança"],
-                "neg_terms": ["sanção", "sanções", "restrição", "prorroga mecanismos", "controle de cotas", "cota", "guerra", "tensão", "bloqueio", "tarifa", "conflito"],
+                "pos_terms": ["acordo", "abertura", "isencao", "parceria", "embarque garantido", "distensao", "normalizacao", "cooperacao", "mantem lideranca", "livre comercio"],
+                "neg_terms": ["sancao", "sancoes", "restricao", "prorroga mecanismos", "controle de cotas", "cota", "guerra", "tensao", "bloqueio", "tarifa", "conflito", "embargo", "prejuizo", "risco geopolitico", "ormuz"],
                 "driver": "Políticas alfandegárias de grandes players globais (Rússia, China, Oriente Médio).",
             },
         ]
@@ -373,28 +386,37 @@ class GoogleNewsService:
         results = []
         for cfg in topics_config:
             t_name = cfg["topic"]
-            sub_df = df_news[df_news["topic"] == t_name] if not df_news.empty and "topic" in df_news.columns else pd.DataFrame()
-            news_cnt = len(sub_df)
+            # Coleta todas as matérias associadas ao tópico por categoria ou por palavras-chave do tema
+            matched_articles = []
+            if not df_news.empty:
+                for _, row in df_news.iterrows():
+                    row_topic = str(row.get("topic", ""))
+                    txt_norm = _strip_accents(f"{row.get('title', '')} {row.get('snippet', '')}")
+                    # Associa se for o tópico oficial ou se contiver termos relevantes do tema
+                    if row_topic == t_name or any(kw in txt_norm for kw in cfg["keywords"]):
+                        matched_articles.append(txt_norm)
 
+            news_cnt = len(matched_articles)
             net_points = 0.0
+
             if news_cnt > 0:
-                for _, row in sub_df.iterrows():
-                    txt = f"{row.get('title', '')} {row.get('snippet', '')}".lower()
+                for txt in matched_articles:
                     pos_hits = sum(1 for term in cfg["pos_terms"] if term in txt)
                     neg_hits = sum(1 for term in cfg["neg_terms"] if term in txt)
                     net_points += (pos_hits - neg_hits)
                 avg_net = net_points / news_cnt
+                # Mapeia dinamicamente para escala contínua de -10.0 a +10.0 pts
                 calc_score = round(max(-10.0, min(10.0, avg_net * 3.5)), 1)
             else:
                 calc_score = 0.0
 
-            # Padrão estrito de 3 classificações adaptado contextualmente por tópico
-            if calc_score >= 1.2:
+            # 3 classificações padronizadas ("Melhorando", "Estável", "Piorando")
+            if calc_score >= 1.5:
                 classification = "Melhorando"
                 label = cfg["positive_label"]
                 badge_color = "emerald"
                 score_str = f"+{calc_score:.1f}"
-            elif calc_score <= -1.2:
+            elif calc_score <= -1.5:
                 classification = "Piorando"
                 label = cfg["negative_label"]
                 badge_color = "amber"
@@ -407,7 +429,7 @@ class GoogleNewsService:
 
             results.append({
                 "topic": t_name,
-                "icon": cfg["icon"],
+                "short_name": cfg["short_name"],
                 "score": score_str,
                 "score_val": calc_score,
                 "classification": classification,

@@ -1,6 +1,7 @@
 """Radar de Notícias e Fatos Relevantes de Fertilizantes (Google News RSS)."""
 
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 
 from app.presentation.streamlit.components.ui import (
@@ -10,22 +11,81 @@ from app.presentation.streamlit.components.ui import (
 from app.presentation.streamlit.services.news_service import GoogleNewsService
 
 
+def _create_gauge_indicator(short_name: str, score_val: float, classification: str) -> go.Figure:
+    """Gera um barômetro semicircular interativo via Plotly Indicator para análise de sentimento setorial."""
+    if score_val >= 1.5:
+        bar_color = "#10B981"  # Emerald / Melhorando
+    elif score_val <= -1.5:
+        bar_color = "#EF4444"  # Red / Piorando
+    else:
+        bar_color = "#3B82F6"  # Blue / Estável
+
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number",
+            value=score_val,
+            number={
+                "valueformat": "+.1f" if score_val > 0 else ".1f",
+                "font": {"size": 22, "color": "#1B4332", "family": "Inter, sans-serif"},
+                "suffix": " pts",
+            },
+            title={
+                "text": f"<b>{short_name}</b>",
+                "font": {"size": 13, "color": "#1B4332", "family": "Inter, sans-serif"},
+            },
+            gauge={
+                "axis": {
+                    "range": [-10, 10],
+                    "tickmode": "array",
+                    "tickvals": [-10, -5, 0, 5, 10],
+                    "ticktext": ["-10", "-5", "0", "+5", "+10"],
+                    "tickfont": {"size": 9, "color": "#6B7280"},
+                    "tickcolor": "#9CA3AF",
+                },
+                "bar": {"color": bar_color, "thickness": 0.26},
+                "bgcolor": "#FFFFFF",
+                "borderwidth": 1,
+                "bordercolor": "#E5E7EB",
+                "steps": [
+                    {"range": [-10, -1.5], "color": "rgba(239, 68, 68, 0.15)"},
+                    {"range": [-1.5, 1.5], "color": "rgba(59, 130, 246, 0.12)"},
+                    {"range": [1.5, 10], "color": "rgba(16, 185, 129, 0.18)"},
+                ],
+                "threshold": {
+                    "line": {"color": "#111827", "width": 3},
+                    "thickness": 0.8,
+                    "value": score_val,
+                },
+            },
+        )
+    )
+
+    fig.update_layout(
+        height=175,
+        margin=dict(l=12, r=12, t=32, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font={"family": "Inter, sans-serif"},
+    )
+    return fig
+
+
 def render_view() -> None:
     render_header(
-        title="Radar de Notícias NPK • Google News",
-        subtitle="Agregador e analisador em tempo real de notícias setoriais dos últimos 7 dias com alta correlação de mercado: capacidade produtiva, consumo de safras, fretes portuários, cotações e comércio internacional.",
-        badge_text="Live Feed • AgTech",
+        title="Radar de Notícias - Mercado de Fertilizantes",
+        subtitle="Monitoramento em tempo real de notícias setoriais dos últimos 7 dias: logística portuária, capacidade produtiva, ritmo de demanda das safras, paridade de preços e comércio internacional.",
+        badge_text="Feed em Tempo Real",
         badge_type="emerald",
     )
 
     # Botão de atualização rápida do feed
     c_btn, c_note = st.columns([2.5, 5.5])
     with c_btn:
-        if st.button("🔄 Recarregar Feed (Últimos 7 Dias)", width="stretch"):
+        if st.button("Recarregar Feed (Últimos 7 Dias)", width="stretch"):
             GoogleNewsService.fetch_fertilizer_news.clear()
             st.rerun()
     with c_note:
-        st.caption("Filtro temporal estrito: apenas notícias publicadas nas últimas 168 horas (7 dias) com impacto direto no agronegócio de fertilizantes.")
+        st.caption("Filtro temporal estrito: apenas publicações das últimas 168 horas (7 dias) com impacto direto na cadeia de suprimentos e agronegócio.")
 
     # Busca de notícias com cache inteligente
     df_news = GoogleNewsService.fetch_fertilizer_news()
@@ -35,69 +95,62 @@ def render_view() -> None:
         return
 
     # =========================================================================
-    # ANÁLISE DE SENTIMENTO SETORIAL (ÚLTIMOS 7 DIAS)
+    # BARÔMETROS DE ANÁLISE DE SENTIMENTO SETORIAL (PLOTLY)
     # =========================================================================
-    st.markdown("#### 🧭 Barômetro de Sentimento Setorial (Últimos 7 Dias)")
-    st.caption("Diagnóstico automatizado de polaridade e tendências de mercado por tópico estratégico, calculado a partir das notícias publicadas nos últimos 7 dias.")
+    st.markdown("#### Barômetros de Sentimento de Mercado (Últimos 7 Dias)")
+    st.caption("Diagnóstico semântico automatizado por processamento léxico das notícias reais publicadas nas últimas 168 horas.")
 
     sentiments = GoogleNewsService.analyze_sentiment_by_topic(df_news)
 
-    # Grid de 5 colunas para os tópicos estratégicos
+    # Grid de 5 colunas com barômetros semicirculares em Plotly
     cols = st.columns(len(sentiments))
     for idx, sent in enumerate(sentiments):
         with cols[idx]:
             with st.container(border=True):
-                # Cabeçalho do card com ícone
-                st.markdown(
-                    f"""
-                    <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
-                        <span style="font-size: 1.25rem;">{sent['icon']}</span>
-                        <span style="font-size: 0.85rem; font-weight: 700; color: #1B4332; text-transform: uppercase;">
-                            {sent['topic'].split(' / ')[0]}
-                        </span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
+                # Barômetro real com ponteiro e faixas coloridas
+                fig_gauge = _create_gauge_indicator(
+                    short_name=sent["short_name"],
+                    score_val=sent["score_val"],
+                    classification=sent["classification"],
                 )
+                st.plotly_chart(fig_gauge, width="stretch", config={"displayModeBar": False})
 
-                # Pontuação de sentimento em destaque (-10 a +10)
-                score_color = "#2D6A4F" if sent["score_val"] >= 1.2 else ("#D97706" if sent["score_val"] <= -1.2 else "#2563EB")
+                # Badge de status e diagnóstico contextual
                 st.markdown(
                     f"""
-                    <div style="margin: 0.35rem 0;">
-                        <span style="font-size: 1.55rem; font-weight: 800; color: {score_color}; letter-spacing: -0.02em;">
-                            {sent['score']}
-                        </span>
-                        <span style="font-size: 0.78rem; font-weight: 600; color: #6B7280;">/ 10 pts</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                # Classificação em 3 níveis (Melhorando / Estável / Piorando)
-                st.markdown(
-                    f"""
-                    <div style="margin-bottom: 0.5rem;">
-                        <span class="fp-badge fp-badge-{sent['badge_color']}" style="font-size: 0.72rem; padding: 0.2rem 0.6rem;">
+                    <div style="text-align: center; margin-top: -0.2rem; margin-bottom: 0.5rem;">
+                        <span class="fp-badge fp-badge-{sent['badge_color']}" style="font-size: 0.72rem; padding: 0.2rem 0.65rem;">
                             {sent['classification']}
                         </span>
                     </div>
-                    <div style="font-size: 0.78rem; color: #374151; font-weight: 600; line-height: 1.35; min-height: 2.3rem;">
+                    <div style="font-size: 0.76rem; color: #374151; font-weight: 600; line-height: 1.35; min-height: 2.2rem; text-align: center;">
                         {sent['status_label']}
                     </div>
-                    <div style="font-size: 0.72rem; color: #6B7280; margin-top: 0.4rem; border-top: 1px dashed #E2E8F0; padding-top: 0.4rem;">
-                        📰 <b>{sent['news_count']}</b> notícias nos últimos 7d
+                    <div style="font-size: 0.72rem; color: #6B7280; margin-top: 0.4rem; border-top: 1px dashed #E2E8F0; padding-top: 0.4rem; text-align: center;">
+                        Volume: <b>{sent['news_count']}</b> matérias analisadas
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
 
-    st.markdown("<div style='height: 1.25rem;'></div>", unsafe_allow_html=True)
+    # Nota explicativa da metodologia NLP
+    with st.expander("Metodologia da Análise de Sentimento"):
+        st.markdown(
+            """
+            **Como funciona o algoritmo de análise de sentimento:**
+            1. **Processamento em Tempo Real:** O algoritmo extrai os textos integrais (títulos e resumos) das matérias captadas no feed RSS dos últimos 7 dias.
+            2. **Segmentação Temática:** Cada notícia é mapeada para os 5 eixos críticos do mercado (Frete & Logística, Produção & Indústria, Consumo & Demanda, Preços & Mercado e Geopolítica & Comércio).
+            3. **Análise Léxica Setorial:** Avalia termos de expansão e alívio operacional (*queda de custos, novos investimentos, parcerias, fluidez portuária*) versus gargalos e riscos (*alta de tarifas, quebra de oferta, sanções, embargos, estiagem*).
+            4. **Pontuação Contínua:** Calcula a polaridade líquida numa escala de **-10.0 a +10.0 pontos**, classificando o barômetro em **Melhorando** (≥ +1.5 pts), **Estável** (-1.4 a +1.4 pts) ou **Piorando** (≤ -1.5 pts).
+            """
+        )
+
+    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
 
     # =========================================================================
     # FILTROS E BUSCA INTERATIVA
     # =========================================================================
-    st.markdown("#### 🔍 Filtros de Alta Correlação de Mercado")
+    st.markdown("#### Filtros Setoriais")
 
     c_topic, c_nut, c_search = st.columns([1.5, 1.2, 1.8])
 
@@ -145,13 +198,12 @@ def render_view() -> None:
     st.markdown(f"<div style='color: #4B5563; font-size: 0.88rem; margin: 0.5rem 0 1rem 0;'>Exibindo <b>{len(df_filtered)}</b> matérias dos últimos 7 dias:</div>", unsafe_allow_html=True)
 
     # =========================================================================
-    # CARDS DE NOTÍCIAS ESTILIZADOS EM DUAS COLUNAS
+    # CARDS DE NOTÍCIAS EM DUAS COLUNAS PARALELAS
     # =========================================================================
     if df_filtered.empty:
-        st.info("Nenhuma notícia dos últimos 7 dias encontrada com os filtros selecionados. Tente termos mais amplos.")
+        st.info("Nenhuma matéria encontrada com os filtros aplicados. Tente termos mais abrangentes.")
         return
 
-    # Distribuição em duas colunas paralelas (Grid Jornalístico AgTech)
     col_left, col_right = st.columns(2)
 
     for idx, (_, row) in enumerate(df_filtered.iterrows()):
@@ -176,7 +228,7 @@ def render_view() -> None:
                     padding: 1.25rem 1.35rem;
                     margin-bottom: 1.1rem;
                     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-                    min-height: 250px;
+                    min-height: 240px;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
@@ -186,10 +238,10 @@ def render_view() -> None:
                             <span class="fp-badge fp-badge-{topic_color}" style="font-size: 0.72rem;">{topic}</span>
                             <span class="fp-badge fp-badge-blue" style="font-size: 0.72rem;">{nutrient}</span>
                             <span style="font-size: 0.74rem; font-weight: 600; color: #1B4332; background: #EDF3EF; padding: 0.2rem 0.55rem; border-radius: 9999px;">
-                                📰 {source}
+                                Fonte: {source}
                             </span>
                             <span style="font-size: 0.74rem; color: #6B7280; margin-left: auto;">
-                                🕒 {pub_rel}
+                                {pub_rel}
                             </span>
                         </div>
                         <div style="font-size: 1.05rem; font-weight: 700; color: #1B4332; line-height: 1.4; margin-bottom: 0.45rem;">
@@ -215,7 +267,7 @@ def render_view() -> None:
                             font-weight: 600;
                             text-decoration: none;
                         ">
-                            Ler Matéria na Fonte Original ↗
+                            Acessar Matéria na Fonte Original
                         </a>
                     </div>
                 </div>
@@ -224,7 +276,7 @@ def render_view() -> None:
             )
 
     st.divider()
-    render_source_badge("Google News RSS Feed & Inteligência FertiPartner (Últimos 7 Dias)", "Live Aggregator")
+    render_source_badge("Google News RSS Feed & Inteligência FertiPartner (Últimos 7 Dias)", "Agregador em Tempo Real")
 
 
 if __name__ == "__main__":
