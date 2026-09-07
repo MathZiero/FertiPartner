@@ -5,7 +5,6 @@ import streamlit as st
 
 from app.presentation.streamlit.components.ui import (
     render_header,
-    render_kpi_card,
     render_source_badge,
 )
 from app.presentation.streamlit.services.news_service import GoogleNewsService
@@ -14,64 +13,86 @@ from app.presentation.streamlit.services.news_service import GoogleNewsService
 def render_view() -> None:
     render_header(
         title="Radar de Notícias NPK • Google News",
-        subtitle="Agregador e analisador em tempo real de notícias setoriais com alta correlação de mercado: capacidade produtiva, consumo de safras, fretes portuários, cotações e comércio internacional.",
+        subtitle="Agregador e analisador em tempo real de notícias setoriais dos últimos 7 dias com alta correlação de mercado: capacidade produtiva, consumo de safras, fretes portuários, cotações e comércio internacional.",
         badge_text="Live Feed • AgTech",
         badge_type="emerald",
     )
 
     # Botão de atualização rápida do feed
-    c_btn, _ = st.columns([2, 6])
+    c_btn, c_note = st.columns([2.5, 5.5])
     with c_btn:
-        if st.button("🔄 Recarregar Feed de Notícias do Google", width="stretch"):
+        if st.button("🔄 Recarregar Feed (Últimos 7 Dias)", width="stretch"):
             GoogleNewsService.fetch_fertilizer_news.clear()
             st.rerun()
+    with c_note:
+        st.caption("Filtro temporal estrito: apenas notícias publicadas nas últimas 168 horas (7 dias) com impacto direto no agronegócio de fertilizantes.")
 
     # Busca de notícias com cache inteligente
     df_news = GoogleNewsService.fetch_fertilizer_news()
 
     if df_news.empty:
-        st.warning("Não foi possível obter notícias no momento. Tente novamente mais tarde.")
+        st.warning("Nenhuma notícia dos últimos 7 dias foi encontrada no momento. Tente novamente mais tarde.")
         return
 
     # =========================================================================
-    # KPI HERO CARDS: RADAR E TERMÔMETRO DE NOTÍCIAS
+    # ANÁLISE DE SENTIMENTO SETORIAL (ÚLTIMOS 7 DIAS)
     # =========================================================================
-    st.markdown("#### ⚡ Termômetro e Frequência do Setor")
-    kpi_tot, kpi_rec, kpi_top, kpi_nut = st.columns(4)
+    st.markdown("#### 🧭 Barômetro de Sentimento Setorial (Últimos 7 Dias)")
+    st.caption("Diagnóstico automatizado de polaridade e tendências de mercado por tópico estratégico, calculado a partir das notícias publicadas nos últimos 7 dias.")
 
-    total_articles = len(df_news)
-    recent_count = len(df_news[df_news["pub_date_relative"].isin(["Hoje", "Ontem", "Recente"]) | df_news["pub_date_relative"].str.contains("min|h", na=False)])
-    top_topic = df_news["topic"].value_counts().index[0] if "topic" in df_news.columns and not df_news.empty else "Geral"
-    nut_coverage = len(df_news["nutrient"].dropna().unique()) if "nutrient" in df_news.columns else 0
+    sentiments = GoogleNewsService.analyze_sentiment_by_topic(df_news)
 
-    with kpi_tot:
-        render_kpi_card(
-            title="Total Rastreado",
-            value=f"{total_articles} notícias",
-            help_text="Matérias curadas pelo mecanismo de busca setorial.",
-        )
-    with kpi_rec:
-        render_kpi_card(
-            title="Últimas 24-48 Horas",
-            value=f"{recent_count} frescas",
-            delta="Fluxo contínuo",
-            delta_positive=True,
-            help_text="Notícias publicadas nas últimas 48 horas.",
-        )
-    with kpi_top:
-        render_kpi_card(
-            title="Tópico em Evidência",
-            value=top_topic.split(" / ")[0],
-            help_text="Área com maior concentração de matérias recentes.",
-        )
-    with kpi_nut:
-        render_kpi_card(
-            title="Grupos Cobertos",
-            value=f"{nut_coverage} classes",
-            help_text="Nitrogenados, Fosfatados, Potássicos e Complexos NPK mapeados.",
-        )
+    # Grid de 5 colunas para os tópicos estratégicos
+    cols = st.columns(len(sentiments))
+    for idx, sent in enumerate(sentiments):
+        with cols[idx]:
+            with st.container(border=True):
+                # Cabeçalho do card com ícone
+                st.markdown(
+                    f"""
+                    <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
+                        <span style="font-size: 1.25rem;">{sent['icon']}</span>
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #1B4332; text-transform: uppercase;">
+                            {sent['topic'].split(' / ')[0]}
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
-    st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
+                # Pontuação de sentimento em destaque (-10 a +10)
+                score_color = "#2D6A4F" if sent["score_val"] >= 1.2 else ("#D97706" if sent["score_val"] <= -1.2 else "#2563EB")
+                st.markdown(
+                    f"""
+                    <div style="margin: 0.35rem 0;">
+                        <span style="font-size: 1.55rem; font-weight: 800; color: {score_color}; letter-spacing: -0.02em;">
+                            {sent['score']}
+                        </span>
+                        <span style="font-size: 0.78rem; font-weight: 600; color: #6B7280;">/ 10 pts</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                # Classificação em 3 níveis (Melhorando / Estável / Piorando)
+                st.markdown(
+                    f"""
+                    <div style="margin-bottom: 0.5rem;">
+                        <span class="fp-badge fp-badge-{sent['badge_color']}" style="font-size: 0.72rem; padding: 0.2rem 0.6rem;">
+                            {sent['classification']}
+                        </span>
+                    </div>
+                    <div style="font-size: 0.78rem; color: #374151; font-weight: 600; line-height: 1.35; min-height: 2.3rem;">
+                        {sent['status_label']}
+                    </div>
+                    <div style="font-size: 0.72rem; color: #6B7280; margin-top: 0.4rem; border-top: 1px dashed #E2E8F0; padding-top: 0.4rem;">
+                        📰 <b>{sent['news_count']}</b> notícias nos últimos 7d
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+    st.markdown("<div style='height: 1.25rem;'></div>", unsafe_allow_html=True)
 
     # =========================================================================
     # FILTROS E BUSCA INTERATIVA
@@ -121,16 +142,21 @@ def render_view() -> None:
         )
         df_filtered = df_filtered[mask]
 
-    st.markdown(f"<div style='color: #4B5563; font-size: 0.88rem; margin: 0.5rem 0 1rem 0;'>Exibindo <b>{len(df_filtered)}</b> matérias filtradas:</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='color: #4B5563; font-size: 0.88rem; margin: 0.5rem 0 1rem 0;'>Exibindo <b>{len(df_filtered)}</b> matérias dos últimos 7 dias:</div>", unsafe_allow_html=True)
 
     # =========================================================================
-    # CARDS DE NOTÍCIAS ESTILIZADOS
+    # CARDS DE NOTÍCIAS ESTILIZADOS EM DUAS COLUNAS
     # =========================================================================
     if df_filtered.empty:
-        st.info("Nenhuma notícia encontrada com os filtros selecionados. Tente termos mais amplos.")
+        st.info("Nenhuma notícia dos últimos 7 dias encontrada com os filtros selecionados. Tente termos mais amplos.")
         return
 
-    for _, row in df_filtered.iterrows():
+    # Distribuição em duas colunas paralelas (Grid Jornalístico AgTech)
+    col_left, col_right = st.columns(2)
+
+    for idx, (_, row) in enumerate(df_filtered.iterrows()):
+        target_col = col_left if idx % 2 == 0 else col_right
+
         title = row.get("title", "Sem Título")
         link = row.get("link", "https://news.google.com")
         source = row.get("source", "Google Notícias")
@@ -140,59 +166,65 @@ def render_view() -> None:
         topic_color = row.get("topic_color", "emerald")
         nutrient = row.get("nutrient", "Geral")
 
-        st.markdown(
-            f"""
-            <div style="
-                background: #FFFFFF;
-                border: 1px solid #E2E8F0;
-                border-radius: 12px;
-                padding: 1.25rem 1.5rem;
-                margin-bottom: 1rem;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-                transition: transform 0.15s ease, box-shadow 0.15s ease;
-            ">
-                <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap;">
-                    <span class="fp-badge fp-badge-{topic_color}">{topic}</span>
-                    <span class="fp-badge fp-badge-blue">{nutrient}</span>
-                    <span style="font-size: 0.78rem; font-weight: 600; color: #1B4332; background: #EDF3EF; padding: 0.2rem 0.6rem; border-radius: 9999px;">
-                        📰 {source}
-                    </span>
-                    <span style="font-size: 0.78rem; color: #6B7280; margin-left: auto;">
-                        🕒 {pub_rel}
-                    </span>
+        with target_col:
+            st.markdown(
+                f"""
+                <div style="
+                    background: #FFFFFF;
+                    border: 1px solid #E2E8F0;
+                    border-radius: 12px;
+                    padding: 1.25rem 1.35rem;
+                    margin-bottom: 1.1rem;
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+                    min-height: 250px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                ">
+                    <div>
+                        <div style="display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap;">
+                            <span class="fp-badge fp-badge-{topic_color}" style="font-size: 0.72rem;">{topic}</span>
+                            <span class="fp-badge fp-badge-blue" style="font-size: 0.72rem;">{nutrient}</span>
+                            <span style="font-size: 0.74rem; font-weight: 600; color: #1B4332; background: #EDF3EF; padding: 0.2rem 0.55rem; border-radius: 9999px;">
+                                📰 {source}
+                            </span>
+                            <span style="font-size: 0.74rem; color: #6B7280; margin-left: auto;">
+                                🕒 {pub_rel}
+                            </span>
+                        </div>
+                        <div style="font-size: 1.05rem; font-weight: 700; color: #1B4332; line-height: 1.4; margin-bottom: 0.45rem;">
+                            <a href="{link}" target="_blank" style="color: #1B4332; text-decoration: none;">
+                                {title}
+                            </a>
+                        </div>
+                        <div style="font-size: 0.85rem; color: #4B5563; line-height: 1.5; margin-bottom: 0.85rem;">
+                            {snippet}
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{link}" target="_blank" style="
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 0.35rem;
+                            background: #F0F7F3;
+                            border: 1px solid #B7E4C7;
+                            color: #2D6A4F;
+                            padding: 0.35rem 0.85rem;
+                            border-radius: 8px;
+                            font-size: 0.8rem;
+                            font-weight: 600;
+                            text-decoration: none;
+                        ">
+                            Ler Matéria na Fonte Original ↗
+                        </a>
+                    </div>
                 </div>
-                <div style="font-size: 1.12rem; font-weight: 700; color: #1B4332; line-height: 1.4; margin-bottom: 0.4rem;">
-                    <a href="{link}" target="_blank" style="color: #1B4332; text-decoration: none;">
-                        {title}
-                    </a>
-                </div>
-                <div style="font-size: 0.88rem; color: #4B5563; line-height: 1.5; margin-bottom: 0.8rem;">
-                    {snippet}
-                </div>
-                <div>
-                    <a href="{link}" target="_blank" style="
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 0.35rem;
-                        background: #F0F7F3;
-                        border: 1px solid #B7E4C7;
-                        color: #2D6A4F;
-                        padding: 0.35rem 0.85rem;
-                        border-radius: 8px;
-                        font-size: 0.82rem;
-                        font-weight: 600;
-                        text-decoration: none;
-                    ">
-                        Ler Matéria na Fonte Original ↗
-                    </a>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+                """,
+                unsafe_allow_html=True,
+            )
 
     st.divider()
-    render_source_badge("Google News RSS Feed & Inteligência FertiPartner", "Live Aggregator")
+    render_source_badge("Google News RSS Feed & Inteligência FertiPartner (Últimos 7 Dias)", "Live Aggregator")
 
 
 if __name__ == "__main__":

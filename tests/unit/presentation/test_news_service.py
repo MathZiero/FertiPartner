@@ -97,3 +97,41 @@ def test_parse_xml_feed_parses_sample_xml():
     assert art["topic"] == "PRODUÇÃO"
     assert art["nutrient"] == "Nitrogenados (N)"
     assert "<p>" not in art["snippet"]
+
+
+def test_fetch_fertilizer_news_strictly_under_7_days():
+    """Garante que todas as notícias retornadas foram publicadas a no máximo 7 dias."""
+    from datetime import datetime, timezone, timedelta
+    df = GoogleNewsService.fetch_fertilizer_news()
+    assert not df.empty
+    now_utc = datetime.now(timezone.utc)
+    cutoff = now_utc - timedelta(days=7)
+
+    for _, row in df.iterrows():
+        pub_str = row.get("published_at")
+        assert pub_str is not None
+        dt = pd.to_datetime(pub_str, utc=True)
+        # Tolerância de 5 segundos para execução
+        assert dt >= (cutoff - timedelta(seconds=5)), f"Notícia com data {dt} excede limite de 7 dias (cutoff: {cutoff})"
+
+
+def test_analyze_sentiment_by_topic_returns_structured_metrics():
+    """Garante que o barômetro de sentimento calcula os 5 tópicos com 3 classificações e pontuações."""
+    df = GoogleNewsService.fetch_fertilizer_news()
+    sentiments = GoogleNewsService.analyze_sentiment_by_topic(df)
+
+    assert len(sentiments) == 5
+    expected_topics = [
+        "FRETE / LOGÍSTICA",
+        "PRODUÇÃO",
+        "CONSUMO / DEMANDA",
+        "PREÇOS / MERCADO",
+        "GEOPOLÍTICA / COMÉRCIO",
+    ]
+    for s in sentiments:
+        assert s["topic"] in expected_topics
+        assert s["classification"] in ["Melhorando", "Estável", "Piorando"]
+        assert -10.0 <= s["score_val"] <= 10.0
+        assert s["badge_color"] in ["emerald", "blue", "amber"]
+        assert len(s["status_label"]) > 0
+        assert "notícias" in s["status_label"] or len(s["driver"]) > 0
