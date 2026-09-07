@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from app.domain.ai.entities import AIResponse, ChatMessage, ChatRole, ToolCall
+from app.domain.ai.entities import AIResponse, ChatMessage, ChatRole, ToolCall, ToolResult
 from app.infrastructure.ai.gemini_client import GeminiClient
 from app.application.use_cases.ai.tool_executor import ToolExecutor
 from app.application.use_cases.ai.copilot_orchestrator import FertiPartnerAIOrchestrator
@@ -231,4 +231,26 @@ def test_gemini_client_generation_config_omits_temperature_for_gemini_3():
         assert "generationConfig" in json_payload
         assert "temperature" not in json_payload["generationConfig"]
         assert json_payload["generationConfig"]["maxOutputTokens"] == 2048
+        assert json_payload["generationConfig"]["thinkingConfig"]["thinkingLevel"] == "LOW"
+
+
+def test_gemini_client_converts_tool_call_id_roundtrip():
+    """Garante que id gerado na tool call é repassado na resposta de tool."""
+    client = GeminiClient()
+    msg_model = ChatMessage(
+        role=ChatRole.MODEL,
+        content="",
+        tool_calls=[ToolCall(name="get_fertilizer_technical_spec", args={"fertilizer_name": "Ureia"}, id="call_abc_123")],
+    )
+    msg_tool = ChatMessage(
+        role=ChatRole.TOOL,
+        content="",
+        tool_results=[ToolResult(name="get_fertilizer_technical_spec", content={"status": "ok"}, id="call_abc_123")],
+    )
+
+    contents = client._convert_messages_to_gemini_contents([msg_model, msg_tool])
+    assert len(contents) == 2
+    assert contents[0]["parts"][0]["functionCall"]["id"] == "call_abc_123"
+    assert contents[1]["parts"][0]["functionResponse"]["id"] == "call_abc_123"
+
 

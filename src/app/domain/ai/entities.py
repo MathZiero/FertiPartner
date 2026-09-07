@@ -19,6 +19,7 @@ class ToolCall:
     """Intenção de chamada de função emitida pela LLM."""
     name: str
     args: dict[str, Any]
+    id: str | None = None
 
 
 @dataclass
@@ -26,6 +27,7 @@ class ToolResult:
     """Resultado da execução de uma ferramenta retornado para a LLM."""
     name: str
     content: dict[str, Any] | list[Any] | str
+    id: str | None = None
 
 
 @dataclass

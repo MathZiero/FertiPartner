@@ -18,8 +18,10 @@ class GeminiClient:
 
     def __init__(self, api_key: str | None = None, model_name: str | None = None) -> None:
         self.api_key = api_key or ""
-        self.model_name = model_name or self.DEFAULT_MODEL
-        self._http_client = httpx.Client(timeout=35.0)
+        self.model_name = (model_name or self.DEFAULT_MODEL).removeprefix("models/")
+        self._http_client = httpx.Client(
+            timeout=httpx.Timeout(90.0, connect=20.0, read=90.0, write=30.0)
+        )
 
     @classmethod
     def list_available_models(cls, api_key: str) -> list[str]:
@@ -76,23 +78,29 @@ class GeminiClient:
                 if msg.content:
                     parts.append({"text": msg.content})
                 for tc in msg.tool_calls:
-                    parts.append({
+                    call_obj: dict[str, Any] = {
                         "functionCall": {
                             "name": tc.name,
                             "args": tc.args,
                         }
-                    })
+                    }
+                    if tc.id:
+                        call_obj["functionCall"]["id"] = tc.id
+                    parts.append(call_obj)
                 if parts:
                     contents.append({"role": "model", "parts": parts})
             elif msg.role == ChatRole.TOOL:
                 parts = []
                 for tr in msg.tool_results:
-                    parts.append({
+                    resp_obj: dict[str, Any] = {
                         "functionResponse": {
                             "name": tr.name,
                             "response": {"output": tr.content},
                         }
-                    })
+                    }
+                    if tr.id:
+                        resp_obj["functionResponse"]["id"] = tr.id
+                    parts.append(resp_obj)
                 if parts:
                     contents.append({"role": "user", "parts": parts})
 
@@ -122,8 +130,12 @@ class GeminiClient:
         gen_config: dict[str, Any] = {
             "maxOutputTokens": 2048,
         }
-        # Na série Gemini 3.x, parâmetros como temperature não são suportados em generationConfig
-        if not self.model_name.startswith("gemini-3") and temperature is not None:
+        # Na série Gemini 3.x, ativa thinkingLevel LOW para respostas ágeis sem timeout em chat
+        if self.model_name.startswith("gemini-3"):
+            gen_config["thinkingConfig"] = {
+                "thinkingLevel": "LOW",
+            }
+        elif temperature is not None:
             gen_config["temperature"] = temperature
 
         payload: dict[str, Any] = {
@@ -165,11 +177,19 @@ class GeminiClient:
                 tool_calls: list[ToolCall] = []
 
                 for part in parts:
+                    if part.get("thought", False):
+                        continue
                     if "text" in part and part["text"]:
                         text_fragments.append(part["text"])
                     if "functionCall" in part:
                         fc = part["functionCall"]
-                        tool_calls.append(ToolCall(name=fc.get("name", ""), args=fc.get("args", {})))
+                        tool_calls.append(
+                            ToolCall(
+                                name=fc.get("name", ""),
+                                args=fc.get("args", {}),
+                                id=fc.get("id"),
+                            )
+                        )
 
                 finish_reason = first_candidate.get("finishReason", "STOP")
                 full_text = "".join(text_fragments).strip()
@@ -220,11 +240,11 @@ class GeminiClient:
                 )
 
         except httpx.TimeoutException:
-            logger.error("Timeout na requisição para a API do Gemini.")
+            logger.error("Timeout na requisição para a API do Gemini (modelo: %s).", self.model_name)
             return AIResponse(
                 content="",
                 is_success=False,
-                error_message="Tempo limite de resposta esgotado na comunicação com a API do Google Gemini.",
+                error_message="Tempo limite de resposta esgotado na comunicação com a API do Google Gemini. O servidor da Google demorou para responder. Por favor, tente enviar a pergunta novamente.",
             )
         except Exception as exc:
             logger.exception("Exceção inesperada ao consultar a API do Gemini: %s", exc)

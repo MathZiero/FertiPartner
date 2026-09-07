@@ -66,7 +66,7 @@ class FertiPartnerAIOrchestrator:
                     tools_used.append(tc.name)
                     logger.info("Executando ferramenta: %s com argumentos: %s", tc.name, tc.args)
                     exec_result = ToolExecutor.execute(tc.name, tc.args)
-                    tool_results.append(ToolResult(name=tc.name, content=exec_result))
+                    tool_results.append(ToolResult(name=tc.name, content=exec_result, id=tc.id))
 
                 # 3. Adiciona os resultados ao histórico para reenvio
                 working_history.append(ChatMessage(
