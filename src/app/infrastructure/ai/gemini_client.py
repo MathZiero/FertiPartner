@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 from typing import Any
 import httpx
 
@@ -74,21 +75,27 @@ class GeminiClient:
             if msg.role == ChatRole.USER:
                 contents.append({"role": "user", "parts": [{"text": msg.content}]})
             elif msg.role == ChatRole.MODEL:
-                parts: list[dict[str, Any]] = []
-                if msg.content:
-                    parts.append({"text": msg.content})
-                for tc in msg.tool_calls:
-                    call_obj: dict[str, Any] = {
-                        "functionCall": {
-                            "name": tc.name,
-                            "args": tc.args,
+                if msg.raw_parts:
+                    # Preserva os parts originais exatos da Google (incluindo thoughtSignature e IDs)
+                    contents.append({"role": "model", "parts": msg.raw_parts})
+                else:
+                    parts: list[dict[str, Any]] = []
+                    if msg.content:
+                        parts.append({"text": msg.content})
+                    for tc in msg.tool_calls:
+                        call_obj: dict[str, Any] = {
+                            "functionCall": {
+                                "name": tc.name,
+                                "args": tc.args,
+                            }
                         }
-                    }
-                    if tc.id:
-                        call_obj["functionCall"]["id"] = tc.id
-                    parts.append(call_obj)
-                if parts:
-                    contents.append({"role": "model", "parts": parts})
+                        if tc.id:
+                            call_obj["functionCall"]["id"] = tc.id
+                        if tc.thought_signature:
+                            call_obj["thoughtSignature"] = tc.thought_signature
+                        parts.append(call_obj)
+                    if parts:
+                        contents.append({"role": "model", "parts": parts})
             elif msg.role == ChatRole.TOOL:
                 parts = []
                 for tr in msg.tool_results:
@@ -153,103 +160,139 @@ class GeminiClient:
                 {"functionDeclarations": tools_declarations}
             ]
 
-        try:
-            resp = self._http_client.post(
-                url,
-                headers={"Content-Type": "application/json"},
-                json=payload,
-            )
+        max_retries = 2
+        for attempt in range(max_retries + 1):
+            try:
+                resp = self._http_client.post(
+                    url,
+                    headers={"Content-Type": "application/json"},
+                    json=payload,
+                )
 
-            if resp.status_code == 200:
-                data = resp.json()
-                candidates = data.get("candidates", [])
-                if not candidates:
-                    return AIResponse(
-                        content="Não foi possível gerar uma resposta para esta consulta.",
-                        is_success=True,
-                    )
-
-                first_candidate = candidates[0]
-                content_obj = first_candidate.get("content", {})
-                parts = content_obj.get("parts", [])
-
-                text_fragments: list[str] = []
-                tool_calls: list[ToolCall] = []
-
-                for part in parts:
-                    if part.get("thought", False):
-                        continue
-                    if "text" in part and part["text"]:
-                        text_fragments.append(part["text"])
-                    if "functionCall" in part:
-                        fc = part["functionCall"]
-                        tool_calls.append(
-                            ToolCall(
-                                name=fc.get("name", ""),
-                                args=fc.get("args", {}),
-                                id=fc.get("id"),
-                            )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if not candidates:
+                        return AIResponse(
+                            content="Não foi possível gerar uma resposta para esta consulta.",
+                            is_success=True,
                         )
 
-                finish_reason = first_candidate.get("finishReason", "STOP")
-                full_text = "".join(text_fragments).strip()
+                    first_candidate = candidates[0]
+                    content_obj = first_candidate.get("content", {})
+                    parts = content_obj.get("parts", [])
 
+                    text_fragments: list[str] = []
+                    tool_calls: list[ToolCall] = []
+
+                    for part in parts:
+                        if part.get("thought", False):
+                            continue
+                        if "text" in part and part["text"]:
+                            text_fragments.append(part["text"])
+                        if "functionCall" in part:
+                            fc = part["functionCall"]
+                            sig = (
+                                part.get("thoughtSignature")
+                                or part.get("thought_signature")
+                                or fc.get("thoughtSignature")
+                                or fc.get("thought_signature")
+                            )
+                            tool_calls.append(
+                                ToolCall(
+                                    name=fc.get("name", ""),
+                                    args=fc.get("args", {}),
+                                    id=fc.get("id"),
+                                    thought_signature=sig,
+                                )
+                            )
+
+                    finish_reason = first_candidate.get("finishReason", "STOP")
+                    full_text = "".join(text_fragments).strip()
+
+                    return AIResponse(
+                        content=full_text,
+                        tool_calls=tool_calls,
+                        is_success=True,
+                        finish_reason=finish_reason,
+                        raw_parts=parts,
+                    )
+
+                elif resp.status_code == 503:
+                    if attempt < max_retries:
+                        wait_seconds = (attempt + 1) * 2.0
+                        logger.warning(
+                            "Gemini 503 (alta demanda temporária). Reenviando em %.1fs (tentativa %d/%d)...",
+                            wait_seconds,
+                            attempt + 1,
+                            max_retries,
+                        )
+                        time.sleep(wait_seconds)
+                        continue
+                    return AIResponse(
+                        content="",
+                        is_success=False,
+                        error_message=(
+                            f"O modelo '{self.model_name}' está temporariamente sob alta demanda nos servidores da Google (HTTP 503). "
+                            "Aguarde alguns segundos ou selecione outro modelo (como gemini-3.8-flash) no seletor de modelos."
+                        ),
+                    )
+
+                elif resp.status_code in (400, 401, 403):
+                    err_data = resp.json().get("error", {})
+                    err_msg = err_data.get("message", "Chave de API inválida ou parâmetros incorretos.")
+                    logger.warning("Falha de autenticação/parâmetros no Gemini: %s", err_msg)
+                    return AIResponse(
+                        content="",
+                        is_success=False,
+                        error_message=f"Erro no Google Gemini: {err_msg}",
+                    )
+                elif resp.status_code == 404:
+                    err_data = resp.json().get("error", {})
+                    err_msg = err_data.get("message", f"O modelo '{self.model_name}' não está disponível ou foi depreciado.")
+                    logger.warning("Modelo Gemini indisponível (HTTP 404): %s", err_msg)
+                    return AIResponse(
+                        content="",
+                        is_success=False,
+                        error_message=f"Modelo Gemini indisponível: {err_msg}",
+                    )
+                elif resp.status_code == 429:
+                    return AIResponse(
+                        content="",
+                        is_success=False,
+                        error_message="Limite de taxa (rate limit / cota gratuita) atingido na API do Gemini. Aguarde alguns segundos.",
+                    )
+                else:
+                    err_msg = ""
+                    try:
+                        err_msg = resp.json().get("error", {}).get("message", "")
+                    except Exception:
+                        pass
+                    detail = f": {err_msg}" if err_msg else f" (HTTP {resp.status_code})."
+                    logger.error("Erro na API Gemini: HTTP %s - %s", resp.status_code, resp.text)
+                    return AIResponse(
+                        content="",
+                        is_success=False,
+                        error_message=f"Falha na comunicação com o Google Gemini{detail}",
+                    )
+
+            except httpx.TimeoutException:
+                logger.error("Timeout na requisição para a API do Gemini (modelo: %s).", self.model_name)
                 return AIResponse(
-                    content=full_text,
-                    tool_calls=tool_calls,
-                    is_success=True,
-                    finish_reason=finish_reason,
+                    content="",
+                    is_success=False,
+                    error_message="Tempo limite de resposta esgotado na comunicação com a API do Google Gemini. O servidor da Google demorou para responder. Por favor, tente enviar a pergunta novamente.",
+                )
+            except Exception as exc:
+                logger.exception("Exceção inesperada ao consultar a API do Gemini: %s", exc)
+                return AIResponse(
+                    content="",
+                    is_success=False,
+                    error_message=f"Erro ao conectar com a API do Gemini: {str(exc)}",
                 )
 
-            elif resp.status_code in (400, 401, 403):
-                err_data = resp.json().get("error", {})
-                err_msg = err_data.get("message", "Chave de API inválida ou parâmetros incorretos.")
-                logger.warning("Falha de autenticação/parâmetros no Gemini: %s", err_msg)
-                return AIResponse(
-                    content="",
-                    is_success=False,
-                    error_message=f"Erro no Google Gemini: {err_msg}",
-                )
-            elif resp.status_code == 404:
-                err_data = resp.json().get("error", {})
-                err_msg = err_data.get("message", f"O modelo '{self.model_name}' não está disponível ou foi depreciado.")
-                logger.warning("Modelo Gemini indisponível (HTTP 404): %s", err_msg)
-                return AIResponse(
-                    content="",
-                    is_success=False,
-                    error_message=f"Modelo Gemini indisponível: {err_msg}",
-                )
-            elif resp.status_code == 429:
-                return AIResponse(
-                    content="",
-                    is_success=False,
-                    error_message="Limite de taxa (rate limit / cota gratuita) atingido na API do Gemini. Aguarde alguns segundos.",
-                )
-            else:
-                err_msg = ""
-                try:
-                    err_msg = resp.json().get("error", {}).get("message", "")
-                except Exception:
-                    pass
-                detail = f": {err_msg}" if err_msg else f" (HTTP {resp.status_code})."
-                logger.error("Erro na API Gemini: HTTP %s - %s", resp.status_code, resp.text)
-                return AIResponse(
-                    content="",
-                    is_success=False,
-                    error_message=f"Falha na comunicação com o Google Gemini{detail}",
-                )
-
-        except httpx.TimeoutException:
-            logger.error("Timeout na requisição para a API do Gemini (modelo: %s).", self.model_name)
-            return AIResponse(
-                content="",
-                is_success=False,
-                error_message="Tempo limite de resposta esgotado na comunicação com a API do Google Gemini. O servidor da Google demorou para responder. Por favor, tente enviar a pergunta novamente.",
-            )
-        except Exception as exc:
-            logger.exception("Exceção inesperada ao consultar a API do Gemini: %s", exc)
-            return AIResponse(
-                content="",
-                is_success=False,
-                error_message=f"Erro ao conectar com a API do Gemini: {str(exc)}",
-            )
+        return AIResponse(
+            content="",
+            is_success=False,
+            error_message="Não foi possível obter resposta da API do Gemini.",
+        )

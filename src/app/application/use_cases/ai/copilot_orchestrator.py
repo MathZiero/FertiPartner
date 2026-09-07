@@ -59,6 +59,7 @@ class FertiPartnerAIOrchestrator:
                     role=ChatRole.MODEL,
                     content=response.content,
                     tool_calls=response.tool_calls,
+                    raw_parts=response.raw_parts,
                 ))
 
                 # 2. Executa cada ferramenta

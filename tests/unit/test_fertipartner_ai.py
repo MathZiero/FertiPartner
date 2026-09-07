@@ -254,3 +254,58 @@ def test_gemini_client_converts_tool_call_id_roundtrip():
     assert contents[1]["parts"][0]["functionResponse"]["id"] == "call_abc_123"
 
 
+def test_gemini_client_preserves_thought_signature_and_raw_parts():
+    """Garante que raw_parts e thoughtSignature retornados pela API são mantidos e reenviados."""
+    client = GeminiClient(api_key="AIzaSyFakeKeyTest12345")
+    mock_parts = [
+        {
+            "functionCall": {"name": "get_market_sentiment_barometers", "args": {}},
+            "thoughtSignature": "CgcIARDA1wIYabcdef12345",
+        }
+    ]
+    with patch("httpx.Client.post") as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "candidates": [{"content": {"parts": mock_parts}, "finishReason": "STOP"}]
+        }
+        mock_post.return_value = mock_resp
+
+        res = client.generate_content([ChatMessage(role=ChatRole.USER, content="Notícias")])
+        assert res.is_success
+        assert len(res.tool_calls) == 1
+        assert res.tool_calls[0].thought_signature == "CgcIARDA1wIYabcdef12345"
+        assert res.raw_parts == mock_parts
+
+        # Valida que na conversão de histórico o raw_parts original com thoughtSignature é repassado intacto
+        model_msg = ChatMessage(
+            role=ChatRole.MODEL,
+            content="",
+            tool_calls=res.tool_calls,
+            raw_parts=res.raw_parts,
+        )
+        converted = client._convert_messages_to_gemini_contents([model_msg])
+        assert len(converted) == 1
+        assert converted[0]["parts"] == mock_parts
+        assert converted[0]["parts"][0]["thoughtSignature"] == "CgcIARDA1wIYabcdef12345"
+
+
+def test_gemini_client_handles_503_retry_and_friendly_error():
+    """Valida retentativas automáticas em erro 503 de alta demanda e mensagem explicativa final."""
+    client = GeminiClient(api_key="AIzaSyFakeKeyTest12345", model_name="gemini-3.6-flash")
+    with patch("httpx.Client.post") as mock_post, patch("time.sleep") as mock_sleep:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 503
+        mock_resp.text = '{"error": {"code": 503, "message": "High demand"}}'
+        mock_post.return_value = mock_resp
+
+        res = client.generate_content([ChatMessage(role=ChatRole.USER, content="Teste")])
+        assert not res.is_success
+        assert res.error_message is not None
+        assert "alta demanda" in res.error_message.lower()
+        # Verifica que tentou 3 vezes (inicial + 2 retries)
+        assert mock_post.call_count == 3
+        assert mock_sleep.call_count == 2
+
+
+

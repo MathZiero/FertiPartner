@@ -20,6 +20,7 @@ class ToolCall:
     name: str
     args: dict[str, Any]
     id: str | None = None
+    thought_signature: str | None = None
 
 
 @dataclass
@@ -38,6 +39,7 @@ class ChatMessage:
     tool_calls: list[ToolCall] = field(default_factory=list)
     tool_results: list[ToolResult] = field(default_factory=list)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    raw_parts: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -49,3 +51,4 @@ class AIResponse:
     error_message: str | None = None
     finish_reason: str | None = None
     tools_used: list[str] = field(default_factory=list)
+    raw_parts: list[dict[str, Any]] = field(default_factory=list)
