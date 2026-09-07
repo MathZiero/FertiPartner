@@ -101,6 +101,12 @@ p_analises = st.Page(
     icon=":material/analytics:",
     url_path="analises-comparativas",
 )
+p_noticias = st.Page(
+    str(PAGES_DIR / "10_noticias_mercado.py"),
+    title="Radar de Notícias NPK",
+    icon=":material/newspaper:",
+    url_path="noticias-mercado",
+)
 p_observabilidade = st.Page(
     str(PAGES_DIR / "09_observabilidade.py"),
     title="Observabilidade",
@@ -125,7 +131,7 @@ pages = {
         *secundarios_pages,
         *micronutrientes_pages,
     ],
-    "💡 Inteligência": [p_analises],
+    "💡 Inteligência": [p_analises, p_noticias],
     "⚙️ Infraestrutura": [p_observabilidade],
 }
 
@@ -187,6 +193,7 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.page_link(p_analises, label="Análises & Comparações", icon=":material/analytics:", width="stretch")
+    st.page_link(p_noticias, label="Radar de Notícias NPK", icon=":material/newspaper:", width="stretch")
 
     # ⚙️ Infraestrutura
     st.markdown(

@@ -19,6 +19,7 @@ PAGE_FILES = [
     "07_mercado_brasil.py",
     "08_analises_comparativas.py",
     "09_observabilidade.py",
+    "10_noticias_mercado.py",
     "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/ureia.py",
     "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/amonia_anidra.py",
     "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/nitrato_de_amonio.py",
@@ -104,6 +105,8 @@ def test_dashboard_compiles_and_contains_updated_categories():
     assert "Secundários" in content, "Categoria 'Secundários' não encontrada no dashboard"
     assert "Micronutrientes" in content, "Categoria 'Micronutrientes' não encontrada no dashboard"
     assert "💡 Inteligência" in content, "Categoria '💡 Inteligência' não encontrada no dashboard"
+    assert "10_noticias_mercado.py" in content, "Página 10_noticias_mercado.py não encontrada no dashboard"
+    assert "Radar de Notícias NPK" in content, "Radar de Notícias NPK não encontrado no dashboard"
     assert "catalogo_de_fertilizantes" in content, "Pasta catalogo_de_fertilizantes não referenciada no dashboard"
     assert "macronutrientes_primarios" in content, "Pasta macronutrientes_primarios não referenciada no dashboard"
     assert "nitrogenados" in content, "Subpasta nitrogenados não referenciada no dashboard"
