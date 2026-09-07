@@ -12,7 +12,6 @@ PAGES_DIR = Path(__file__).resolve().parents[2] / "src" / "app" / "presentation"
 PAGE_FILES = [
     "01_inicio.py",
     "01_visao_geral.py",
-    "02_catalogo.py",
     "03_producao_global.py",
     "04_comercio_internacional.py",
     "05_fluxos_sankey.py",
@@ -20,7 +19,6 @@ PAGE_FILES = [
     "07_mercado_brasil.py",
     "08_analises_comparativas.py",
     "09_observabilidade.py",
-    "catalogo_de_fertilizantes/catalogo.py",
     "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/ureia.py",
     "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/amonia_anidra.py",
     "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/nitrato_de_amonio.py",
@@ -117,6 +115,9 @@ def test_dashboard_compiles_and_contains_updated_categories():
     assert "cloreto_de_potassio.py" in content, "Página do KCl não encontrada no dashboard"
     assert "enxofre_elementar.py" in content, "Página do Enxofre não encontrada no dashboard"
     assert "micronutrientes.py" in content, "Página de Micronutrientes não encontrada no dashboard"
+    assert "catalogo.py" not in content, "catalogo.py (Hub Central) não deve ser referenciado no dashboard"
+    assert "02_catalogo.py" not in content, "02_catalogo.py não deve ser referenciado no dashboard"
+    assert "Catálogo •" not in content, "Não devem existir categorias 'Catálogo • ...' divididas no dashboard"
 
 
 def test_catalogo_folder_hierarchy_exists():

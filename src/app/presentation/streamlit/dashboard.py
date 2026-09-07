@@ -74,34 +74,23 @@ pages = {
         ),
     ],
     "📦 Catálogo de Fertilizantes": [
-        st.Page(
-            str(CATALOG_DIR / "catalogo.py"),
-            title="Hub Central do Catálogo",
-            icon=":material/menu_book:",
-            url_path="catalogo",
-        ),
-    ],
-    "🌱 Catálogo • Primários: Nitrogenados": [
+        # Primários: Nitrogenados
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "nitrogenados" / "ureia.py"), title="Ureia", icon=":material/science:", url_path="fert-ureia"),
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "nitrogenados" / "amonia_anidra.py"), title="Amônia Anidra", icon=":material/science:", url_path="fert-amonia-anidra"),
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "nitrogenados" / "nitrato_de_amonio.py"), title="Nitrato de Amônio", icon=":material/science:", url_path="fert-nitrato-de-amonio"),
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "nitrogenados" / "sulfato_de_amonio.py"), title="Sulfato de Amônio", icon=":material/science:", url_path="fert-sulfato-de-amonio"),
-    ],
-    "🌱 Catálogo • Primários: Fosfatados": [
+        # Primários: Fosfatados
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "fosfatados" / "map.py"), title="Fosfato Monoamônico (MAP)", icon=":material/science:", url_path="fert-map"),
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "fosfatados" / "dap.py"), title="Fosfato Diamônico (DAP)", icon=":material/science:", url_path="fert-dap"),
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "fosfatados" / "ssp.py"), title="Superfosfato Simples (SSP)", icon=":material/science:", url_path="fert-ssp"),
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "fosfatados" / "tsp.py"), title="Superfosfato Triplo (TSP)", icon=":material/science:", url_path="fert-tsp"),
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "fosfatados" / "rocha_fosfatica.py"), title="Rocha Fosfática", icon=":material/science:", url_path="fert-rocha-fosfatica"),
-    ],
-    "🌱 Catálogo • Primários: Potássicos": [
+        # Primários: Potássicos
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "potassicos" / "cloreto_de_potassio.py"), title="Cloreto de Potássio (KCl)", icon=":material/science:", url_path="fert-cloreto-de-potassio"),
         st.Page(str(CATALOG_DIR / "macronutrientes_primarios" / "potassicos" / "sulfato_de_potassio.py"), title="Sulfato de Potássio (SOP)", icon=":material/science:", url_path="fert-sulfato-de-potassio"),
-    ],
-    "🌿 Catálogo • Macronutrientes Secundários": [
+        # Macronutrientes Secundários
         st.Page(str(CATALOG_DIR / "macronutrientes_secundarios" / "enxofre_elementar.py"), title="Enxofre Elementar", icon=":material/science:", url_path="fert-enxofre-elementar"),
-    ],
-    "🔬 Catálogo • Micronutrientes": [
+        # Micronutrientes
         st.Page(str(CATALOG_DIR / "micronutrientes" / "micronutrientes.py"), title="Micronutrientes (Geral)", icon=":material/biotech:", url_path="fert-micronutrientes"),
     ],
     "💡 Inteligência": [
