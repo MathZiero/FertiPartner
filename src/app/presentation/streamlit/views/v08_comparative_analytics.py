@@ -9,7 +9,6 @@ import streamlit as st
 from app.presentation.streamlit.components.ui import (
     render_download_csv_button,
     render_header,
-    render_kpi_card,
     render_source_badge,
     render_units_legend,
 )
@@ -19,6 +18,7 @@ from app.presentation.streamlit.theme import (
     apply_ferti_theme,
     get_default_plotly_config,
 )
+from domain.fertilizers import FERTILIZERS_CATALOG
 
 
 def render_view() -> None:
@@ -34,59 +34,6 @@ def render_view() -> None:
     df_dependency = FertiDataService.get_brazil_external_dependency()
     df_production = FertiDataService.get_global_production_rankings()
     df_uf = FertiDataService.get_brazil_uf_distribution()
-
-    # =========================================================================
-    # KPI HERO CARDS: COTAÇÕES ATUAIS N, P E K
-    # =========================================================================
-    st.markdown("#### ⚡ Cotações Spot Internacionais de Referência (Último Registro)")
-    c_n, c_p, c_k, c_ratio = st.columns(4)
-
-    # Preços mais recentes
-    latest_n = 0.0
-    latest_p = 0.0
-    latest_k = 0.0
-
-    if not df_prices.empty and "price_date" in df_prices.columns:
-        df_sorted = df_prices.sort_values("price_date")
-        n_df = df_sorted[df_sorted["nutrient_type"] == "Nitrogenados"]
-        p_df = df_sorted[df_sorted["nutrient_type"] == "Fosfatados"]
-        k_df = df_sorted[df_sorted["nutrient_type"] == "Potássicos"]
-
-        if not n_df.empty:
-            latest_n = float(n_df.iloc[-1]["standard_price_usd_per_mt"])
-        if not p_df.empty:
-            latest_p = float(p_df.iloc[-1]["standard_price_usd_per_mt"])
-        if not k_df.empty:
-            latest_k = float(k_df.iloc[-1]["standard_price_usd_per_mt"])
-
-    with c_n:
-        render_kpi_card(
-            title="Ureia (N) • FOB Báltico",
-            value=f"${latest_n:,.1f} / MT" if latest_n > 0 else "N/D",
-            help_text="Cotação de referência internacional para nitrogênio.",
-        )
-    with c_p:
-        render_kpi_card(
-            title="DAP / MAP (P) • FOB / CFR",
-            value=f"${latest_p:,.1f} / MT" if latest_p > 0 else "N/D",
-            help_text="Cotação internacional de referência para fosfatados concentrados.",
-        )
-    with c_k:
-        render_kpi_card(
-            title="KCl (K) • CFR Brasil",
-            value=f"${latest_k:,.1f} / MT" if latest_k > 0 else "N/D",
-            help_text="Cotação CFR Porto de Paranaguá para Cloreto de Potássio padrão.",
-        )
-    with c_ratio:
-        ratio_val = (latest_p / latest_n) if latest_n > 0 else 0.0
-        render_kpi_card(
-            title="Paridade DAP / Ureia",
-            value=f"{ratio_val:.2f}x" if ratio_val > 0 else "N/D",
-            delta="Paridade típica: 1.40x - 1.60x",
-            help_text="Relação de troca entre valor do fósforo e do nitrogênio.",
-        )
-
-    st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
 
     # =========================================================================
     # MÓDULO 1: COMPARADOR DINÂMICO DE PREÇOS NPK AO LONGO DO TEMPO
@@ -207,23 +154,10 @@ def render_view() -> None:
     st.divider()
 
     # =========================================================================
-    # MÓDULO 2: RELAÇÕES DE TROCA & RATIOS ENTRE NUTRIENTES
+    # MÓDULO 2: RELAÇÕES DE TROCA & RATIOS ENTRE FERTILIZANTES
     # =========================================================================
-    st.markdown("### 2. ⚖️ Relações de Troca & Ratios Históricos de Preços entre Nutrientes")
-    st.caption("A paridade relativa entre N, P e K orienta compras antecipadas e formulações de adubos compostos na indústria agronômica.")
-
-    c_ratio_sel, c_ratio_info = st.columns([1.5, 2.5])
-
-    with c_ratio_sel:
-        ratio_type = st.radio(
-            "Selecione a Paridade para Análise:",
-            options=[
-                "DAP / Ureia (Fosfatado vs Nitrogenado)",
-                "KCl / Ureia (Potássico vs Nitrogenado)",
-                "DAP / KCl (Fosfatado vs Potássico)",
-            ],
-            key="comp_ratio_type",
-        )
+    st.markdown("### 2. ⚖️ Relações de Troca & Ratios Históricos entre Fertilizantes")
+    st.caption("Selecione quaisquer dois fertilizantes para comparar a paridade de preços relativa ao longo do tempo, identificar desvios da média histórica (±1σ) e diagnosticar momentos oportunos de aquisição.")
 
     # Pivot de preços por data para calcular paridades
     pivoted_prices = df_prices.pivot_table(
@@ -233,49 +167,67 @@ def render_view() -> None:
         aggfunc="mean",
     ).dropna()
 
-    # Encontra colunas correspondentes de N, P e K
-    col_n = next((c for c in pivoted_prices.columns if "Ureia" in c), None)
-    col_p = next((c for c in pivoted_prices.columns if "DAP" in c or "MAP" in c), None)
-    col_k = next((c for c in pivoted_prices.columns if "Potássio" in c or "KCl" in c), None)
+    if not pivoted_prices.empty and len(pivoted_prices.columns) >= 2:
+        available_price_ferts = list(pivoted_prices.columns)
 
-    ratio_series = pd.Series(dtype=float)
-    ratio_label = ""
-    mean_tipica = 1.5
+        col_sel_a, col_sel_b = st.columns(2)
+        with col_sel_a:
+            # Numerador: prioriza DAP ou MAP se disponível
+            def_a_idx = next((i for i, name in enumerate(available_price_ferts) if "DAP" in name or "MAP" in name), 0)
+            fert_a = st.selectbox(
+                "Fertilizante Numerador (A):",
+                options=available_price_ferts,
+                index=def_a_idx,
+                key="comp_ratio_fert_a",
+                help="O preço deste fertilizante ficará no numerador da fração (A ÷ B).",
+            )
 
-    if "DAP / Ureia" in ratio_type and col_p and col_n:
-        ratio_series = (pivoted_prices[col_p] / pivoted_prices[col_n]).dropna()
-        ratio_label = f"Ratio {col_p} ÷ {col_n}"
-        mean_tipica = 1.50
-    elif "KCl / Ureia" in ratio_type and col_k and col_n:
-        ratio_series = (pivoted_prices[col_k] / pivoted_prices[col_n]).dropna()
-        ratio_label = f"Ratio {col_k} ÷ {col_n}"
-        mean_tipica = 0.95
-    elif "DAP / KCl" in ratio_type and col_p and col_k:
-        ratio_series = (pivoted_prices[col_p] / pivoted_prices[col_k]).dropna()
-        ratio_label = f"Ratio {col_p} ÷ {col_k}"
-        mean_tipica = 1.65
+        with col_sel_b:
+            # Denominador: prioriza Ureia se disponível
+            def_b_idx = next((i for i, name in enumerate(available_price_ferts) if "Ureia" in name), 1 if len(available_price_ferts) > 1 else 0)
+            fert_b = st.selectbox(
+                "Fertilizante Denominador (B):",
+                options=available_price_ferts,
+                index=def_b_idx,
+                key="comp_ratio_fert_b",
+                help="O preço deste fertilizante servirá como base comparativa de valor no denominador.",
+            )
 
-    with c_ratio_info:
+        if fert_a == fert_b:
+            st.info(f"Você selecionou o mesmo fertilizante ({fert_a}) como numerador e denominador. A paridade entre o mesmo insumo é unitária e constante (1.00x).")
+            ratio_series = pd.Series(1.0, index=pivoted_prices.index)
+            ratio_label = f"Ratio: {fert_a} ÷ {fert_b} (1.00x)"
+        else:
+            ratio_series = (pivoted_prices[fert_a] / pivoted_prices[fert_b]).dropna()
+            ratio_label = f"Ratio: {fert_a} ÷ {fert_b}"
+
         if not ratio_series.empty:
             curr_ratio = float(ratio_series.iloc[-1])
             avg_ratio = float(ratio_series.mean())
-            std_ratio = float(ratio_series.std()) if len(ratio_series) > 1 else 0.1
-            status_text = "Equilíbrio Histórico"
-            badge_class = "fp-badge-emerald"
+            std_ratio = float(ratio_series.std()) if len(ratio_series) > 1 else 0.05
+            upper_bound = avg_ratio + std_ratio
+            lower_bound = max(0.0, avg_ratio - std_ratio)
 
-            if curr_ratio > (avg_ratio + std_ratio):
-                status_text = "Nutriente Numerador Sobrevalorizado (Prêmio Histórico)"
+            if fert_a == fert_b:
+                status_text = "Paridade Unitária Neutra (Mesmo Produto)"
+                badge_class = "fp-badge-emerald"
+            elif curr_ratio > upper_bound:
+                status_text = f"{fert_a} Sobrevalorizado vs {fert_b} (Prêmio Acima de +1σ Histórico)"
                 badge_class = "fp-badge-amber"
-            elif curr_ratio < (avg_ratio - std_ratio):
-                status_text = "Nutriente Numerador Subvalorizado (Oportunidade de Compra)"
+            elif curr_ratio < lower_bound:
+                status_text = f"{fert_a} Subvalorizado vs {fert_b} (Oportunidade Histórica Abaixo de -1σ)"
                 badge_class = "fp-badge-blue"
+            else:
+                status_text = f"Paridade em Equilíbrio Histórico (Dentro da Faixa Típica ±1σ)"
+                badge_class = "fp-badge-emerald"
 
             st.markdown(
                 f"""
-                <div style="background: #F8FAF9; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1rem 1.25rem;">
-                    <div style="font-size: 0.8rem; font-weight: 700; color: #52796F; text-transform: uppercase;">Diagnóstico de Paridade</div>
-                    <div style="font-size: 1.25rem; font-weight: 800; color: #1B4332; margin: 0.25rem 0;">
-                        Ratio Atual: {curr_ratio:.2f}x <span style="font-size: 0.85rem; font-weight: 500; color: #6B7280;">(Média Histórica: {avg_ratio:.2f}x ± {std_ratio:.2f})</span>
+                <div style="background: #F8FAF9; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1rem 1.25rem; margin-top: 0.5rem; margin-bottom: 1.25rem;">
+                    <div style="font-size: 0.8rem; font-weight: 700; color: #52796F; text-transform: uppercase;">Diagnóstico Estatístico de Paridade</div>
+                    <div style="font-size: 1.35rem; font-weight: 800; color: #1B4332; margin: 0.35rem 0;">
+                        Ratio Atual: {curr_ratio:.2f}x 
+                        <span style="font-size: 0.88rem; font-weight: 500; color: #6B7280;">(Média Histórica: {avg_ratio:.2f}x | Faixa Normal: {lower_bound:.2f}x — {upper_bound:.2f}x)</span>
                     </div>
                     <span class="fp-badge {badge_class}">{status_text}</span>
                 </div>
@@ -283,60 +235,56 @@ def render_view() -> None:
                 unsafe_allow_html=True,
             )
 
-    if not ratio_series.empty:
-        fig_ratio = go.Figure()
+            fig_ratio = go.Figure()
 
-        # Bandas de desvio padrão
-        avg = ratio_series.mean()
-        std = ratio_series.std() if len(ratio_series) > 1 else 0.1
-        upper = avg + std
-        lower = max(0.0, avg - std)
+            # Bandas de desvio padrão
+            fig_ratio.add_trace(go.Scatter(
+                x=ratio_series.index,
+                y=[upper_bound] * len(ratio_series),
+                mode="lines",
+                line=dict(color="rgba(180, 83, 9, 0.4)", dash="dot", width=1.2),
+                name=f"+1σ ({upper_bound:.2f}x)",
+                showlegend=True,
+            ))
+            fig_ratio.add_trace(go.Scatter(
+                x=ratio_series.index,
+                y=[lower_bound] * len(ratio_series),
+                mode="lines",
+                line=dict(color="rgba(180, 83, 9, 0.4)", dash="dot", width=1.2),
+                fill="tonexty",
+                fillcolor="rgba(245, 158, 11, 0.08)",
+                name=f"-1σ ({lower_bound:.2f}x)",
+                showlegend=True,
+            ))
+            # Linha Média
+            fig_ratio.add_trace(go.Scatter(
+                x=ratio_series.index,
+                y=[avg_ratio] * len(ratio_series),
+                mode="lines",
+                line=dict(color="#6B7280", dash="dash", width=1.5),
+                name=f"Média Histórica ({avg_ratio:.2f}x)",
+            ))
+            # Linha do Ratio Real
+            fig_ratio.add_trace(go.Scatter(
+                x=ratio_series.index,
+                y=ratio_series.values,
+                mode="lines+markers",
+                line=dict(color=FERTI_COLORS[0], width=2.5),
+                marker=dict(size=5),
+                name=ratio_label,
+            ))
 
-        fig_ratio.add_trace(go.Scatter(
-            x=ratio_series.index,
-            y=[upper] * len(ratio_series),
-            mode="lines",
-            line=dict(color="rgba(180, 83, 9, 0.2)", dash="dot", width=1),
-            name="+1 Desvio Padrão",
-            showlegend=True,
-        ))
-        fig_ratio.add_trace(go.Scatter(
-            x=ratio_series.index,
-            y=[lower] * len(ratio_series),
-            mode="lines",
-            line=dict(color="rgba(180, 83, 9, 0.2)", dash="dot", width=1),
-            fill="tonexty",
-            fillcolor="rgba(245, 158, 11, 0.08)",
-            name="-1 Desvio Padrão",
-            showlegend=True,
-        ))
-        # Linha Média
-        fig_ratio.add_trace(go.Scatter(
-            x=ratio_series.index,
-            y=[avg] * len(ratio_series),
-            mode="lines",
-            line=dict(color="#6B7280", dash="dash", width=1.5),
-            name=f"Média Histórica ({avg:.2f}x)",
-        ))
-        # Linha do Ratio Real
-        fig_ratio.add_trace(go.Scatter(
-            x=ratio_series.index,
-            y=ratio_series.values,
-            mode="lines+markers",
-            line=dict(color=FERTI_COLORS[0], width=2.5),
-            marker=dict(size=5),
-            name=ratio_label,
-        ))
-
-        apply_ferti_theme(fig_ratio, height=360)
-        fig_ratio.update_layout(
-            yaxis_title="Ratio de Troca (x)",
-            hovermode="x unified",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        )
-        st.plotly_chart(fig_ratio, width="stretch", config=get_default_plotly_config())
+            apply_ferti_theme(fig_ratio, height=380)
+            fig_ratio.update_layout(
+                yaxis_title=f"Ratio de Troca: {fert_a} ÷ {fert_b} (x)",
+                hovermode="x unified",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            )
+            st.plotly_chart(fig_ratio, width="stretch", config=get_default_plotly_config())
+        else:
+            st.info("Séries históricas insuficientes para calcular a paridade selecionada.")
     else:
-        st.info("Séries insuficientes para cálculo da paridade selecionada.")
+        st.info("Séries de preços insuficientes na base de dados para cálculo de paridades.")
 
     st.divider()
 
@@ -518,26 +466,138 @@ def render_view() -> None:
     # MÓDULO 6: MATRIZ ESTATÍSTICA DE CORRELAÇÃO & VOLATILIDADE
     # =========================================================================
     st.markdown("### 6. ⚡ Matriz Estatística de Correlação e Volatilidade entre Fertilizantes")
-    st.caption("Coeficiente de correlação linear de Pearson e dispersão histórica dos preços internacionais.")
+    st.caption("Coeficiente de correlação linear de Pearson e dispersão histórica dos preços para todos os fertilizantes do portfólio.")
 
-    if not pivoted_prices.empty and len(pivoted_prices.columns) > 1:
-        corr_matrix = pivoted_prices.corr().round(3)
+    # Catálogo completo de fertilizantes do sistema
+    catalog_items = [
+        {"name": "Ureia", "query": ["ureia"]},
+        {"name": "Amônia Anidra", "query": ["amônia", "amonia"]},
+        {"name": "Nitrato Amônio", "query": ["nitrato"]},
+        {"name": "Sulfato Amônio", "query": ["sulfato de am"]},
+        {"name": "MAP", "query": ["map", "monoamônico", "monoamonico"]},
+        {"name": "DAP", "query": ["dap", "diamônico", "diamonico"]},
+        {"name": "SSP", "query": ["ssp", "superfosfato simples"]},
+        {"name": "TSP", "query": ["tsp", "superfosfato triplo"]},
+        {"name": "Rocha Fosfática", "query": ["rocha"]},
+        {"name": "KCl", "query": ["kcl", "potássio", "potassio"]},
+        {"name": "SOP", "query": ["sop", "sulfato de pot"]},
+        {"name": "Enxofre", "query": ["enxofre"]},
+        {"name": "Micronutrientes", "query": ["micronutrientes"]},
+    ]
 
-        c_corr_heat, c_vol_tbl = st.columns([1.5, 1.5])
+    # Mapeamento de quais fertilizantes possuem séries de preços em pivoted_prices
+    fert_col_map: dict[str, str | None] = {}
+    for item in catalog_items:
+        fname = item["name"]
+        matched_col = None
+        if not pivoted_prices.empty:
+            for col in pivoted_prices.columns:
+                col_l = col.lower()
+                if any(q in col_l for q in item["query"]):
+                    matched_col = col
+                    break
+        fert_col_map[fname] = matched_col
 
-        with c_corr_heat:
-            fig_corr = px.imshow(
-                corr_matrix,
-                text_auto=True,
-                color_continuous_scale="RdBu_r",
-                zmin=-1.0,
-                zmax=1.0,
-                labels=dict(color="Correlação (r)"),
-            )
-            apply_ferti_theme(fig_corr, height=350)
-            st.plotly_chart(fig_corr, width="stretch", config=get_default_plotly_config())
+    all_names = [item["name"] for item in catalog_items]
+    n_total = len(all_names)
+    z_base = [[0 for _ in range(n_total)] for _ in range(n_total)]
+    z_corr: list[list[float | None]] = [[None for _ in range(n_total)] for _ in range(n_total)]
+    annotations = []
 
-        with c_vol_tbl:
+    for i, row_name in enumerate(all_names):
+        col_i = fert_col_map.get(row_name)
+        for j, col_name in enumerate(all_names):
+            col_j = fert_col_map.get(col_name)
+            val = None
+            if col_i is not None and col_j is not None and not pivoted_prices.empty:
+                if i == j:
+                    val = 1.0
+                else:
+                    s_i = pivoted_prices[col_i]
+                    s_j = pivoted_prices[col_j]
+                    c_val = s_i.corr(s_j)
+                    if pd.notna(c_val):
+                        val = round(float(c_val), 2)
+            z_corr[i][j] = val
+
+            if val is None:
+                txt = "N/D"
+                txt_color = "#94A3B8"
+            else:
+                txt = f"{val:+.2f}" if val != 1.0 else "1.00"
+                txt_color = "#FFFFFF" if abs(val) > 0.65 else "#1E293B"
+
+            annotations.append(dict(
+                x=all_names[j],
+                y=all_names[i],
+                text=txt,
+                showarrow=False,
+                font=dict(color=txt_color, size=9),
+            ))
+
+    c_corr_heat, c_vol_tbl = st.columns([1.8, 1.2])
+
+    with c_corr_heat:
+        fig_corr = go.Figure()
+
+        # Camada 1: Células neutras de fundo para indicar ausência de dados
+        fig_corr.add_trace(go.Heatmap(
+            x=all_names,
+            y=all_names,
+            z=z_base,
+            colorscale=[[0, "#F1F5F9"], [1, "#F1F5F9"]],
+            showscale=False,
+            hoverinfo="skip",
+            xgap=2,
+            ygap=2,
+        ))
+
+        # Camada 2: Células com coeficientes de correlação reais calculados
+        fig_corr.add_trace(go.Heatmap(
+            x=all_names,
+            y=all_names,
+            z=z_corr,
+            colorscale="RdBu_r",
+            zmin=-1.0,
+            zmax=1.0,
+            xgap=2,
+            ygap=2,
+            colorbar=dict(
+                title="Pearson (r)",
+                thickness=14,
+                len=0.85,
+                tickvals=[-1.0, -0.5, 0.0, 0.5, 1.0],
+                ticktext=["-1.0 (Inversa)", "-0.5", "0.0 (Neutra)", "+0.5", "+1.0 (Direta)"],
+            ),
+            hovertemplate="%{y} vs %{x}<br>Correlação (r): %{z:.2f}<extra></extra>",
+        ))
+
+        apply_ferti_theme(fig_corr, height=520)
+        fig_corr.update_layout(
+            annotations=annotations,
+            xaxis=dict(tickangle=-45, side="bottom"),
+            yaxis=dict(autorange="reversed"),
+        )
+        st.plotly_chart(fig_corr, width="stretch", config=get_default_plotly_config())
+
+        # Legenda explicativa explícita e clara sobre células neutras N/D
+        st.markdown(
+            """
+            <div style="background: #F8FAF9; border: 1px solid #E2E8F0; border-radius: 8px; padding: 0.85rem 1.1rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: #1B4332; margin-bottom: 0.35rem;">
+                    📖 Interpretação da Matriz de Correlação Multidimensional
+                </div>
+                <div style="font-size: 0.82rem; color: #4B5563; line-height: 1.5;">
+                    • <b style="color: #2563EB;">Escala Colorida (-1.00 a +1.00):</b> Coeficiente de correlação de Pearson entre as cotações históricas de preços internacionais. Valores próximos a <b>+1.00</b> indicam tendência forte de movimentação conjunta; valores negativos indicam dinâmicas divergentes de mercado.<br>
+                    • <b style="color: #64748B;">Células em Cinza Neutro (N/D):</b> <i>Sem dados históricos suficientes para correlacionar.</i> Abrange fertilizantes cadastrados no banco de dados (ex.: Amônia Anidra, Nitrato de Amônio, Sulfatos, Superfosfatos, Rocha, SOP e Micronutrientes) que atualmente não contam com séries spot internacionais ativas para pareamento temporal direto.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with c_vol_tbl:
+        if not pivoted_prices.empty and len(pivoted_prices.columns) > 1:
             vol_records = []
             for cname in pivoted_prices.columns:
                 series = pivoted_prices[cname].dropna()
@@ -552,6 +612,7 @@ def render_view() -> None:
                 })
             df_vol = pd.DataFrame(vol_records).sort_values("Volatilidade (CV %)", ascending=False)
             st.markdown("###### 📊 Ranking de Volatilidade de Preços")
+            st.caption("Calculado sobre os produtos com séries temporais de preços ativas.")
             st.dataframe(
                 df_vol,
                 column_config={
@@ -566,6 +627,8 @@ def render_view() -> None:
                 width="stretch",
                 hide_index=True,
             )
+        else:
+            st.info("Dados insuficientes para ranking de volatilidade.")
 
     st.divider()
     render_units_legend()
