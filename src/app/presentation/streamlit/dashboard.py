@@ -59,6 +59,7 @@ def _find_pages_dir() -> Path:
     raise FileNotFoundError("Diretório de páginas do Streamlit não encontrado.")
 
 
+PAGES_DIR = _find_pages_dir()
 CATALOG_DIR = PAGES_DIR / "catalogo_de_fertilizantes"
 
 # Estrutura moderna de navegação organizada pelo Catálogo Central e Categorias Agronômicas em pastas dedicadas
