@@ -31,15 +31,15 @@ from app.presentation.streamlit.theme import (
 def _render_sidebar_quick_jump(fert_name: str) -> None:
     """Renderiza links de navegação rápida na barra lateral para as seções da página."""
     with st.sidebar:
-        st.markdown(f"#### 🧭 Navegação — {fert_name}")
+        st.markdown(f"#### Navegação — {fert_name}")
         st.markdown(
             """
             <div style="font-size: 0.88rem; line-height: 1.8;">
-                <a href="#producao-global" style="text-decoration: none; color: #1B4332; font-weight: 600;">🌍 1. Produção Global & Mapa</a><br>
-                <a href="#comercio-internacional" style="text-decoration: none; color: #1B4332; font-weight: 600;">🚢 2. Comércio Internacional & Sankey</a><br>
-                <a href="#precos-benchmarks" style="text-decoration: none; color: #1B4332; font-weight: 600;">📈 3. Preços & Benchmarks</a><br>
-                <a href="#mercado-brasileiro" style="text-decoration: none; color: #1B4332; font-weight: 600;">🇧🇷 4. Mercado Brasileiro</a><br>
-                <a href="#ficha-tecnica" style="text-decoration: none; color: #1B4332; font-weight: 600;">📋 5. Ficha Técnica Completa</a>
+                <a href="#producao-global" style="text-decoration: none; color: #1B4332; font-weight: 600;">1. Produção Global & Mapa</a><br>
+                <a href="#comercio-internacional" style="text-decoration: none; color: #1B4332; font-weight: 600;">2. Comércio Internacional & Sankey</a><br>
+                <a href="#precos-benchmarks" style="text-decoration: none; color: #1B4332; font-weight: 600;">3. Preços & Benchmarks</a><br>
+                <a href="#mercado-brasileiro" style="text-decoration: none; color: #1B4332; font-weight: 600;">4. Mercado Brasileiro</a><br>
+                <a href="#ficha-tecnica" style="text-decoration: none; color: #1B4332; font-weight: 600;">5. Ficha Técnica Completa</a>
             </div>
             """,
             unsafe_allow_html=True,
@@ -81,14 +81,14 @@ def _render_hero_specs(fert: dict[str, Any]) -> None:
 def _render_section_production(fert: dict[str, Any], slug: str) -> None:
     """Seção 1: Produção Global, Mapa Coroplético com filtros de Tipo/Ano e Ranking."""
     st.markdown('<div id="producao-global"></div>', unsafe_allow_html=True)
-    st.markdown("### 🌍 1. Produção Global & Mapa Interativo")
+    st.markdown("### 1. Produção Global & Mapa Interativo")
     st.caption("Mapeamento geográfico da oferta mundial com filtros individuais para tipo de fluxo e ano de referência.")
 
     canonical_name = fert.get("canonical_name", "Fertilizante")
 
     # Controles exclusivos do Mapa Global
     with st.container(border=True):
-        st.markdown("##### 🗺️ Mapa Global de Fluxos e Oferta")
+        st.markdown("##### Mapa Global de Fluxos e Oferta")
         col_type, col_year = st.columns([7, 5])
         with col_type:
             flow_type = st.segmented_control(
@@ -196,7 +196,7 @@ def _render_section_production(fert: dict[str, Any], slug: str) -> None:
 
     # Card do Ranking dos Maiores Produtores com filtro próprio
     with st.container(border=True):
-        st.markdown("##### 🏆 Ranking Mundial de Produtores")
+        st.markdown("##### Ranking Mundial de Produtores")
         df_prod = FertiDataService.get_global_production_rankings()
         if not df_prod.empty:
             df_p_fert = df_prod[df_prod["fertilizer_name"].astype(str).str.contains(canonical_name, case=False, na=False) | (df_prod["fertilizer_name"] == canonical_name)]
@@ -261,7 +261,7 @@ def _render_section_production(fert: dict[str, Any], slug: str) -> None:
 def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
     """Seção 2: Comércio Internacional, Fluxos Sankey e Rotas Bilaterais com filtros independentes."""
     st.markdown('<div id="comercio-internacional"></div>', unsafe_allow_html=True)
-    st.markdown("### 🚢 2. Comércio Internacional & Fluxos Sankey")
+    st.markdown("### 2. Comércio Internacional & Fluxos Sankey")
     st.caption("Relações bilaterais transfronteiriças, volumes de comércio e diagramas de rotas comerciais.")
 
     canonical_name = fert.get("canonical_name", "Fertilizante")
@@ -273,7 +273,7 @@ def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
 
     # Bloco 1: Diagrama Sankey
     with st.container(border=True):
-        st.markdown("##### 🌊 Diagrama de Fluxos Bilaterais (Sankey)")
+        st.markdown("##### Diagrama de Fluxos Bilaterais (Sankey)")
         c_sy, c_sm = st.columns([5, 7])
         trade_years = sorted(df_t_fert["trade_year"].dropna().unique().astype(int).tolist(), reverse=True) if not df_t_fert.empty else [2024, 2023, 2022]
         with c_sy:
@@ -336,7 +336,7 @@ def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
 
     # Bloco 2: Origens e Destinos Globais
     with st.container(border=True):
-        st.markdown("##### 🌐 Países Exportadores (Origem) e Importadores (Destino)")
+        st.markdown("##### Países Exportadores (Origem) e Importadores (Destino)")
         c_by, _ = st.columns([4, 8])
         with c_by:
             bar_year = st.selectbox("Ano de Análise Aduaneira:", trade_years, index=0, key=f"sec_bar_trade_year_{slug}")
@@ -346,7 +346,7 @@ def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
         if not filtered_trade.empty:
             c_exp, c_imp = st.columns(2)
             with c_exp:
-                st.markdown("###### 🚢 Maiores Origens (Exportadores)")
+                st.markdown("###### Maiores Origens (Exportadores)")
                 exp_summary = filtered_trade.groupby("exporter_country")["total_quantity_mt"].sum().reset_index()
                 exp_summary = exp_summary.sort_values(by="total_quantity_mt", ascending=True).tail(8)
                 fig_exp = px.bar(
@@ -363,7 +363,7 @@ def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
                 st.plotly_chart(fig_exp, width="stretch", config=get_default_plotly_config())
 
             with c_imp:
-                st.markdown("###### 📥 Maiores Destinos (Importadores)")
+                st.markdown("###### Maiores Destinos (Importadores)")
                 imp_summary = filtered_trade.groupby("importer_country")["total_quantity_mt"].sum().reset_index()
                 imp_summary = imp_summary.sort_values(by="total_quantity_mt", ascending=True).tail(8)
                 fig_imp = px.bar(
@@ -379,7 +379,7 @@ def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
                 apply_ferti_theme(fig_imp, height=320, show_legend=False)
                 st.plotly_chart(fig_imp, width="stretch", config=get_default_plotly_config())
 
-            st.markdown("###### 📑 Relações Comerciais Consolidadas")
+            st.markdown("###### Relações Comerciais Consolidadas")
             disp_cols = ["exporter_country", "importer_country", "total_quantity_mt", "total_value_usd", "avg_usd_per_mt"]
             avail_cols = [c for c in disp_cols if c in filtered_trade.columns]
             st.dataframe(
@@ -403,7 +403,7 @@ def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
 def _render_section_prices(fert: dict[str, Any], slug: str) -> None:
     """Seção 3: Preços Internacionais e Benchmarks com controles próprios de Referência e Janela Temporal."""
     st.markdown('<div id="precos-benchmarks"></div>', unsafe_allow_html=True)
-    st.markdown("### 📈 3. Preços & Benchmarks Internacionais")
+    st.markdown("### 3. Preços & Benchmarks Internacionais")
     st.caption("Cotações históricas internacionais (FOB/CFR), médias móveis e spreads de mercado.")
 
     canonical_name = fert.get("canonical_name", "Fertilizante")
@@ -414,7 +414,7 @@ def _render_section_prices(fert: dict[str, Any], slug: str) -> None:
         df_p_fert = df_prices[df_prices["fertilizer_name"].astype(str).str.contains(canonical_name, case=False, na=False) | (df_prices["fertilizer_name"] == canonical_name)].copy()
 
     with st.container(border=True):
-        st.markdown("##### 💵 Cotações e Médias Móveis")
+        st.markdown("##### Cotações e Médias Móveis")
         bench_options = ["Todos"]
         if not df_p_fert.empty and "benchmark_name" in df_p_fert.columns:
             bench_options += sorted(df_p_fert["benchmark_name"].dropna().unique().tolist())
@@ -508,7 +508,7 @@ def _render_section_prices(fert: dict[str, Any], slug: str) -> None:
 def _render_section_brazil(fert: dict[str, Any], slug: str) -> None:
     """Seção 4: Mercado Brasileiro, Consumo Aparente e Dependência com filtros próprios."""
     st.markdown('<div id="mercado-brasileiro"></div>', unsafe_allow_html=True)
-    st.markdown("### 🇧🇷 4. Mercado Brasileiro & Dependência Estratégica")
+    st.markdown("### 4. Mercado Brasileiro & Dependência Estratégica")
     st.caption("Consumo aparente nacional, importações vs produção interna e dependência de fornecimento externo.")
 
     canonical_name = fert.get("canonical_name", "Fertilizante")
@@ -519,7 +519,7 @@ def _render_section_brazil(fert: dict[str, Any], slug: str) -> None:
         df_d_fert = df_dep[df_dep["fertilizer_name"].astype(str).str.contains(canonical_name, case=False, na=False) | (df_dep["fertilizer_name"] == canonical_name)].copy()
 
     with st.container(border=True):
-        st.markdown("##### 📦 Balanço Nacional: Produção Interna vs. Importações")
+        st.markdown("##### Balanço Nacional: Produção Interna vs. Importações")
         dep_years = sorted(df_d_fert["ref_year"].dropna().unique().astype(int).tolist(), reverse=True) if not df_d_fert.empty else [2024, 2023, 2022]
         c_by, c_bm = st.columns([6, 6])
         with c_by:
@@ -595,29 +595,29 @@ def _render_section_brazil(fert: dict[str, Any], slug: str) -> None:
 def _render_section_technical_sheet(fert: dict[str, Any]) -> None:
     """Seção 5: Ficha Técnica Completa com Agronomia, Propriedades Físicas, Armazenagem e Tributação."""
     st.markdown('<div id="ficha-tecnica"></div>', unsafe_allow_html=True)
-    st.markdown("### 📋 5. Ficha Técnica & Especificações Agronômicas")
+    st.markdown("### 5. Ficha Técnica & Especificações Agronômicas")
     st.caption("Especificações físico-químicas, dinâmicas de solo, compatibilidade e recomendações técnicas.")
 
     with st.container(border=True):
         col_agron, col_phys = st.columns(2)
         with col_agron:
-            st.markdown("##### 🌱 Aplicação Agronômica & Solo")
+            st.markdown("##### Aplicação Agronômica & Solo")
             usage = fert.get("agronomic_usage", "Especificações agronômicas não cadastradas.")
             st.markdown(f"<p style='line-height:1.6; color:#374151;'>{usage}</p>", unsafe_allow_html=True)
 
         with col_phys:
-            st.markdown("##### 🔬 Propriedades Físico-Químicas")
+            st.markdown("##### Propriedades Físico-Químicas")
             phys = fert.get("physical_properties", "Propriedades físicas não cadastradas.")
             st.markdown(f"<p style='line-height:1.6; color:#374151;'>{phys}</p>", unsafe_allow_html=True)
 
         col_store, col_tax = st.columns(2)
         with col_store:
-            st.markdown("##### 📦 Armazenagem, PCUR & Manuseio")
+            st.markdown("##### Armazenagem, PCUR & Manuseio")
             store = fert.get("handling_storage", "Instruções de manuseio não cadastradas.")
             st.markdown(f"<p style='line-height:1.6; color:#374151;'>{store}</p>", unsafe_allow_html=True)
 
         with col_tax:
-            st.markdown("##### 📑 Nomes Comerciais & Sinônimos")
+            st.markdown("##### Nomes Comerciais & Sinônimos")
             synonyms = fert.get("synonyms") or []
             if synonyms:
                 st.markdown(" • ".join([f"**{s}**" for s in synonyms]))

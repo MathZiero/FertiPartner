@@ -27,7 +27,7 @@ def render_view() -> None:
     # Controles superiores
     c_btn, _ = st.columns([3, 9])
     with c_btn:
-        if st.button("🔄 Atualizar Métricas & Limpar Cache", width="stretch"):
+        if st.button("Atualizar Métricas & Limpar Cache", icon=":material/refresh:", width="stretch"):
             st.cache_data.clear()
             st.rerun()
 

@@ -1,99 +1,146 @@
 # FertiPartner
 
-Plataforma de inteligência de mercado e análise de dados para a cadeia produtiva e comercial de fertilizantes (Nitrogenados, Fosfatados e Potássicos — NPK), desenvolvida para atender produtores agrícolas, distribuidores e tradings.
+Plataforma de inteligência de mercado, análise de dados e suporte cognitivo para a cadeia produtiva e comercial de fertilizantes agrícolas (Macronutrientes Primários N-P-K, Secundários e Micronutrientes), desenvolvida para atender produtores agrícolas, distribuidores de insumos, tradings e consultorias do agronegócio.
 
-O sistema ingere dados complexos de comércio exterior, produção, consumo e índices econômicos de fontes internacionais e nacionais, processa-os através de uma arquitetura resiliente e normalizada em 4ª Forma Normal (4NF) no Supabase (PostgreSQL), disponibilizando visões analíticas de alta performance.
-
----
-
-## Principais Funcionalidades
-
-- **Ingestão Multi-Fonte Resiliente**:
-  - **MDIC Comex Stat**: Microdados mensais detalhados de importações e exportações brasileiras (por NCM, país de origem e UF de destino).
-  - **UN Comtrade**: Fluxos de comércio bilateral global entre os principais players mundiais (por códigos SH/HS).
-  - **FRED (Federal Reserve)**: Séries históricas de preços internacionais de commodities e índices de preços ao produtor (PPI).
-  - **FAOSTAT (FAO)**: Dados anuais globais de produção, consumo agrícola e balanço de nutrientes.
-- **Arquitetura de Dados em Quarta Forma Normal (4NF)**:
-  - Eliminação de dependências multivaloradas e redundâncias.
-  - Separação estrita de tabelas de fatos (`trade_records`, `production_records`, `consumption_records`, `price_records`, `brazil_trade_details`).
-  - Armazenamento imutável de payloads brutos em `raw_data` com hash SHA-256 para auditoria completa e garantia de idempotência (RNF02).
-  - Políticas de segurança ativas via **Row Level Security (RLS)** no PostgreSQL.
-- **Cliente HTTP Resiliente**:
-  - Controle de taxa (*rate limiting*) dedicado por provedor.
-  - Retentativas com *exponential backoff* e *jitter* para evitar estrangulamento de requisições e tratar limites de cota (HTTP 429).
-- **Visões Analíticas Otimizadas**:
-  - Views SQL consolidadas (ex.: `v_fertilizer_profiles`) para consultas rápidas de inteligência de mercado.
+O sistema ingere dados complexos de comércio exterior, produção industrial, consumo agrícola, cotações internacionais e notícias setoriais de fontes governamentais e multilaterais, processa-os através de uma arquitetura resiliente e normalizada em **Quarta Forma Normal (4NF)** no Supabase (PostgreSQL), disponibilizando visões analíticas de alta performance e um assistente especialista com inteligência artificial (**FertiPartner.AI**) baseado no Google Gemini 3.x com Function Calling e GuardRails de segurança.
 
 ---
 
-## Arquitetura do Projeto
+## Proposta de Valor e Perspectivas
 
-O FertiPartner segue os princípios de **Clean Architecture** e **Domain-Driven Design (DDD)**:
+### 1. Perspectiva de Negócio & Agronegócio
+O Brasil é o quarto maior consumidor global de fertilizantes e importa aproximadamente **85%** de sua demanda anual. O FertiPartner resolve a assimetria de informação no setor através de:
+- **Mitigação de Riscos de Suprimento:** Mapeamento antecipado de origens, dependência de grandes polos exportadores (Rússia, Canadá, China, Marrocos) e estoques de passagem.
+- **Previsibilidade e Paridade de Troca (Barter):** Acompanhamento da relação histórica de preços entre adubos (Ureia, MAP, KCl) e sacas de grãos (soja e milho) para identificar janelas oportunas de compra para safra e safrinha.
+- **Logística Portuária e Distribuição Regional:** Monitoramento de fluxos de importação nos portos brasileiros (Paranaguá, Santos, Itaqui, Rio Grande) e consumo por estado (Mato Grosso, Paraná, Rio Grande do Sul, Goiás, etc.).
+- **Catálogo Técnico Agronômico:** Fichas completas com garantias nutricionais, limites de higroscopicidade (PCUR), sinônimos fiscais (NCM/CAS) e compatibilidade em misturas.
+
+### 2. Perspectiva de Engenharia & Solução de Software
+- **Clean Architecture & Domain-Driven Design (DDD):** Isolamento total das regras de negócio em relação a frameworks de interface, clientes HTTP e drivers de banco.
+- **Modelagem Relacional em Quarta Forma Normal (4NF):** Eliminação de dependências multivaloradas e anomalias de atualização, com separação de tabelas de fatos atômicos e dimensões.
+- **Idempotência Criptográfica (SHA-256):** Cada lote de dados coletado possui cálculo de `payload_hash`, impedindo inserções duplicadas e assegurando auditabilidade contínua.
+- **Segurança Nativa via Row Level Security (RLS):** Permissões restritas de leitura pública e escrita restrita a tokens de serviço autenticados.
+- **FertiPartner.AI com GuardRails:** RAG quantitativo determinístico acoplado a Function Calling que elimina alucinações numéricas, operando com baixa latência (`thinkingLevel: LOW`), suporte a `thoughtSignature` e blindagem pré-inferência contra Prompt Injections e desvios de escopo.
+- **Desenvolvimento Orientado a Testes (TDD):** Mais de 165 testes unitários automatizados cobrindo entidades de domínio, orquestração de IA, clientes de rede e integridade de páginas.
+
+---
+
+## Funcionalidades da Plataforma
+
+### 1. Catálogo Estruturado de Fertilizantes (13 Painéis Dedicados)
+Páginas analíticas completas organizadas em submenus na barra lateral:
+- **Macronutrientes Primários — Nitrogenados (N):** Ureia, Amônia Anidra, Nitrato de Amônio e Sulfato de Amônio.
+- **Macronutrientes Primários — Fosfatados (P):** Fosfato Monoamônico (MAP), Fosfato Diamônico (DAP), Superfosfato Simples (SSP), Superfosfato Triplo (TSP) e Rocha Fosfática.
+- **Macronutrientes Primários — Potássicos (K):** Cloreto de Potássio (KCl) e Sulfato de Potássio (SOP).
+- **Macronutrientes Secundários:** Enxofre Elementar Pastilhado.
+- **Micronutrientes:** Painel estratégico de Zinco (Zn), Boro (B), Cobre (Cu), Manganês (Mn), Molibdênio (Mo) e Cobalto (Co).
+
+Cada painel dedicado conta com:
+- Mapa mundi coroplético interativo com alternância entre Produção, Exportação e Importação.
+- Diagrama de Fluxos Bilaterais Sankey (Top 10 rotas globais ponderadas por volume ou valor).
+- Séries históricas de cotações internacionais com médias móveis trimestrais (3M).
+- Balanço físico nacional (Produção Interna vs. Importações) e taxa de dependência externa (%).
+- Ficha técnica agronômica, propiedades físico-químicas e cuidados de PCUR/armazenagem.
+
+### 2. Módulo de Inteligência de Mercado
+- **Análises & Comparações:**
+  - Comparador dinâmico de preços nominais e indexados em Base 100.
+  - Calculadora de paridades e ratios livres (ex.: DAP/Ureia, KCl/Ureia) com bandas estatísticas de Bollinger ($\pm 1\sigma$).
+  - Indicador Herfindahl-Hirschman (HHI) de concentração e risco geopolítico da oferta global.
+  - Demanda regional e entregas por Unidade Federativa brasileira.
+  - Matriz estatística multidimensional de correlação linear de Pearson e volatilidade anualizada (CV %).
+- **Radar de Notícias NPK (Últimos 7 Dias):**
+  - Captura contínua via Google News RSS com corte temporal estrito de 168 horas (7 dias).
+  - Barômetros semicirculares em Plotly para os 5 tópicos estratégicos: Frete & Logística, Produção Industrial, Consumo & Demanda, Preços & Mercado e Geopolítica.
+  - Diagnóstico automatizado em 3 estados (*Melhorando*, *Estável*, *Piorando*) e pontuação quantitativa líquida de -10 a +10 pontos.
+- **FertiPartner.AI:**
+  - Assistente conversacional especialista em nutrição vegetal e macroeconomia agrícola.
+  - Integração com a família de modelos **Google Gemini 3.x Flash** (`gemini-3.6-flash`, `gemini-3.8-flash`).
+  - Execução de 6 ferramentas analíticas conectadas ao banco de dados relacional.
+  - **AIGuardrails:** Blindagem determinística contra Prompt Injections, tentativas de Jailbreak ("DAN", override de regras), exfiltração de system prompt e contenção estrita de escopo ao agronegócio.
+
+### 3. Módulo de Infraestrutura & Governança
+- **Observabilidade:** Monitoramento do status operacional das fontes de dados (MDIC, Comtrade, FAOSTAT, FRED, Google News RSS), logs de rotinas de ingestão (`data_collection_runs`), matriz de consistência temporal e SLAs.
+- **Software:** Documentação interativa detalhando a Clean Architecture, modelagem 4NF, esteira de TDD e especificações de IA.
+- **Documentação (README):** Renderização direta deste arquivo no Streamlit para consulta rápida em tempo de execução.
+
+---
+
+## Arquitetura do Software
+
+O projeto segue estritamente a **Clean Architecture**:
 
 ```text
 FertiPartner/
-├── docs/                      # Documentação de arquitetura, decisões (ADRs) e regras
-│   ├── architecture/          # Modelagem de dados 4NF, arquitetura e boas práticas de APIs
-│   │   └── decisions/         # Architecture Decision Records (ADRs)
-│   ├── engineering/           # Convenções de código, estratégia de testes e DoD
-│   └── product/               # Requisitos funcionais/não-funcionais e visão de produto
-├── infrastructure/            # Configurações de infraestrutura e migrações
-│   └── supabase/              # Scripts SQL (schema 4NF, migrations, grants de segurança)
-├── scripts/                   # Utilitários CLI (ingestão, migrações, gerador de tokens)
+├── docs/                      # Documentação de arquitetura, ADRs e requisitos
+├── infrastructure/            # Configurações de infraestrutura e migrações SQL
+│   └── supabase/              # Schema 4NF, tabelas de fatos, views e políticas RLS
+├── scripts/                   # Utilitários CLI de ingestão, tokens e manutenção
 ├── src/
 │   ├── main.py                # Ponto de entrada da aplicação
 │   └── app/
-│       ├── domain/            # Entidades de negócio e interfaces puras
+│       ├── domain/            # Regras de negócio puras (sem dependências externas)
+│       │   ├── entities/      # Entidades agronômicas e de mercado
+│       │   └── ai/            # Entidades de chat, tools schema, prompts e AIGuardrails
 │       ├── application/       # Casos de uso e orquestração
-│       ├── infrastructure/    # Adaptadores de banco (Supabase), HTTP e coletores de dados
-│       │   ├── collectors/    # Coletores para Comex Stat, Comtrade, FAOSTAT e FRED
-│       │   ├── faostat/       # Autenticação JWT e gerenciador de sessão da FAO
-│       │   ├── http/          # Cliente HTTP resiliente com retentativas e rate limit
-│       │   └── supabase/      # Repositórios, gerenciador de conexão e mapeamento 4NF
-│       └── presentation/      # Interfaces de usuário, rotas de API e CLI
+│       │   ├── use_cases/     # Briefing executivo, diagnósticos de produtos
+│       │   │   └── ai/        # CopilotOrchestrator e ToolExecutor
+│       ├── infrastructure/    # Adaptadores externos, APIs e banco de dados
+│       │   ├── ai/            # Cliente Google Gemini 3.x com thoughtSignature e retentativa
+│       │   ├── collectors/    # Coletores para MDIC, UN Comtrade, FAOSTAT e FRED
+│       │   ├── http/          # Cliente HTTP resiliente com retentativas exponenciais e jitter
+│       │   └── supabase/      # Repositórios PostgREST e mapeamento 4NF
+│       └── presentation/      # Interface gráfica e serviços da UI
+│           └── streamlit/     # Dashboard, páginas (pages/), views (views/) e estilos (styles.py)
 └── tests/
     ├── conftest.py            # Fixtures globais do pytest
-    ├── unit/                  # Testes unitários rápidos e isolados (com mocks)
-    └── integration/           # Testes de integração ao vivo (Supabase e APIs externas)
+    └── unit/                  # Suíte de mais de 165 testes unitários rápidos e isolados
 ```
+
+### Regras de Dependência:
+- `Domain` não depende de nenhuma camada externa.
+- `Application` depende exclusivamente de `Domain` e abstrações de infraestrutura.
+- `Infrastructure` implementa os contratos e serviços externos.
+- `Presentation` consome `Application` e expõe a experiência analítica.
 
 ---
 
 ## Primeiros Passos
 
 ### Pré-requisitos
-
 - **Python 3.13+**
 - **uv** (gerenciador de dependências e ambientes virtuais ultrarrápido da Astral)
 
 ### Instalação
-
 1. Clone o repositório:
    ```bash
    git clone https://github.com/MathZiero/FertiPartner.git
    cd FertiPartner
    ```
 
-2. Instale as dependências do projeto e configure o ambiente com `uv`:
+2. Crie o ambiente virtual e sincronize as dependências:
    ```bash
    uv sync
    ```
 
 ### Configuração de Variáveis de Ambiente
-
-Crie um arquivo `.env` na raiz do projeto baseado nas suas credenciais:
+Crie um arquivo `.env` na raiz do projeto com as suas credenciais:
 
 ```dotenv
-# Supabase
+# Supabase / PostgreSQL (4NF Data Layer)
 SUPABASE_URL="https://seu-projeto.supabase.co"
 SUPABASE_KEY="sua-chave-anon-publica"
 SUPABASE_SERVICE_ROLE_KEY="sua-chave-service-role-admin"
 
-# APIs Externas
+# Google Gemini API (FertiPartner.AI)
+# Obtenha gratuitamente em: https://aistudio.google.com/app/apikey
+GEMINI_API_KEY="AIzaSy..."
+
+# APIs Externas (Ingestão)
 FRED_API_KEY="sua-chave-api-fred"
 COMTRADE_API_KEY="sua-chave-api-un-comtrade"
 
-# FAOSTAT (Opcional - para autenticação e renovação automática)
+# FAOSTAT (Opcional - para renovação automática de token)
 FAOSTAT_USERNAME="seu-usuario-fao"
 FAOSTAT_PASSWORD="sua-senha-fao"
 FAOSTAT_TOKEN="seu-jwt-token"
@@ -101,82 +148,53 @@ FAOSTAT_TOKEN="seu-jwt-token"
 
 ---
 
-## Scripts e Execução
+## Execução
 
-### 1. Migrações do Banco de Dados (Supabase)
+### 1. Iniciar o Painel Streamlit
+```bash
+# Execução direta via uv:
+uv run streamlit run src/app/presentation/streamlit/dashboard.py
 
-Para validar a integridade do banco e aplicar o schema 4NF:
+# Ou via script auxiliar:
+uv run python scripts/run_dashboard.py
+```
+Acesse no navegador: `http://localhost:8501`.
 
+### 2. Ingestão de Dados (Pipelines)
+```bash
+# Executar todos os coletores de dados:
+uv run python scripts/populate_database.py --all
+
+# Ou executar coletores específicos:
+uv run python scripts/populate_database.py --source comex
+uv run python scripts/populate_database.py --source comtrade
+uv run python scripts/populate_database.py --source faostat
+uv run python scripts/populate_database.py --source fred
+```
+
+### 3. Migrações e Verificação de Integridade 4NF
 ```bash
 uv run python scripts/apply_supabase_migrations.py --check
 ```
 
-### 2. Ingestão e Povoamento da Base de Dados
-
-O FertiPartner disponibiliza um script unificado de coleta de dados:
-
-```bash
-# Executar todos os coletores de dados
-uv run python scripts/populate_database.py --all
-
-# Ou executar um coletor específico:
-uv run python scripts/populate_database.py --source fred
-uv run python scripts/populate_database.py --source comex
-uv run python scripts/populate_database.py --source comtrade
-uv run python scripts/populate_database.py --source faostat
-```
-
-### 3. Autenticação e Token do FAOSTAT
-
-Para inspecionar a validade do token JWT ou autenticar programmaticamente:
-
-```bash
-# Verificar status e expiração do token atual
-uv run python scripts/faostat_token_generator.py --check
-
-# Efetuar login e obter novo token de 1 hora
-uv run python scripts/faostat_token_generator.py --login --username seu_email --password sua_senha
-```
-
-### 4. Inicialização do Front-end (Streamlit + Plotly)
-
-O FertiPartner conta com uma interface analítica interativa construída em **Streamlit 1.63+** e **Plotly**:
-
-```bash
-# Executar o painel analítico diretamente
-uv run python scripts/run_dashboard.py
-
-# Ou via comando nativo do Streamlit:
-uv run streamlit run src/app/presentation/streamlit/dashboard.py
-```
-
-A aplicação será disponibilizada em seu navegador no endereço: `http://localhost:8501`.
-
 ---
 
-## Testes Automatizados
+## Testes Automatizados (TDD)
 
-O conjunto de testes do FertiPartner é dividido em testes unitários (executados no CI sem necessidade de credenciais) e testes de integração:
+A suíte de testes unitários conta com **165+ testes automatizados**, executados sem dependência de rede externa ou credenciais ativas:
 
 ```bash
-# Executar apenas testes unitários e com mocks (rápido e padrão do CI):
-uv run pytest -m "not integration"
+# Executar toda a suíte de testes unitários:
+uv run pytest tests/unit
 
-# Executar todos os testes (incluindo testes de integração ao vivo com APIs e Supabase):
-uv run pytest
+# Executar testes com relatório detalhado:
+uv run pytest tests/unit -v
 ```
 
 ---
 
-## Documentação Técnica
-
-Para se aprofundar nos detalhes do projeto, consulte a pasta `docs/`:
-
-- [Arquitetura Geral](docs/architecture/architecture.md)
-- [Modelagem de Dados em Quarta Forma Normal (4NF)](docs/architecture/data-model.md)
-- [Boas Práticas de Integração com APIs Externas](docs/architecture/external-apis-best-practices.md)
-- [ADR 0001: Supabase e Arquitetura 4NF](docs/architecture/decisions/0001-supabase-4nf-data-architecture.md)
-- [Convenções de Engenharia](docs/engineering/conventions.md)
-- [Estratégia de Testes](docs/engineering/testing.md)
-- [Definição de Pronto (Definition of Done)](docs/engineering/definition-of-done.md)
-- [Diretrizes de Agentes de IA](AGENTS.md)
+## Licença e Diretrizes
+Este projeto adota padrões estritos de governança:
+- Branches de desenvolvimento específicas (ex.: `feature/...`).
+- Proibição de emojis em textos e relatórios institucionais para manutenção de tom corporativo.
+- Conformidade integral com as diretrizes do `AGENTS.md`.

@@ -93,7 +93,7 @@ def render_view() -> None:
 
     col_orig, col_dest = st.columns([6, 6])
     with col_orig:
-        st.markdown("##### 🚢 Principais Países Exportadores (Origens)")
+        st.markdown("##### Principais Países Exportadores (Origens)")
         exp_summary = filtered.groupby("exporter_country")["total_quantity_mt"].sum().reset_index()
         exp_summary = exp_summary.sort_values(by="total_quantity_mt", ascending=True).tail(8)
         fig_exp = px.bar(
@@ -110,7 +110,7 @@ def render_view() -> None:
         st.plotly_chart(fig_exp, width="stretch", config=get_default_plotly_config())
 
     with col_dest:
-        st.markdown("##### 📥 Principais Mercados Compradores (Destinos)")
+        st.markdown("##### Principais Mercados Compradores (Destinos)")
         imp_summary = filtered.groupby("importer_country")["total_quantity_mt"].sum().reset_index()
         imp_summary = imp_summary.sort_values(by="total_quantity_mt", ascending=True).tail(8)
         fig_imp = px.bar(
@@ -128,7 +128,7 @@ def render_view() -> None:
 
     st.divider()
 
-    st.markdown("##### 📑 Relações Comerciais Detalhadas")
+    st.markdown("##### Relações Comerciais Detalhadas")
     display_cols = ["fertilizer_name", "flow_type", "exporter_country", "importer_country", "total_quantity_mt", "total_value_usd", "avg_usd_per_mt"]
     st.dataframe(
         filtered[display_cols].rename(columns={

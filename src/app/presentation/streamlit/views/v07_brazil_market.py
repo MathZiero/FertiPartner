@@ -103,9 +103,9 @@ def render_view() -> None:
             )
 
     tab_balance, tab_geo, tab_suppliers = st.tabs([
-        "⚖️ Balanço Oferta & Demanda",
-        "🗺️ Distribuição por Estado (UF)",
-        "🌐 Principais Países Fornecedores",
+        "Balanço Oferta & Demanda",
+        "Distribuição por Estado (UF)",
+        "Principais Países Fornecedores",
     ])
 
     with tab_balance:
@@ -113,7 +113,7 @@ def render_view() -> None:
         with c_bar:
             c_b_title, c_b_opt = st.columns([7, 5])
             with c_b_title:
-                st.markdown("##### 📦 Balanço Físico: Produção vs. Importações")
+                st.markdown("##### Balanço Físico: Produção vs. Importações")
             with c_b_opt:
                 bar_mode = st.radio(
                     "Exibição:",
@@ -140,7 +140,7 @@ def render_view() -> None:
             st.plotly_chart(fig_bal, width="stretch", config=get_default_plotly_config())
 
         with c_dep_ind:
-            st.markdown("##### 🚨 Taxa de Dependência Externa por Fertilizante (%)")
+            st.markdown("##### Taxa de Dependência Externa por Fertilizante (%)")
             # Filtra apenas registros consolidados com dependência válida
             filtered_dep = filtered.dropna(subset=["external_dependency_pct"])
             if not filtered_dep.empty:
@@ -161,7 +161,7 @@ def render_view() -> None:
                 st.info("Taxa de dependência não calculada para os filtros selecionados (aguardando dados consolidados de produção).")
 
     with tab_geo:
-        st.markdown("##### 🚜 Participação dos Estados no Consumo / Internalização de Fertilizantes")
+        st.markdown("##### Participação dos Estados no Consumo / Internalização de Fertilizantes")
         c_uf_chart, c_uf_table = st.columns([7, 5])
         with c_uf_chart:
             if not df_uf.empty and "share_pct" in df_uf.columns:
@@ -205,7 +205,7 @@ def render_view() -> None:
                 )
 
     with tab_suppliers:
-        st.markdown("##### 🚢 Origem das Importações do Brasil por País Parceiro")
+        st.markdown("##### Origem das Importações do Brasil por País Parceiro")
         br_imports = df_trade[
             (df_trade["importer_country"] == "Brasil") | (df_trade["importer_iso3"] == "BRA")
         ]
@@ -226,7 +226,7 @@ def render_view() -> None:
             st.info("Registros de fornecedores do Brasil não encontrados.")
 
     st.divider()
-    st.markdown("##### 📋 Tabela Consolidada de Dependência Comercial")
+    st.markdown("##### Tabela Consolidada de Dependência Comercial")
     st.dataframe(
         filtered.rename(columns={
             "fertilizer_name": "Fertilizante",

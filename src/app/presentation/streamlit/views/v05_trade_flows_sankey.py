@@ -70,7 +70,7 @@ def render_view() -> None:
     # Otimização visual: Filtrar apenas os Top 10 maiores fluxos para o diagrama Sankey
     sankey_routes = routes.sort_values(by=agg_col, ascending=False).head(10)
 
-    st.markdown("##### 🌊 Diagrama de Fluxos Bilaterais — Top 10 Maiores Corredores")
+    st.markdown("##### Diagrama de Fluxos Bilaterais — Top 10 Maiores Corredores")
     st.caption("Exibindo exclusivamente as **10 maiores rotas** no diagrama para evitar poluição visual e facilitar a leitura estratégica. A tabela abaixo lista a totalidade das interações comerciais.")
 
     # Construção das listas de nós e links para o Sankey (Top 10)
@@ -136,7 +136,7 @@ def render_view() -> None:
     st.divider()
 
     # Tabela detalhada com TODAS as rotas comerciais
-    st.markdown("##### 🧭 Resumo Geral de Todas as Rotas Comerciais Registradas")
+    st.markdown("##### Resumo Geral de Todas as Rotas Comerciais Registradas")
     st.caption(f"Detalhamento completo de todas as {len(routes)} conexões bilaterais identificadas para o filtro selecionado.")
     routes_sorted = routes.sort_values(by=agg_col, ascending=False)
     st.dataframe(

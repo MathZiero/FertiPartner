@@ -12,6 +12,7 @@ PAGES_DIR = Path(__file__).resolve().parents[2] / "src" / "app" / "presentation"
 PAGE_FILES = [
     "01_inicio.py",
     "01_visao_geral.py",
+    "02_documentacao_readme.py",
     "03_producao_global.py",
     "04_comercio_internacional.py",
     "05_fluxos_sankey.py",
@@ -106,12 +107,14 @@ def test_dashboard_compiles_and_contains_updated_categories():
     assert "Primários: Potássicos" in content, "Subdivisão 'Primários: Potássicos' não encontrada no dashboard"
     assert "Secundários" in content, "Categoria 'Secundários' não encontrada no dashboard"
     assert "Micronutrientes" in content, "Categoria 'Micronutrientes' não encontrada no dashboard"
-    assert "💡 Inteligência" in content, "Categoria '💡 Inteligência' não encontrada no dashboard"
+    assert "02_documentacao_readme.py" in content, "Página 02_documentacao_readme.py não encontrada no dashboard"
+    assert "Documentação (README)" in content, "Documentação (README) não encontrada no dashboard"
+    assert 'with st.expander("Inteligência"' in content or '"Inteligência"' in content, "Categoria 'Inteligência' não encontrada no dashboard"
     assert "10_noticias_mercado.py" in content, "Página 10_noticias_mercado.py não encontrada no dashboard"
     assert "Radar de Notícias NPK" in content, "Radar de Notícias NPK não encontrado no dashboard"
     assert "11_assistente_ia.py" in content, "Página 11_assistente_ia.py não encontrada no dashboard"
     assert "FertiPartner.AI" in content, "FertiPartner.AI não encontrado no dashboard"
-    assert "⚙️ Infraestrutura" in content, "Categoria '⚙️ Infraestrutura' não encontrada no dashboard"
+    assert 'with st.expander("Infraestrutura"' in content or '"Infraestrutura"' in content, "Categoria 'Infraestrutura' não encontrada no dashboard"
     assert "09_observabilidade.py" in content, "Página 09_observabilidade.py não encontrada no dashboard"
     assert "12_software.py" in content, "Página 12_software.py não encontrada no dashboard"
     assert "Software" in content, "Página Software não encontrada no dashboard"

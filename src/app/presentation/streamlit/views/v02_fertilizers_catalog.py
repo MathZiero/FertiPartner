@@ -44,12 +44,12 @@ def _classify_macro_category(cat_name: str) -> str:
     """Classifica as categorias canônicas nas macrocategorias da aplicação."""
     cat_lower = cat_name.lower()
     if any(k in cat_lower for k in ["nitrogenad", "fosfatad", "potássic", "npk"]):
-        return "🌱 Macronutrientes Primários"
+        return "Macronutrientes Primários"
     if any(k in cat_lower for k in ["secundár", "enxofre"]):
-        return "🌿 Macronutrientes Secundários"
+        return "Macronutrientes Secundários"
     if "micronutriente" in cat_lower:
-        return "🔬 Micronutrientes"
-    return "🌱 Macronutrientes Primários"
+        return "Micronutrientes"
+    return "Macronutrientes Primários"
 
 
 def _classify_primary_subgroup(cat_name: str) -> str:
@@ -119,12 +119,12 @@ def _render_fertilizer_cards(records: list[dict[str, Any]], cols_per_row: int = 
                     # Link direto para a página individual do fertilizante em sua respectiva pasta
                     page_path = _FERTILIZER_PAGE_MAP.get(slug, _PAGES_DIR / f"fert_{slug.replace('-', '_')}.py")
                     try:
-                        st.page_link(str(page_path), label="📊 Acessar Painel do Produto", width="stretch")
+                        st.page_link(str(page_path), label="Acessar Painel do Produto", width="stretch", icon=":material/analytics:")
                     except Exception:
                         st.caption(f"Acesse '{canonical_name}' na sidebar.")
 
                     # Botão da Ficha Técnica modal
-                    if st.button("📋 Ficha Técnica Rápida", key=f"btn_modal_{fert_id}", width="stretch"):
+                    if st.button("Ficha Técnica Rápida", key=f"btn_modal_{fert_id}", width="stretch"):
                         show_fertilizer_details_modal(fert_dict)
 
 
@@ -196,15 +196,15 @@ def render_view() -> None:
     # ==============================================================================
     # 1. MACRONUTRIENTES PRIMÁRIOS (COM SUBDIVISÃO NITROGENADOS, FOSFATADOS E POTÁSSICOS)
     # ==============================================================================
-    st.markdown("## 🌱 Macronutrientes Primários")
+    st.markdown("## Macronutrientes Primários")
     st.caption("Fertilizantes de maior volume e valor da pauta agrícola global, essenciais na adubação de base e cobertura.")
 
-    prim_df = df_fert[df_fert["category_name"].apply(_classify_macro_category) == "🌱 Macronutrientes Primários"]
+    prim_df = df_fert[df_fert["category_name"].apply(_classify_macro_category) == "Macronutrientes Primários"]
 
     subgroups = [
-        ("Nitrogenados", "🔹 Fertilizantes Nitrogenados (N)", "Fontes de nitrogênio para desenvolvimento vegetativo, síntese proteica e biomassa."),
-        ("Fosfatados", "🔸 Fertilizantes Fosfatados (P)", "Insumos concentrados em fósforo solúvel e total para enraizamento e arranque inicial das culturas."),
-        ("Potássicos", "🟣 Fertilizantes Potássicos (K)", "Fontes de potássio fundamentais para osmorregulação vegetal, enchimento de grãos e tolerância a estresses."),
+        ("Nitrogenados", "Fertilizantes Nitrogenados (N)", "Fontes de nitrogênio para desenvolvimento vegetativo, síntese proteica e biomassa."),
+        ("Fosfatados", "Fertilizantes Fosfatados (P)", "Insumos concentrados em fósforo solúvel e total para enraizamento e arranque inicial das culturas."),
+        ("Potássicos", "Fertilizantes Potássicos (K)", "Fontes de potássio fundamentais para osmorregulação vegetal, enchimento de grãos e tolerância a estresses."),
     ]
 
     for sub_key, sub_title, sub_desc in subgroups:
@@ -222,10 +222,10 @@ def render_view() -> None:
     # ==============================================================================
     # 2. MACRONUTRIENTES SECUNDÁRIOS
     # ==============================================================================
-    st.markdown("## 🌿 Macronutrientes Secundários")
+    st.markdown("## Macronutrientes Secundários")
     st.caption("Insumos fornecedores de Enxofre (S), Cálcio (Ca) e Magnésio (Mg) para o equilíbrio químico e estrutural das plantas.")
 
-    sec_df = df_fert[df_fert["category_name"].apply(_classify_macro_category) == "🌿 Macronutrientes Secundários"]
+    sec_df = df_fert[df_fert["category_name"].apply(_classify_macro_category) == "Macronutrientes Secundários"]
     if not sec_df.empty:
         _render_fertilizer_cards(sec_df.to_dict("records"))
     else:
@@ -236,19 +236,19 @@ def render_view() -> None:
     # ==============================================================================
     # 3. MICRONUTRIENTES
     # ==============================================================================
-    st.markdown("## 🔬 Micronutrientes")
+    st.markdown("## Micronutrientes")
     st.caption("Nutrientes vitais para a fisiologia vegetal aplicados em frações menores: Zinco (Zn), Boro (B), Cobre (Cu), Manganês (Mn), Molibdênio (Mo) e Cobalto (Co).")
 
     with st.container(border=True):
         c_txt, c_btn = st.columns([8, 4])
         with c_txt:
-            st.markdown("#### 🔬 Painel Estratégico de Micronutrientes")
+            st.markdown("#### Painel Estratégico de Micronutrientes")
             st.write("Acesse o painel completo de demanda, balanço de fornecimento e dependência externa de Zinco, Boro, Cobre, Manganês, Molibdênio e Cobalto no agronegócio nacional.")
         with c_btn:
             st.write("")
             try:
                 micro_page = _FERTILIZER_PAGE_MAP.get("micronutrientes", _CATALOG_DIR / "micronutrientes" / "micronutrientes.py")
-                st.page_link(str(micro_page), label="👉 Abrir Painel de Micronutrientes", icon=":material/biotech:", width="stretch")
+                st.page_link(str(micro_page), label="Abrir Painel de Micronutrientes", icon=":material/biotech:", width="stretch")
             except Exception:
                 st.info("Acesse 'Micronutrientes' na barra lateral.")
 

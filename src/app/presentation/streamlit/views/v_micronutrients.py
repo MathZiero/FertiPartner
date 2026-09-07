@@ -90,14 +90,14 @@ def render_micronutrients_page() -> None:
     )
 
     with st.sidebar:
-        st.markdown("#### 🧭 Navegação — Micronutrientes")
+        st.markdown("#### Navegação — Micronutrientes")
         st.markdown(
             """
             <div style="font-size: 0.88rem; line-height: 1.8;">
-                <a href="#kpis-micro" style="text-decoration: none; color: #1B4332; font-weight: 600;">📊 1. Indicadores do Mercado</a><br>
-                <a href="#demanda-micro" style="text-decoration: none; color: #1B4332; font-weight: 600;">🌾 2. Demanda por Elemento</a><br>
-                <a href="#origens-micro" style="text-decoration: none; color: #1B4332; font-weight: 600;">🚢 3. Dependência Externa & Origens</a><br>
-                <a href="#especificacoes-micro" style="text-decoration: none; color: #1B4332; font-weight: 600;">📋 4. Especificações Técnicas</a>
+                <a href="#kpis-micro" style="text-decoration: none; color: #1B4332; font-weight: 600;">1. Indicadores do Mercado</a><br>
+                <a href="#demanda-micro" style="text-decoration: none; color: #1B4332; font-weight: 600;">2. Demanda por Elemento</a><br>
+                <a href="#origens-micro" style="text-decoration: none; color: #1B4332; font-weight: 600;">3. Dependência Externa & Origens</a><br>
+                <a href="#especificacoes-micro" style="text-decoration: none; color: #1B4332; font-weight: 600;">4. Especificações Técnicas</a>
             </div>
             """,
             unsafe_allow_html=True,
@@ -107,7 +107,7 @@ def render_micronutrients_page() -> None:
     df_micro = pd.DataFrame(MICRONUTRIENTS_DATA)
 
     st.markdown('<div id="kpis-micro"></div>', unsafe_allow_html=True)
-    st.markdown("### 📊 1. Indicadores Globais e Nacionais de Micronutrientes")
+    st.markdown("### 1. Indicadores Globais e Nacionais de Micronutrientes")
 
     total_demand = df_micro["market_volume_mt"].sum()
     weighted_import_dep = (df_micro["market_volume_mt"] * df_micro["import_share_pct"]).sum() / total_demand
@@ -141,7 +141,7 @@ def render_micronutrients_page() -> None:
     st.divider()
 
     st.markdown('<div id="demanda-micro"></div>', unsafe_allow_html=True)
-    st.markdown("### 🌾 2. Demanda de Mercado por Micronutriente (Toneladas Métricas)")
+    st.markdown("### 2. Demanda de Mercado por Micronutriente (Toneladas Métricas)")
 
     col_chart, col_dep = st.columns([7, 5])
     with col_chart:
@@ -175,7 +175,7 @@ def render_micronutrients_page() -> None:
     st.divider()
 
     st.markdown('<div id="origens-micro"></div>', unsafe_allow_html=True)
-    st.markdown("### 🚢 3. Principais Origens e Fontes Minerais")
+    st.markdown("### 3. Principais Origens e Fontes Minerais")
     with st.container(border=True):
         st.dataframe(
             df_micro[["element", "sources", "import_share_pct", "primary_origin"]].rename(columns={
@@ -200,9 +200,9 @@ def render_micronutrients_page() -> None:
     st.divider()
 
     st.markdown('<div id="especificacoes-micro"></div>', unsafe_allow_html=True)
-    st.markdown("### 📋 4. Especificações e Dinâmica Agronômica")
+    st.markdown("### 4. Especificações e Dinâmica Agronômica")
     for item in MICRONUTRIENTS_DATA:
-        with st.expander(f"🔬 {item['element']} — Ficha Técnica & Aplicação", expanded=False):
+        with st.expander(f"{item['element']} — Ficha Técnica & Aplicação", expanded=False, icon=":material/biotech:"):
             st.markdown(f"**Função Fisiológica na Planta:** {item['role']}")
             st.markdown(f"**Diagnóstico no Solo (Cerrado/Brasil):** {item['deficiency_cerrado']}")
             st.markdown(f"**Fontes Químicas Utilizadas:** {item['sources']}")

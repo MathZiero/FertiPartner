@@ -76,15 +76,15 @@ def render_view() -> None:
 
     # Abas com diferentes perspectivas analíticas
     tab_overview, tab_prices, tab_products = st.tabs([
-        "📊 Composição & Balanço",
-        "📈 Panorama de Preços",
-        "🌱 Matriz de Fertilizantes Cadastrados",
+        "Composição & Balanço",
+        "Panorama de Preços",
+        "Matriz de Fertilizantes Cadastrados",
     ])
 
     with tab_overview:
         col_left, col_right = st.columns([6, 5])
         with col_left:
-            st.markdown("##### 🇧🇷 Composição do Consumo Aparente Brasileiro (Oferta vs Dependência)")
+            st.markdown("##### Composição do Consumo Aparente Brasileiro (Oferta vs Dependência)")
             if not df_dep.empty:
                 fig_bar = px.bar(
                     df_dep,
@@ -104,7 +104,7 @@ def render_view() -> None:
                 st.info("Dados de dependência não disponíveis.")
 
         with col_right:
-            st.markdown("##### 🌍 Top Produtores Mundiais (Market Share Global %)")
+            st.markdown("##### Top Produtores Mundiais (Market Share Global %)")
             if not df_prod.empty:
                 fig_pie = px.pie(
                     df_prod.groupby("country_name")["standard_quantity_mt"].sum().reset_index(),
@@ -120,7 +120,7 @@ def render_view() -> None:
                 st.info("Dados de produção não disponíveis.")
 
     with tab_prices:
-        st.markdown("##### 📈 Evolução Recente dos Preços Internacionais (FOB e CFR em USD/MT)")
+        st.markdown("##### Evolução Recente dos Preços Internacionais (FOB e CFR em USD/MT)")
         if not df_prices.empty:
             fig_prices = px.line(
                 df_prices,
@@ -141,7 +141,7 @@ def render_view() -> None:
             st.info("Séries de preços não disponíveis.")
 
     with tab_products:
-        st.markdown("##### 📑 Catálogo de Fertilizantes Mapeados no Sistema")
+        st.markdown("##### Catálogo de Fertilizantes Mapeados no Sistema")
         if not df_fert.empty:
             display_cols = ["canonical_name", "category_name", "chemical_formula", "cas_rn"]
             available_cols = [c for c in display_cols if c in df_fert.columns]

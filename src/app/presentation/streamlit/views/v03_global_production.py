@@ -80,7 +80,7 @@ def render_view() -> None:
     st.divider()
 
     # Nota conceitual metodológica: Produtor vs Exportador
-    with st.expander("💡 Entenda a Diferença Técnica: País Produtor vs País Exportador", expanded=False):
+    with st.expander("Diferença Técnica: País Produtor vs País Exportador", expanded=False, icon=":material/info:"):
         st.markdown(
             """
             - **País Produtor (FAOSTAT / IFA)**: Mede o volume físico total sintetizado industrialmente (ex: síntese de amônia pelo método Haber-Bosch) ou extraído mineralmente (ex: mineração de rocha fosfática ou silvinita) no território nacional. Países como a **China** e a **Índia** figuram no topo da produção global de fertilizantes nitrogenados e fosfatados, mas a esmagadora maioria desse volume é consumida por seus próprios mercados agrícolas internos.
@@ -89,7 +89,7 @@ def render_view() -> None:
         )
 
     # Mapa Mundi Coroplético com filtros de Tipo e Ano
-    st.markdown("##### 🌍 Mapa Global (Produção, Exportação e Importação)")
+    st.markdown("##### Mapa Global (Produção, Exportação e Importação)")
     c_mtype, c_myear = st.columns([7, 5])
     with c_mtype:
         map_flow_type = st.segmented_control(
@@ -171,7 +171,7 @@ def render_view() -> None:
     # Gráfico de Barras do Ranking
     col_chart, col_tbl = st.columns([6, 6])
     with col_chart:
-        st.markdown("##### 🏆 Ranking dos Maiores Produtores")
+        st.markdown("##### Ranking dos Maiores Produtores")
         sorted_prod = filtered.sort_values(by="standard_quantity_mt", ascending=True)
         fig_bar = px.bar(
             sorted_prod,
@@ -191,7 +191,7 @@ def render_view() -> None:
         st.plotly_chart(fig_bar, width="stretch", config=get_default_plotly_config())
 
     with col_tbl:
-        st.markdown("##### 📊 Detalhamento e Market Share (%)")
+        st.markdown("##### Detalhamento e Market Share (%)")
         display_tbl = filtered[["rank_position", "country_name", "standard_quantity_mt", "global_market_share_pct"]].sort_values(by="rank_position")
         st.dataframe(
             display_tbl.rename(columns={

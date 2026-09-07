@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from app.domain.ai.entities import AIResponse, ChatMessage, ChatRole, ToolCall, ToolResult
+from app.domain.ai.guardrails import AIGuardrails
 from app.domain.ai.prompts import SYSTEM_PROMPT_FERTIPARTNER_AI
 from app.domain.ai.tools_schema import GEMINI_TOOLS_DECLARATIONS
 from app.infrastructure.ai.gemini_client import GeminiClient
@@ -33,6 +34,20 @@ class FertiPartnerAIOrchestrator:
                 error_message="Chave da API do Google Gemini não configurada. Por favor, informe sua chave no painel lateral.",
             )
             return err_resp, history
+
+        # 1. Validação de GuardRails (Prompt Injection, Jailbreak e Contenção de Escopo)
+        guard_result = AIGuardrails.validate_input(user_prompt)
+        if not guard_result.is_safe:
+            working_history = list(history)
+            working_history.append(ChatMessage(role=ChatRole.USER, content=user_prompt.strip()))
+            message_text = guard_result.user_message or ""
+            working_history.append(ChatMessage(role=ChatRole.MODEL, content=message_text))
+            blocked_response = AIResponse(
+                content=message_text,
+                is_success=True,
+                error_message=None,
+            )
+            return blocked_response, working_history
 
         # Cria uma cópia do histórico e adiciona a nova mensagem do usuário
         working_history = list(history)

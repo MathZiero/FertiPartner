@@ -265,6 +265,18 @@ def render_view() -> None:
             """
         )
 
+        st.write("")
+        st.markdown("##### Arquitetura de GuardRails & Segurança de IA (AIGuardrails)")
+        st.markdown(
+            """
+            Para mitigar vulnerabilidades clássicas de modelos de linguagem e garantir rigor corporativo, a camada de domínio implementa o componente **`AIGuardrails`** (`src/app/domain/ai/guardrails.py`):
+            - **Defesa Pré-Inferência contra Prompt Injection & Jailbreak:** Cada mensagem submetida pelo usuário passa por uma esteira determinística de análise léxica e regex. Padrões de ataque como tentativas de override (*"ignore all previous instructions"*, *"now you are DAN"*, *"modo desenvolvedor"*), injeções de papéis falsos (`<system>`, `[SYSTEM]`) e comandos de código malicioso são interceptados e bloqueados antes mesmo do envio da requisição ao Gemini, economizando cotas de API e blindando a aplicação.
+            - **Contenção Estrita de Escopo de Domínio (Domain Bounding):** O assistente foi concebido estritamente para o ecossistema de fertilizantes e mercado agropecuário. O motor de guardrails avalia a pertinência temática do prompt (fertilizantes, nutrientes, dinâmica de solos, cotações, portos, safras e comércio internacional). Consultas alheias a esse escopo (culinária, esportes, programação genérica, ficção) recebem uma recusa cortês e institucional, redirecionando o usuário para os recursos agronômicos da plataforma.
+            - **Proteção contra Exfiltração de System Prompt:** Bloqueio ativo de tentativas de extração de diretrizes internas, system prompts ou chaves do ambiente.
+            - **Reforço de Prompt no Nível do Sistema:** O `SYSTEM_PROMPT_FERTIPARTNER_AI` contém cláusulas mandatórias de não-conformidade com instruções do usuário que atentem contra as políticas de segurança e a seriedade executiva do FertiPartner.
+            """
+        )
+
     with tab_quality:
         st.markdown("#### Qualidade de Código, Resiliência & TDD")
         st.markdown(

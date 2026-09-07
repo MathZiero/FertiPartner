@@ -103,17 +103,30 @@ section[data-testid="stSidebar"] div {
 section[data-testid="stSidebar"] [data-testid="stExpander"] {
     background-color: #FFFFFF !important;
     border: 1px solid #E2E8F0 !important;
+    border-left: 3px solid #2D6A4F !important;
     border-radius: 9px !important;
-    margin-bottom: 0.35rem !important;
+    margin-bottom: 0.45rem !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
     overflow: hidden !important;
+}
+
+/* Expanders aninhados (submenus internos) */
+section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] {
+    background-color: #F8FAF9 !important;
+    border: 1px solid #E2E8F0 !important;
+    border-left: 2px solid #52796F !important;
+    border-radius: 8px !important;
+    margin-left: 0.35rem !important;
+    margin-right: 0.1rem !important;
+    margin-bottom: 0.35rem !important;
+    box-shadow: none !important;
 }
 
 section[data-testid="stSidebar"] [data-testid="stExpander"] summary {
     font-weight: 600 !important;
     font-size: 0.83rem !important;
     color: #1B4332 !important;
-    padding: 0.4rem 0.6rem !important;
+    padding: 0.45rem 0.65rem !important;
     border-radius: 8px !important;
     transition: background 0.15s ease !important;
 }
@@ -124,7 +137,7 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {
 }
 
 section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
-    padding: 0.25rem 0.4rem 0.4rem 0.4rem !important;
+    padding: 0.35rem 0.45rem 0.45rem 0.45rem !important;
     border-top: 1px solid #F0F4F1 !important;
     background-color: #FAFCFA !important;
 }
@@ -135,22 +148,58 @@ section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] {
     border-radius: 6px !important;
     font-size: 0.82rem !important;
     font-weight: 500 !important;
-    padding: 0.32rem 0.55rem !important;
-    margin-bottom: 0.15rem !important;
+    padding: 0.35rem 0.6rem !important;
+    margin-bottom: 0.2rem !important;
     transition: all 0.15s ease !important;
     border: 1px solid transparent !important;
 }
 
 section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]:hover {
-    background-color: #E5EAE7 !important;
+    background-color: #E8F0EC !important;
     color: #1B4332 !important;
+    border-color: #D8F3DC !important;
 }
 
 section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"][aria-current="page"] {
     background-color: #D8F3DC !important;
     border-color: #B7E4C7 !important;
+    border-left: 3px solid #1B4332 !important;
     color: #1B4332 !important;
     font-weight: 700 !important;
+}
+
+/* Ícones de Material na barra lateral */
+section[data-testid="stSidebar"] [data-testid="stIconMaterial"] {
+    color: #2D6A4F !important;
+}
+
+/* Botões com a paleta do projeto */
+button[kind="primary"], .stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 6px rgba(27, 67, 50, 0.15) !important;
+    transition: all 0.2s ease !important;
+}
+
+button[kind="primary"]:hover, .stButton > button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #143326 0%, #1B4332 100%) !important;
+    box-shadow: 0 4px 10px rgba(27, 67, 50, 0.25) !important;
+}
+
+.stButton > button {
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+.stButton > button:hover {
+    border-color: #2D6A4F !important;
+    color: #1B4332 !important;
+    background-color: #F0F7F3 !important;
 }
 
 /* Header estilizado centralizado */

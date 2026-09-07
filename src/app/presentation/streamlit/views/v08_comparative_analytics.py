@@ -38,7 +38,7 @@ def render_view() -> None:
     # =========================================================================
     # MÓDULO 1: COMPARADOR DINÂMICO DE PREÇOS NPK AO LONGO DO TEMPO
     # =========================================================================
-    st.markdown("### 1. 📈 Comparador Dinâmico de Preços NPK ao Longo do Tempo")
+    st.markdown("### 1. Comparador Dinâmico de Preços NPK ao Longo do Tempo")
     st.caption("Compare a evolução temporal das cotações em valor nominal ou em base normalizada (Base 100) para analisar a volatilidade relativa.")
 
     col_fil_nut, col_fil_win, col_fil_mode = st.columns([1.5, 1.2, 1.3])
@@ -156,7 +156,7 @@ def render_view() -> None:
     # =========================================================================
     # MÓDULO 2: RELAÇÕES DE TROCA & RATIOS ENTRE FERTILIZANTES
     # =========================================================================
-    st.markdown("### 2. ⚖️ Relações de Troca & Ratios Históricos entre Fertilizantes")
+    st.markdown("### 2. Relações de Troca & Ratios Históricos entre Fertilizantes")
     st.caption("Selecione quaisquer dois fertilizantes para comparar a paridade de preços relativa ao longo do tempo, identificar desvios da média histórica (±1σ) e diagnosticar momentos oportunos de aquisição.")
 
     # Pivot de preços por data para calcular paridades
@@ -291,7 +291,7 @@ def render_view() -> None:
     # =========================================================================
     # MÓDULO 3: MATRIZ DE DEPENDÊNCIA EXTERNA & BALANÇO FÍSICO NACIONAL
     # =========================================================================
-    st.markdown("### 3. 🌐 Balanço Físico Nacional & Taxa de Dependência Externa")
+    st.markdown("### 3. Balanço Físico Nacional & Taxa de Dependência Externa")
     st.caption("Comparação entre consumo aparente, produção local e importações para cada classe de fertilizante no Brasil.")
 
     if not df_dependency.empty:
@@ -333,7 +333,7 @@ def render_view() -> None:
             st.plotly_chart(fig_dep, width="stretch", config=get_default_plotly_config())
 
         with c_dep_table:
-            st.markdown("###### 📊 Grau de Vulnerabilidade Externa")
+            st.markdown("###### Grau de Vulnerabilidade Externa")
             st.dataframe(
                 df_dep_y[["fertilizer_name", "apparent_consumption_mt", "external_dependency_pct"]].rename(columns={
                     "fertilizer_name": "Produto",
@@ -357,7 +357,7 @@ def render_view() -> None:
     # =========================================================================
     # MÓDULO 4: CONCENTRAÇÃO GLOBAL DE FORNECIMENTO & RISCO GEOPOLÍTICO (HHI)
     # =========================================================================
-    st.markdown("### 4. 🚢 Concentração de Fornecimento Global & Risco Geopolítico (Índice HHI)")
+    st.markdown("### 4. Concentração de Fornecimento Global & Risco Geopolítico (Índice HHI)")
     st.caption("Avaliação do grau de oligopólio ou dispersão entre países produtores mundiais para N, P e K.")
 
     if not df_production.empty:
@@ -426,7 +426,7 @@ def render_view() -> None:
     # =========================================================================
     # MÓDULO 5: DISTRIBUIÇÃO E DEMANDA REGIONAL POR ESTADO (UF)
     # =========================================================================
-    st.markdown("### 5. 🗺️ Distribuição Interestadual & Demanda Regional no Brasil")
+    st.markdown("### 5. Distribuição Interestadual & Demanda Regional no Brasil")
     st.caption("Concentração das entregas de fertilizantes aos consumidores finais por unidade federativa.")
 
     if not df_uf.empty:
@@ -450,7 +450,7 @@ def render_view() -> None:
             st.plotly_chart(fig_uf, width="stretch", config=get_default_plotly_config())
 
         with c_uf_insight:
-            st.markdown("###### 🌾 Principais Polos de Consumo")
+            st.markdown("###### Principais Polos de Consumo")
             st.markdown(
                 """
                 - **Centro-Oeste (Mato Grosso & Goiás)**: Representa mais de 38% da demanda total do país, impulsionada pelo cultivo intensivo de soja de primeira safra e milho safrinha.
@@ -465,7 +465,7 @@ def render_view() -> None:
     # =========================================================================
     # MÓDULO 6: MATRIZ ESTATÍSTICA DE CORRELAÇÃO & VOLATILIDADE
     # =========================================================================
-    st.markdown("### 6. ⚡ Matriz Estatística de Correlação e Volatilidade entre Fertilizantes")
+    st.markdown("### 6. Matriz Estatística de Correlação e Volatilidade entre Fertilizantes")
     st.caption("Coeficiente de correlação linear de Pearson e dispersão histórica dos preços para todos os fertilizantes do portfólio.")
 
     # Catálogo completo de fertilizantes do sistema
@@ -585,7 +585,7 @@ def render_view() -> None:
             """
             <div style="background: #F8FAF9; border: 1px solid #E2E8F0; border-radius: 8px; padding: 0.85rem 1.1rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
                 <div style="font-size: 0.85rem; font-weight: 700; color: #1B4332; margin-bottom: 0.35rem;">
-                    📖 Interpretação da Matriz de Correlação Multidimensional
+                    Interpretação da Matriz de Correlação Multidimensional
                 </div>
                 <div style="font-size: 0.82rem; color: #4B5563; line-height: 1.5;">
                     • <b style="color: #2563EB;">Escala Colorida (-1.00 a +1.00):</b> Coeficiente de correlação de Pearson entre as cotações históricas de preços internacionais. Valores próximos a <b>+1.00</b> indicam tendência forte de movimentação conjunta; valores negativos indicam dinâmicas divergentes de mercado.<br>
@@ -611,7 +611,7 @@ def render_view() -> None:
                     "Volatilidade (CV %)": cov_pct,
                 })
             df_vol = pd.DataFrame(vol_records).sort_values("Volatilidade (CV %)", ascending=False)
-            st.markdown("###### 📊 Ranking de Volatilidade de Preços")
+            st.markdown("###### Ranking de Volatilidade de Preços")
             st.caption("Calculado sobre os produtos com séries temporais de preços ativas.")
             st.dataframe(
                 df_vol,

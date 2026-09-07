@@ -24,7 +24,7 @@ from app.presentation.streamlit.styles import inject_custom_styles
 # Configuração global da página
 st.set_page_config(
     page_title="FertiPartner • Inteligência de Mercado NPK",
-    page_icon="🌱",
+    page_icon=":material/agriculture:",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -69,6 +69,12 @@ p_inicio = st.Page(
     icon=":material/home:",
     default=True,
     url_path="inicio",
+)
+p_readme = st.Page(
+    str(PAGES_DIR / "02_documentacao_readme.py"),
+    title="Documentação (README)",
+    icon=":material/description:",
+    url_path="readme",
 )
 
 # Primários: Nitrogenados
@@ -135,16 +141,16 @@ micronutrientes_pages = [p_micronutrientes]
 
 # Mapeamento completo para registro de rotas no Streamlit
 pages = {
-    "🌐 Visão Geral": [p_inicio],
-    "📦 Catálogo de Fertilizantes": [
+    "Visão Geral": [p_inicio, p_readme],
+    "Catálogo de Fertilizantes": [
         *nitrogenados_pages,
         *fosfatados_pages,
         *potassicos_pages,
         *secundarios_pages,
         *micronutrientes_pages,
     ],
-    "💡 Inteligência": [p_analises, p_noticias, p_ai],
-    "⚙️ Infraestrutura": [p_observabilidade, p_software],
+    "Inteligência": [p_analises, p_noticias, p_ai],
+    "Infraestrutura": [p_observabilidade, p_software],
 }
 
 # Inicialização da navegação oculta para controle total da hierarquia com submenus na barra lateral
@@ -156,67 +162,58 @@ is_fosfatados = pg in fosfatados_pages
 is_potassicos = pg in potassicos_pages
 is_secundarios = pg in secundarios_pages
 is_micronutrientes = pg in micronutrientes_pages
+is_catalogo = is_nitrogenados or is_fosfatados or is_potassicos or is_secundarios or is_micronutrientes
+
+is_inteligencia = pg in [p_analises, p_noticias, p_ai]
+is_infraestrutura = pg in [p_observabilidade, p_software]
 
 # Renderização do menu estruturado com submenus na barra lateral
 with st.sidebar:
-    # 🌐 Visão Geral
+    # Visão Geral
     st.page_link(p_inicio, label="Início", icon=":material/home:", width="stretch")
+    st.page_link(p_readme, label="Documentação (README)", icon=":material/description:", width="stretch")
 
     st.divider()
 
-    # 📦 Catálogo de Fertilizantes - Submenus por Tipo de Nutriente
-    st.markdown(
-        "<div style='font-size: 0.76rem; font-weight: 700; color: #52796F; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.45rem;'>"
-        "📦 Catálogo de Fertilizantes"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    # Catálogo de Fertilizantes (Menu principal colapsável com submenus por nutriente)
+    with st.expander("Catálogo de Fertilizantes", expanded=is_catalogo, icon=":material/inventory_2:"):
+        with st.expander("Primários: Nitrogenados", expanded=is_nitrogenados, icon=":material/science:"):
+            st.page_link(p_ureia, label="Ureia", icon=":material/science:", width="stretch")
+            st.page_link(p_amonia, label="Amônia Anidra", icon=":material/science:", width="stretch")
+            st.page_link(p_nitrato, label="Nitrato de Amônio", icon=":material/science:", width="stretch")
+            st.page_link(p_sulfato_amonio, label="Sulfato de Amônio", icon=":material/science:", width="stretch")
 
-    with st.expander("🌱 Primários: Nitrogenados", expanded=is_nitrogenados):
-        st.page_link(p_ureia, label="Ureia", icon=":material/science:", width="stretch")
-        st.page_link(p_amonia, label="Amônia Anidra", icon=":material/science:", width="stretch")
-        st.page_link(p_nitrato, label="Nitrato de Amônio", icon=":material/science:", width="stretch")
-        st.page_link(p_sulfato_amonio, label="Sulfato de Amônio", icon=":material/science:", width="stretch")
+        with st.expander("Primários: Fosfatados", expanded=is_fosfatados, icon=":material/science:"):
+            st.page_link(p_map, label="Fosfato Monoamônico (MAP)", icon=":material/science:", width="stretch")
+            st.page_link(p_dap, label="Fosfato Diamônico (DAP)", icon=":material/science:", width="stretch")
+            st.page_link(p_ssp, label="Superfosfato Simples (SSP)", icon=":material/science:", width="stretch")
+            st.page_link(p_tsp, label="Superfosfato Triplo (TSP)", icon=":material/science:", width="stretch")
+            st.page_link(p_rocha, label="Rocha Fosfática", icon=":material/science:", width="stretch")
 
-    with st.expander("🌾 Primários: Fosfatados", expanded=is_fosfatados):
-        st.page_link(p_map, label="Fosfato Monoamônico (MAP)", icon=":material/science:", width="stretch")
-        st.page_link(p_dap, label="Fosfato Diamônico (DAP)", icon=":material/science:", width="stretch")
-        st.page_link(p_ssp, label="Superfosfato Simples (SSP)", icon=":material/science:", width="stretch")
-        st.page_link(p_tsp, label="Superfosfato Triplo (TSP)", icon=":material/science:", width="stretch")
-        st.page_link(p_rocha, label="Rocha Fosfática", icon=":material/science:", width="stretch")
+        with st.expander("Primários: Potássicos", expanded=is_potassicos, icon=":material/science:"):
+            st.page_link(p_kcl, label="Cloreto de Potássio (KCl)", icon=":material/science:", width="stretch")
+            st.page_link(p_sop, label="Sulfato de Potássio (SOP)", icon=":material/science:", width="stretch")
 
-    with st.expander("🌿 Primários: Potássicos", expanded=is_potassicos):
-        st.page_link(p_kcl, label="Cloreto de Potássio (KCl)", icon=":material/science:", width="stretch")
-        st.page_link(p_sop, label="Sulfato de Potássio (SOP)", icon=":material/science:", width="stretch")
+        with st.expander("Secundários", expanded=is_secundarios, icon=":material/science:"):
+            st.page_link(p_enxofre, label="Enxofre Elementar", icon=":material/science:", width="stretch")
 
-    with st.expander("🍃 Secundários", expanded=is_secundarios):
-        st.page_link(p_enxofre, label="Enxofre Elementar", icon=":material/science:", width="stretch")
-
-    with st.expander("🔬 Micronutrientes", expanded=is_micronutrientes):
-        st.page_link(p_micronutrientes, label="Micronutrientes (Geral)", icon=":material/biotech:", width="stretch")
+        with st.expander("Micronutrientes", expanded=is_micronutrientes, icon=":material/biotech:"):
+            st.page_link(p_micronutrientes, label="Micronutrientes (Geral)", icon=":material/biotech:", width="stretch")
 
     st.divider()
 
-    # 💡 Inteligência
-    st.markdown(
-        "<div style='font-size: 0.76rem; font-weight: 700; color: #52796F; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.45rem;'>"
-        "💡 Inteligência"
-        "</div>",
-        unsafe_allow_html=True,
-    )
-    st.page_link(p_analises, label="Análises & Comparações", icon=":material/analytics:", width="stretch")
-    st.page_link(p_noticias, label="Radar de Notícias NPK", icon=":material/newspaper:", width="stretch")
-    st.page_link(p_ai, label="FertiPartner.AI", icon=":material/smart_toy:", width="stretch")
+    # Inteligência (Menu colapsável)
+    with st.expander("Inteligência", expanded=is_inteligencia, icon=":material/psychology:"):
+        st.page_link(p_analises, label="Análises & Comparações", icon=":material/analytics:", width="stretch")
+        st.page_link(p_noticias, label="Radar de Notícias NPK", icon=":material/newspaper:", width="stretch")
+        st.page_link(p_ai, label="FertiPartner.AI", icon=":material/smart_toy:", width="stretch")
 
-    # ⚙️ Infraestrutura
-    st.markdown(
-        "<div style='font-size: 0.76rem; font-weight: 700; color: #52796F; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.45rem; margin-top: 0.6rem;'>"
-        "⚙️ Infraestrutura"
-        "</div>",
-        unsafe_allow_html=True,
-    )
-    st.page_link(p_observabilidade, label="Observabilidade", icon=":material/monitoring:", width="stretch")
-    st.page_link(p_software, label="Software", icon=":material/code:", width="stretch")
+    st.divider()
+
+    # Infraestrutura (Menu colapsável)
+    with st.expander("Infraestrutura", expanded=is_infraestrutura, icon=":material/settings:"):
+        st.page_link(p_observabilidade, label="Observabilidade", icon=":material/monitoring:", width="stretch")
+        st.page_link(p_software, label="Software", icon=":material/code:", width="stretch")
 
     st.divider()
     st.caption("FertiPartner • Inteligência de Mercado Agrícola")

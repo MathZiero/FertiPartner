@@ -95,14 +95,14 @@ def show_fertilizer_details_modal(fert: dict[str, Any]) -> None:
     slug = fert.get("slug", "N/A")
 
     st.markdown(f"### {canonical_name}")
-    st.caption(f"🏷️ **Categoria:** {category} | 🧪 **Fórmula Química:** `{chem_formula}` | 🔢 **CAS RN:** `{cas_rn}`")
+    st.caption(f"**Categoria:** {category} | **Fórmula Química:** `{chem_formula}` | **CAS RN:** `{cas_rn}`")
 
     # Abas organizadas de especificações
     tab_agro, tab_chem, tab_storage, tab_customs = st.tabs([
-        "🌱 Aplicação Agronômica",
-        "🔬 Propriedades Físico-Químicas",
-        "📦 Armazenagem & Manuseio",
-        "📑 Fiscal & Aduaneiro",
+        "Aplicação Agronômica",
+        "Propriedades Físico-Químicas",
+        "Armazenagem & Manuseio",
+        "Fiscal & Aduaneiro",
     ])
 
     with tab_agro:

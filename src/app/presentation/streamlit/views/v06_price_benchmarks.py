@@ -106,7 +106,7 @@ def render_view() -> None:
     st.markdown("<div style='height: 1.2rem;'></div>", unsafe_allow_html=True)
 
     # Gráfico Principal de Séries Temporais com Média Móvel
-    st.markdown("##### 📈 Evolução de Preços (USD / MT)")
+    st.markdown("##### Evolução de Preços (USD / MT)")
     fig_line = go.Figure()
 
     for idx, (b_name, grp) in enumerate(filtered.groupby("benchmark_name")):
@@ -142,7 +142,7 @@ def render_view() -> None:
     st.divider()
 
     # Gráfico de Variação MoM %
-    st.markdown("##### 📊 Variação Mensal de Preço (%)")
+    st.markdown("##### Variação Mensal de Preço (%)")
     valid_mom = filtered.dropna(subset=["month_over_month_pct_change"])
     if not valid_mom.empty:
         fig_mom = px.bar(
@@ -161,7 +161,7 @@ def render_view() -> None:
     st.divider()
 
     # Tabela detalhada
-    st.markdown("##### 📋 Histórico Numérico de Cotações")
+    st.markdown("##### Histórico Numérico de Cotações")
     display_cols = ["price_date", "fertilizer_name", "benchmark_name", "hub_port_name", "incoterm", "standard_price_usd_per_mt", "month_over_month_pct_change", "moving_avg_3m_usd"]
     available = [c for c in display_cols if c in filtered.columns]
     st.dataframe(
