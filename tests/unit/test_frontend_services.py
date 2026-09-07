@@ -138,3 +138,55 @@ def test_views_have_render_view_callable():
     for v in views:
         assert hasattr(v, "render_view"), f"{v.__name__} não possui render_view"
         assert callable(v.render_view), f"{v.__name__}.render_view não é chamável"
+
+
+def test_data_service_global_map_data_flows():
+    """Valida geração de dados de mapa com suporte aos 3 tipos de fluxo: Produção, Exportação e Importação."""
+    # 1. Produção
+    df_prod = FertiDataService.get_global_map_data(fertilizer_name="Ureia", year=2023, flow_type="Produção")
+    assert isinstance(df_prod, pd.DataFrame)
+    assert not df_prod.empty
+    assert "country_iso3" in df_prod.columns
+    assert "standard_quantity_mt" in df_prod.columns
+
+    # 2. Exportação
+    df_exp = FertiDataService.get_global_map_data(fertilizer_name="Ureia", year=2023, flow_type="Exportação")
+    assert isinstance(df_exp, pd.DataFrame)
+    assert not df_exp.empty
+    assert "country_iso3" in df_exp.columns
+    assert "standard_quantity_mt" in df_exp.columns
+    assert "rank_position" in df_exp.columns
+
+    # 3. Importação
+    df_imp = FertiDataService.get_global_map_data(fertilizer_name="Ureia", year=2023, flow_type="Importação")
+    assert isinstance(df_imp, pd.DataFrame)
+    assert not df_imp.empty
+    assert "country_iso3" in df_imp.columns
+    assert "standard_quantity_mt" in df_imp.columns
+    assert "rank_position" in df_imp.columns
+
+
+def test_data_service_get_fertilizer_by_slug_or_id():
+    """Valida localização segura de fertilizantes por slug e ID numérico."""
+    fert_urea = FertiDataService.get_fertilizer_by_slug_or_id("ureia")
+    assert fert_urea is not None
+    assert fert_urea["canonical_name"] == "Ureia"
+    assert fert_urea["id"] == 1
+
+    fert_map = FertiDataService.get_fertilizer_by_slug_or_id(2)
+    assert fert_map is not None
+    assert "MAP" in fert_map["canonical_name"]
+
+    fert_kcl = FertiDataService.get_fertilizer_by_slug_or_id("cloreto-de-potassio")
+    assert fert_kcl is not None
+    assert "KCl" in fert_kcl["canonical_name"]
+
+
+def test_views_fertilizer_detail_and_micronutrients_callable():
+    """Valida a existência e invocabilidade das novas views modulares."""
+    from app.presentation.streamlit.views.v_fertilizer_detail import render_fertilizer_page
+    from app.presentation.streamlit.views.v_micronutrients import render_micronutrients_page
+
+    assert callable(render_fertilizer_page)
+    assert callable(render_micronutrients_page)
+

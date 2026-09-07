@@ -140,6 +140,53 @@ class FertiDataService:
         return pd.DataFrame(MOCK_FERTILIZERS)
 
     @classmethod
+    def _build_fallback_production_rankings(cls) -> pd.DataFrame:
+        """Constrói ranking completo a partir dos benchmarks homologados de produção."""
+        try:
+            from domain.benchmarks import PRODUCTION_BENCHMARKS
+            iso_map = {
+                "CN": ("China", "CHN", 2),
+                "IN": ("Índia", "IND", 3),
+                "RU": ("Rússia", "RUS", 5),
+                "US": ("Estados Unidos", "USA", 4),
+                "QA": ("Catar", "QAT", 9),
+                "SA": ("Arábia Saudita", "SAU", 10),
+                "EG": ("Egito", "EGY", 11),
+                "CA": ("Canadá", "CAN", 6),
+                "DE": ("Alemanha", "DEU", 12),
+                "BR": ("Brasil", "BRA", 1),
+                "MA": ("Marrocos", "MAR", 7),
+                "BY": ("Belarus", "BLR", 8),
+                "TT": ("Trinidad e Tobago", "TTO", 13),
+            }
+            fert_names = {f["id"]: f["canonical_name"] for f in FERTILIZERS_CATALOG}
+            rows = []
+            for item in PRODUCTION_BENCHMARKS:
+                fid = item["fert_id"]
+                fname = fert_names.get(fid, f"Fertilizante {fid}")
+                c_name, c_iso3, cid = iso_map.get(item["iso2"], (item["iso2"], item["iso2"], 99))
+                for y, qty in item["years"].items():
+                    rows.append({
+                        "fertilizer_id": fid,
+                        "fertilizer_name": fname,
+                        "country_id": cid,
+                        "country_name": c_name,
+                        "country_iso3": c_iso3,
+                        "production_year": int(y),
+                        "standard_quantity_mt": float(qty),
+                    })
+            if rows:
+                df = pd.DataFrame(rows)
+                totals = df.groupby(["fertilizer_id", "production_year"])["standard_quantity_mt"].transform("sum")
+                df["global_total_mt"] = totals
+                df["global_market_share_pct"] = (df["standard_quantity_mt"] / df["global_total_mt"] * 100).round(2)
+                df["rank_position"] = df.groupby(["fertilizer_id", "production_year"])["standard_quantity_mt"].rank(ascending=False, method="min").astype(int)
+                return df
+        except Exception as exc:
+            logger.warning("Falha ao construir fallback de produção dinâmico: %s", exc)
+        return pd.DataFrame(MOCK_GLOBAL_PRODUCTION)
+
+    @classmethod
     @st.cache_data(ttl=600, show_spinner=False)
     def get_global_production_rankings(cls) -> pd.DataFrame:
         """Obtém o ranking de produção global por país, ano e fertilizante."""
@@ -155,7 +202,7 @@ class FertiDataService:
                     return df
             except Exception as exc:
                 logger.warning("Falha ao buscar v_global_production_rankings: %s", exc)
-        return pd.DataFrame(MOCK_GLOBAL_PRODUCTION)
+        return cls._build_fallback_production_rankings()
 
     @classmethod
     @st.cache_data(ttl=600, show_spinner=False)
@@ -475,4 +522,117 @@ class FertiDataService:
             {"source_name": "FAOSTAT Fertilizers", "source_code": "FAOSTAT_RFB", "frequency": "ANNUAL", "last_ingestion": "2024-09-05", "last_status": "SUCCESS", "records_inserted": 111, "requested_data": "Anos: 2022 a 2024 • Produção Mundial"},
             {"source_name": "FRED St. Louis Prices", "source_code": "FRED_FERT_PRICES", "frequency": "MONTHLY", "last_ingestion": "2024-09-02", "last_status": "SUCCESS", "records_inserted": 96, "requested_data": "Séries históricas de preços"},
         ])
+
+    @classmethod
+    def get_fertilizer_by_slug_or_id(cls, slug_or_id: str | int) -> dict[str, Any] | None:
+        """Localiza o dicionário de especificações do fertilizante por slug ou ID."""
+        for f in FERTILIZERS_CATALOG:
+            if str(slug_or_id).isdigit():
+                if f.get("id") == int(slug_or_id):
+                    return f
+            if f.get("slug") == str(slug_or_id).strip().lower():
+                return f
+        # Busca aproximada por canonical_name
+        search = str(slug_or_id).lower()
+        for f in FERTILIZERS_CATALOG:
+            if search in f.get("canonical_name", "").lower():
+                return f
+        return None
+
+    @classmethod
+    def get_years_for_flow_type(cls, flow_type: str = "Produção", fertilizer_name: str | None = None) -> list[int]:
+        """Retorna os anos disponíveis para o tipo de fluxo selecionado."""
+        if flow_type == "Produção":
+            df = cls.get_global_production_rankings()
+            if not df.empty and "production_year" in df.columns:
+                if fertilizer_name and fertilizer_name != "Todos":
+                    df = df[df["fertilizer_name"].astype(str).str.contains(fertilizer_name, case=False, na=False) | (df["fertilizer_name"] == fertilizer_name)]
+                years = sorted(df["production_year"].dropna().unique().astype(int).tolist(), reverse=True)
+                if years:
+                    return years
+            return [2024, 2023, 2022]
+        else:
+            df = cls.get_bilateral_trade_flows()
+            if not df.empty and "trade_year" in df.columns:
+                if fertilizer_name and fertilizer_name != "Todos":
+                    df = df[df["fertilizer_name"].astype(str).str.contains(fertilizer_name, case=False, na=False) | (df["fertilizer_name"] == fertilizer_name)]
+                years = sorted(df["trade_year"].dropna().unique().astype(int).tolist(), reverse=True)
+                if years:
+                    return years
+            return [2024, 2023, 2022]
+
+    @classmethod
+    @st.cache_data(ttl=300, show_spinner=False)
+    def get_global_map_data(
+        cls,
+        fertilizer_name: str | None = None,
+        year: int | None = None,
+        flow_type: str = "Produção",
+    ) -> pd.DataFrame:
+        """Obtém dados estruturados para o mapa global com suporte a Produção, Exportação e Importação."""
+        if flow_type == "Produção":
+            df = cls.get_global_production_rankings()
+            if df.empty:
+                return pd.DataFrame()
+            df = df.copy()
+            if fertilizer_name and fertilizer_name != "Todos":
+                df = df[df["fertilizer_name"].astype(str).str.contains(fertilizer_name, case=False, na=False) | (df["fertilizer_name"] == fertilizer_name)]
+            if year is not None and "production_year" in df.columns:
+                df = df[df["production_year"] == year]
+            df = df.rename(columns={"production_year": "ref_year"})
+            return df
+        elif flow_type == "Exportação":
+            df_trade = cls.get_bilateral_trade_flows()
+            if df_trade.empty:
+                return pd.DataFrame()
+            df_trade = df_trade.copy()
+            if fertilizer_name and fertilizer_name != "Todos":
+                df_trade = df_trade[df_trade["fertilizer_name"].astype(str).str.contains(fertilizer_name, case=False, na=False) | (df_trade["fertilizer_name"] == fertilizer_name)]
+            if year is not None and "trade_year" in df_trade.columns:
+                df_trade = df_trade[df_trade["trade_year"] == year]
+
+            if df_trade.empty or "exporter_country" not in df_trade.columns:
+                return pd.DataFrame()
+
+            grouped = df_trade.groupby(["exporter_country", "exporter_iso3", "trade_year"], as_index=False).agg(
+                standard_quantity_mt=("total_quantity_mt", "sum"),
+                total_value_usd=("total_value_usd", "sum"),
+            )
+            total_exp = grouped["standard_quantity_mt"].sum()
+            grouped["global_market_share_pct"] = (grouped["standard_quantity_mt"] / total_exp * 100) if total_exp > 0 else 0.0
+            grouped = grouped.rename(columns={
+                "exporter_country": "country_name",
+                "exporter_iso3": "country_iso3",
+                "trade_year": "ref_year",
+            })
+            grouped["rank_position"] = grouped["standard_quantity_mt"].rank(ascending=False, method="min").astype(int)
+            return grouped
+        elif flow_type == "Importação":
+            df_trade = cls.get_bilateral_trade_flows()
+            if df_trade.empty:
+                return pd.DataFrame()
+            df_trade = df_trade.copy()
+            if fertilizer_name and fertilizer_name != "Todos":
+                df_trade = df_trade[df_trade["fertilizer_name"].astype(str).str.contains(fertilizer_name, case=False, na=False) | (df_trade["fertilizer_name"] == fertilizer_name)]
+            if year is not None and "trade_year" in df_trade.columns:
+                df_trade = df_trade[df_trade["trade_year"] == year]
+
+            if df_trade.empty or "importer_country" not in df_trade.columns:
+                return pd.DataFrame()
+
+            grouped = df_trade.groupby(["importer_country", "importer_iso3", "trade_year"], as_index=False).agg(
+                standard_quantity_mt=("total_quantity_mt", "sum"),
+                total_value_usd=("total_value_usd", "sum"),
+            )
+            total_imp = grouped["standard_quantity_mt"].sum()
+            grouped["global_market_share_pct"] = (grouped["standard_quantity_mt"] / total_imp * 100) if total_imp > 0 else 0.0
+            grouped = grouped.rename(columns={
+                "importer_country": "country_name",
+                "importer_iso3": "country_iso3",
+                "trade_year": "ref_year",
+            })
+            grouped["rank_position"] = grouped["standard_quantity_mt"].rank(ascending=False, method="min").astype(int)
+            return grouped
+        return pd.DataFrame()
+
 

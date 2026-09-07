@@ -88,11 +88,40 @@ def render_view() -> None:
             """
         )
 
-    # Mapa Mundi Coroplético
-    st.markdown("##### 🌍 Mapa Global de Produção (Toneladas Métricas)")
-    if not filtered.empty:
+    # Mapa Mundi Coroplético com filtros de Tipo e Ano
+    st.markdown("##### 🌍 Mapa Global (Produção, Exportação e Importação)")
+    c_mtype, c_myear = st.columns([7, 5])
+    with c_mtype:
+        map_flow_type = st.segmented_control(
+            "Métrica do Mapa:",
+            ["Produção", "Exportação", "Importação"],
+            default="Produção",
+            key="v03_map_flow_type",
+        )
+        if not map_flow_type:
+            map_flow_type = "Produção"
+
+    with c_myear:
+        map_years = FertiDataService.get_years_for_flow_type(map_flow_type, selected_fert)
+        map_year_sel = st.selectbox(
+            "Ano do Mapa:",
+            map_years,
+            index=0,
+            key="v03_map_year_selector",
+        )
+
+    df_map_data = FertiDataService.get_global_map_data(selected_fert, map_year_sel, map_flow_type)
+
+    if not df_map_data.empty and "country_iso3" in df_map_data.columns:
+        color_scales = {
+            "Produção": "Viridis",
+            "Exportação": "Blues",
+            "Importação": "Teal",
+        }
+        chosen_scale = color_scales.get(map_flow_type, "Viridis")
+
         fig_map = px.choropleth(
-            filtered,
+            df_map_data,
             locations="country_iso3",
             color="standard_quantity_mt",
             hover_name="country_name",
@@ -102,10 +131,10 @@ def render_view() -> None:
                 "country_iso3": False,
             },
             labels={
-                "standard_quantity_mt": "Produção (MT)",
+                "standard_quantity_mt": f"{map_flow_type} (MT)",
                 "global_market_share_pct": "Market Share (%)",
             },
-            color_continuous_scale="Viridis",
+            color_continuous_scale=chosen_scale,
             projection="natural earth",
         )
         fig_map.update_geos(
@@ -116,13 +145,13 @@ def render_view() -> None:
             coastlinecolor="#000000",
             coastlinewidth=0.8,
             showland=True,
-            landcolor="#E9ECEF",  # Fundo leve e nítido para países sem produção registrada
+            landcolor="#E9ECEF",
             showocean=True,
-            oceancolor="#F8FAFC",  # Fundo sutil para o oceano
+            oceancolor="#F8FAFC",
             showlakes=True,
             lakecolor="#F8FAFC",
             showframe=True,
-            framecolor="#000000",  # Contorno em preto delimitando o globo
+            framecolor="#000000",
             framewidth=1.2,
             bgcolor="rgba(0,0,0,0)",
         )
@@ -134,6 +163,8 @@ def render_view() -> None:
             font=dict(color="#1B4332"),
         )
         st.plotly_chart(fig_map, use_container_width=True, config=get_default_plotly_config())
+    else:
+        st.info(f"Sem dados geográficos de {map_flow_type.lower()} para o filtro selecionado.")
 
     st.divider()
 

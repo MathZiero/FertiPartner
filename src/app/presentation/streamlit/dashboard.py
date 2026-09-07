@@ -61,7 +61,7 @@ def _find_pages_dir() -> Path:
 
 PAGES_DIR = _find_pages_dir()
 
-# Estrutura moderna de navegação organizada por categorias singulares
+# Estrutura moderna de navegação organizada pelo Catálogo Central e Categorias Agronômicas
 pages = {
     "🌐 Visão Geral": [
         st.Page(
@@ -74,43 +74,28 @@ pages = {
         st.Page(
             str(PAGES_DIR / "02_catalogo.py"),
             title="Catálogo de Fertilizantes",
-            icon=":material/science:",
+            icon=":material/menu_book:",
             url_path="catalogo",
         ),
     ],
-    "⚖️ Oferta e Demanda": [
-        st.Page(
-            str(PAGES_DIR / "03_producao_global.py"),
-            title="Produção Global",
-            icon=":material/factory:",
-            url_path="producao-global",
-        ),
-        st.Page(
-            str(PAGES_DIR / "04_comercio_internacional.py"),
-            title="Comércio Internacional",
-            icon=":material/public:",
-            url_path="comercio-internacional",
-        ),
-        st.Page(
-            str(PAGES_DIR / "05_fluxos_sankey.py"),
-            title="Fluxos Comerciais (Sankey)",
-            icon=":material/swap_calls:",
-            url_path="fluxos-sankey",
-        ),
-        st.Page(
-            str(PAGES_DIR / "07_mercado_brasil.py"),
-            title="Mercado Brasileiro",
-            icon=":material/flag:",
-            url_path="mercado-brasil",
-        ),
+    "🌱 Macronutrientes Primários": [
+        st.Page(str(PAGES_DIR / "fert_ureia.py"), title="Ureia", icon=":material/science:", url_path="fertilizante/ureia"),
+        st.Page(str(PAGES_DIR / "fert_map.py"), title="Fosfato Monoamônico (MAP)", icon=":material/science:", url_path="fertilizante/map"),
+        st.Page(str(PAGES_DIR / "fert_dap.py"), title="Fosfato Diamônico (DAP)", icon=":material/science:", url_path="fertilizante/dap"),
+        st.Page(str(PAGES_DIR / "fert_cloreto_de_potassio.py"), title="Cloreto de Potássio (KCl)", icon=":material/science:", url_path="fertilizante/cloreto-de-potassio"),
+        st.Page(str(PAGES_DIR / "fert_amonia_anidra.py"), title="Amônia Anidra", icon=":material/science:", url_path="fertilizante/amonia-anidra"),
+        st.Page(str(PAGES_DIR / "fert_nitrato_de_amonio.py"), title="Nitrato de Amônio", icon=":material/science:", url_path="fertilizante/nitrato-de-amonio"),
+        st.Page(str(PAGES_DIR / "fert_sulfato_de_amonio.py"), title="Sulfato de Amônio", icon=":material/science:", url_path="fertilizante/sulfato-de-amonio"),
+        st.Page(str(PAGES_DIR / "fert_ssp.py"), title="Superfosfato Simples (SSP)", icon=":material/science:", url_path="fertilizante/ssp"),
+        st.Page(str(PAGES_DIR / "fert_tsp.py"), title="Superfosfato Triplo (TSP)", icon=":material/science:", url_path="fertilizante/tsp"),
+        st.Page(str(PAGES_DIR / "fert_rocha_fosfatica.py"), title="Rocha Fosfática", icon=":material/science:", url_path="fertilizante/rocha-fosfatica"),
+        st.Page(str(PAGES_DIR / "fert_sulfato_de_potassio.py"), title="Sulfato de Potássio (SOP)", icon=":material/science:", url_path="fertilizante/sulfato-de-potassio"),
     ],
-    "📈 Preços": [
-        st.Page(
-            str(PAGES_DIR / "06_precos_benchmarks.py"),
-            title="Preços & Benchmarks",
-            icon=":material/trending_up:",
-            url_path="precos-benchmarks",
-        ),
+    "🌿 Macronutrientes Secundários": [
+        st.Page(str(PAGES_DIR / "fert_enxofre_elementar.py"), title="Enxofre Elementar", icon=":material/science:", url_path="fertilizante/enxofre-elementar"),
+    ],
+    "🔬 Micronutrientes": [
+        st.Page(str(PAGES_DIR / "fert_micronutrientes.py"), title="Micronutrientes (Geral)", icon=":material/biotech:", url_path="fertilizante/micronutrientes"),
     ],
     "💡 Inteligência": [
         st.Page(

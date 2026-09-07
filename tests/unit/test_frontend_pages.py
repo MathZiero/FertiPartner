@@ -20,6 +20,19 @@ PAGE_FILES = [
     "07_mercado_brasil.py",
     "08_analises_comparativas.py",
     "09_observabilidade.py",
+    "fert_ureia.py",
+    "fert_map.py",
+    "fert_dap.py",
+    "fert_cloreto_de_potassio.py",
+    "fert_amonia_anidra.py",
+    "fert_nitrato_de_amonio.py",
+    "fert_sulfato_de_amonio.py",
+    "fert_ssp.py",
+    "fert_tsp.py",
+    "fert_rocha_fosfatica.py",
+    "fert_sulfato_de_potassio.py",
+    "fert_enxofre_elementar.py",
+    "fert_micronutrientes.py",
 ]
 
 
@@ -77,15 +90,21 @@ def test_root_main_exists_and_compiles():
 
 
 def test_dashboard_compiles_and_contains_updated_categories():
-    """Garante que o dashboard.py compila e define as novas categorias de navegação."""
+    """Garante que o dashboard.py compila e define as novas categorias agronômicas de navegação."""
     dashboard_path = Path(__file__).resolve().parents[2] / "src" / "app" / "presentation" / "streamlit" / "dashboard.py"
     assert dashboard_path.exists(), "dashboard.py não encontrado"
     compiled = py_compile.compile(str(dashboard_path), doraise=True)
     assert compiled is not None
 
     content = dashboard_path.read_text(encoding="utf-8")
-    assert "⚖️ Oferta e Demanda" in content, "Categoria '⚖️ Oferta e Demanda' não encontrada no dashboard"
-    assert "📈 Preços" in content, "Categoria '📈 Preços' não encontrada no dashboard"
+    assert "Catálogo de Fertilizantes" in content, "Catálogo não encontrado no dashboard"
+    assert "Macronutrientes Primários" in content, "Categoria 'Macronutrientes Primários' não encontrada no dashboard"
+    assert "Macronutrientes Secundários" in content, "Categoria 'Macronutrientes Secundários' não encontrada no dashboard"
+    assert "Micronutrientes" in content, "Categoria 'Micronutrientes' não encontrada no dashboard"
     assert "💡 Inteligência" in content, "Categoria '💡 Inteligência' não encontrada no dashboard"
-    assert "03_producao_global.py" in content, "Página de Produção Global não encontrada no dashboard"
+    assert "fert_ureia.py" in content, "Página da Ureia não encontrada no dashboard"
+    assert "fert_map.py" in content, "Página do MAP não encontrada no dashboard"
+    assert "fert_cloreto_de_potassio.py" in content, "Página do KCl não encontrada no dashboard"
+    assert "fert_enxofre_elementar.py" in content, "Página do Enxofre não encontrada no dashboard"
+
 
