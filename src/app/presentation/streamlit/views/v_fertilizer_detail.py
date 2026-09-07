@@ -627,6 +627,52 @@ def _render_section_technical_sheet(fert: dict[str, Any]) -> None:
     st.divider()
 
 
+def _render_ai_product_diagnostic(fert: dict[str, Any]) -> None:
+    """Renderiza card de diagnóstico executivo gerado por IA para o fertilizante."""
+    canonical_name = fert.get("canonical_name", "Fertilizante")
+    slug = fert.get("slug", "fert")
+    state_key = f"ai_diag_{slug}"
+
+    from app.presentation.streamlit.services.ai_service import FertiAIService
+
+    with st.container(border=True):
+        st.markdown(
+            f"""
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                <div style="font-size: 1rem; font-weight: 700; color: #1B4332;">
+                    Diagnóstico Estratégico FertiPartner.AI
+                </div>
+                <span class="fp-badge fp-badge-emerald" style="font-size: 0.72rem;">Google Gemini</span>
+            </div>
+            <div style="font-size: 0.82rem; color: #4B5563; margin-bottom: 0.75rem;">
+                Síntese analítica em 3 eixos: dinâmica recente de cotações, vulnerabilidade de abastecimento do Brasil e diretrizes agronômicas.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        api_key = FertiAIService.get_api_key()
+        if not api_key:
+            st.info("Para gerar diagnósticos estratégicos por IA deste fertilizante, configure sua chave do Google Gemini no menu FertiPartner.AI.")
+            return
+
+        if state_key in st.session_state:
+            st.markdown(st.session_state[state_key])
+            if st.button("Atualizar Diagnóstico", key=f"btn_refresh_ai_{slug}"):
+                st.session_state.pop(state_key, None)
+                st.rerun()
+        else:
+            if st.button(f"Gerar Diagnóstico por IA para {canonical_name}", key=f"btn_gen_ai_{slug}", type="primary"):
+                with st.spinner(f"FertiPartner.AI analisando cotações, rotas e balanço de {canonical_name}..."):
+                    use_case = FertiAIService.get_product_diagnostic_use_case()
+                    resp = use_case.execute(canonical_name)
+                    if resp.is_success:
+                        st.session_state[state_key] = resp.content
+                        st.rerun()
+                    else:
+                        st.error(resp.error_message or "Não foi possível gerar o diagnóstico.")
+
+
 def render_fertilizer_page(slug_or_id: str | int) -> None:
     """Renderiza a página única alongada de um fertilizante específico."""
     fert = FertiDataService.get_fertilizer_by_slug_or_id(slug_or_id)
@@ -651,6 +697,9 @@ def render_fertilizer_page(slug_or_id: str | int) -> None:
 
     # Destaques de especificações químicas
     _render_hero_specs(fert)
+
+    # Diagnóstico Estratégico FertiPartner.AI
+    _render_ai_product_diagnostic(fert)
 
     # Seções sequenciais (página única alongada)
     _render_section_production(fert, slug)

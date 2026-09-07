@@ -107,6 +107,12 @@ p_noticias = st.Page(
     icon=":material/newspaper:",
     url_path="noticias-mercado",
 )
+p_ai = st.Page(
+    str(PAGES_DIR / "11_assistente_ia.py"),
+    title="FertiPartner.AI",
+    icon=":material/smart_toy:",
+    url_path="fertipartner-ai",
+)
 p_observabilidade = st.Page(
     str(PAGES_DIR / "09_observabilidade.py"),
     title="Observabilidade",
@@ -131,7 +137,7 @@ pages = {
         *secundarios_pages,
         *micronutrientes_pages,
     ],
-    "💡 Inteligência": [p_analises, p_noticias],
+    "💡 Inteligência": [p_analises, p_noticias, p_ai],
     "⚙️ Infraestrutura": [p_observabilidade],
 }
 
@@ -194,6 +200,7 @@ with st.sidebar:
     )
     st.page_link(p_analises, label="Análises & Comparações", icon=":material/analytics:", width="stretch")
     st.page_link(p_noticias, label="Radar de Notícias NPK", icon=":material/newspaper:", width="stretch")
+    st.page_link(p_ai, label="FertiPartner.AI", icon=":material/smart_toy:", width="stretch")
 
     # ⚙️ Infraestrutura
     st.markdown(

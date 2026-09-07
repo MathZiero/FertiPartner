@@ -90,6 +90,48 @@ def render_view() -> None:
         return
 
     # =========================================================================
+    # BRIEFING EXECUTIVO DA SEMANA - FERTIPARTNER.AI
+    # =========================================================================
+    from app.presentation.streamlit.services.ai_service import FertiAIService
+    with st.container(border=True):
+        st.markdown(
+            """
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                <div style="font-size: 1rem; font-weight: 700; color: #1B4332;">
+                    Briefing Semanal FertiPartner.AI
+                </div>
+                <span class="fp-badge fp-badge-emerald" style="font-size: 0.72rem;">Google Gemini</span>
+            </div>
+            <div style="font-size: 0.82rem; color: #4B5563; margin-bottom: 0.75rem;">
+                Síntese executiva automatizada sobre fretes portuários, apetite de compras de safra e geopolítica a partir das matérias dos últimos 7 dias.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        api_key = FertiAIService.get_api_key()
+        if not api_key:
+            st.info("Para gerar o Briefing Semanal automatizado por IA, configure sua chave do Google Gemini no menu FertiPartner.AI.")
+        else:
+            if "ai_weekly_briefing" in st.session_state:
+                st.markdown(st.session_state["ai_weekly_briefing"])
+                if st.button("Atualizar Briefing Semanal", key="btn_refresh_weekly_ai"):
+                    st.session_state.pop("ai_weekly_briefing", None)
+                    st.rerun()
+            else:
+                if st.button("Gerar Briefing Semanal por IA", key="btn_gen_weekly_ai", type="primary"):
+                    with st.spinner("FertiPartner.AI sintetizando notícias e barômetros da semana..."):
+                        briefing_uc = FertiAIService.get_executive_briefing_use_case()
+                        resp = briefing_uc.execute()
+                        if resp.is_success:
+                            st.session_state["ai_weekly_briefing"] = resp.content
+                            st.rerun()
+                        else:
+                            st.error(resp.error_message or "Falha ao gerar o briefing.")
+
+    st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
+
+    # =========================================================================
     # BARÔMETROS DE ANÁLISE DE SENTIMENTO SETORIAL (PLOTLY)
     # =========================================================================
     st.markdown("#### Barômetros de Sentimento de Mercado (Últimos 7 Dias)")
