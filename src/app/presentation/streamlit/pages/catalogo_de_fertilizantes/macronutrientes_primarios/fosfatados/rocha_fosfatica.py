@@ -4,7 +4,7 @@ from app.presentation.streamlit.views.v_fertilizer_detail import render_fertiliz
 
 
 def render_page() -> None:
-    """Renderiza o painel dedicado da Rocha Fosfática Concentrada."""
+    """Renderiza o painel dedicado da Rocha Fosfática."""
     render_fertilizer_page("rocha-fosfatica")
 
 

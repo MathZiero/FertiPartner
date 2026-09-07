@@ -4,7 +4,7 @@ from app.presentation.streamlit.views.v_fertilizer_detail import render_fertiliz
 
 
 def render_page() -> None:
-    """Renderiza o painel dedicado do Fosfato Diamônico (DAP)."""
+    """Renderiza o painel dedicado do DAP."""
     render_fertilizer_page("dap")
 
 

@@ -4,7 +4,7 @@ from app.presentation.streamlit.views.v_fertilizer_detail import render_fertiliz
 
 
 def render_page() -> None:
-    """Renderiza o painel dedicado do Cloreto de Potássio (KCl / MOP)."""
+    """Renderiza o painel dedicado do Cloreto de Potássio."""
     render_fertilizer_page("cloreto-de-potassio")
 
 

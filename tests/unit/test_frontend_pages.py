@@ -20,19 +20,20 @@ PAGE_FILES = [
     "07_mercado_brasil.py",
     "08_analises_comparativas.py",
     "09_observabilidade.py",
-    "fert_ureia.py",
-    "fert_map.py",
-    "fert_dap.py",
-    "fert_cloreto_de_potassio.py",
-    "fert_amonia_anidra.py",
-    "fert_nitrato_de_amonio.py",
-    "fert_sulfato_de_amonio.py",
-    "fert_ssp.py",
-    "fert_tsp.py",
-    "fert_rocha_fosfatica.py",
-    "fert_sulfato_de_potassio.py",
-    "fert_enxofre_elementar.py",
-    "fert_micronutrientes.py",
+    "catalogo_de_fertilizantes/catalogo.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/ureia.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/amonia_anidra.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/nitrato_de_amonio.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/nitrogenados/sulfato_de_amonio.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/fosfatados/map.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/fosfatados/dap.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/fosfatados/ssp.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/fosfatados/tsp.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/fosfatados/rocha_fosfatica.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/potassicos/cloreto_de_potassio.py",
+    "catalogo_de_fertilizantes/macronutrientes_primarios/potassicos/sulfato_de_potassio.py",
+    "catalogo_de_fertilizantes/macronutrientes_secundarios/enxofre_elementar.py",
+    "catalogo_de_fertilizantes/micronutrientes/micronutrientes.py",
 ]
 
 
@@ -105,9 +106,36 @@ def test_dashboard_compiles_and_contains_updated_categories():
     assert "Secundários" in content, "Categoria 'Secundários' não encontrada no dashboard"
     assert "Micronutrientes" in content, "Categoria 'Micronutrientes' não encontrada no dashboard"
     assert "💡 Inteligência" in content, "Categoria '💡 Inteligência' não encontrada no dashboard"
-    assert "fert_ureia.py" in content, "Página da Ureia não encontrada no dashboard"
-    assert "fert_map.py" in content, "Página do MAP não encontrada no dashboard"
-    assert "fert_cloreto_de_potassio.py" in content, "Página do KCl não encontrada no dashboard"
-    assert "fert_enxofre_elementar.py" in content, "Página do Enxofre não encontrada no dashboard"
+    assert "catalogo_de_fertilizantes" in content, "Pasta catalogo_de_fertilizantes não referenciada no dashboard"
+    assert "macronutrientes_primarios" in content, "Pasta macronutrientes_primarios não referenciada no dashboard"
+    assert "nitrogenados" in content, "Subpasta nitrogenados não referenciada no dashboard"
+    assert "fosfatados" in content, "Subpasta fosfatados não referenciada no dashboard"
+    assert "potassicos" in content, "Subpasta potassicos não referenciada no dashboard"
+    assert "macronutrientes_secundarios" in content, "Pasta macronutrientes_secundarios não referenciada no dashboard"
+    assert "ureia.py" in content, "Página da Ureia não encontrada no dashboard"
+    assert "map.py" in content, "Página do MAP não encontrada no dashboard"
+    assert "cloreto_de_potassio.py" in content, "Página do KCl não encontrada no dashboard"
+    assert "enxofre_elementar.py" in content, "Página do Enxofre não encontrada no dashboard"
+    assert "micronutrientes.py" in content, "Página de Micronutrientes não encontrada no dashboard"
+
+
+def test_catalogo_folder_hierarchy_exists():
+    """Valida que a pasta 'catalogo_de_fertilizantes' possui as subpastas corretas."""
+    cat_dir = PAGES_DIR / "catalogo_de_fertilizantes"
+    assert cat_dir.is_dir(), "Pasta catalogo_de_fertilizantes não existe"
+
+    prim_dir = cat_dir / "macronutrientes_primarios"
+    sec_dir = cat_dir / "macronutrientes_secundarios"
+    micro_dir = cat_dir / "micronutrientes"
+    assert prim_dir.is_dir(), "Pasta macronutrientes_primarios não existe"
+    assert sec_dir.is_dir(), "Pasta macronutrientes_secundarios não existe"
+    assert micro_dir.is_dir(), "Pasta micronutrientes não existe"
+
+    nit_dir = prim_dir / "nitrogenados"
+    fos_dir = prim_dir / "fosfatados"
+    pot_dir = prim_dir / "potassicos"
+    assert nit_dir.is_dir(), "Pasta nitrogenados não existe"
+    assert fos_dir.is_dir(), "Pasta fosfatados não existe"
+    assert pot_dir.is_dir(), "Pasta potassicos não existe"
 
 

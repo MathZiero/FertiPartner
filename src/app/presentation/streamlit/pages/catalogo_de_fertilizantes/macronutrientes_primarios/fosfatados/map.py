@@ -4,7 +4,7 @@ from app.presentation.streamlit.views.v_fertilizer_detail import render_fertiliz
 
 
 def render_page() -> None:
-    """Renderiza o painel dedicado do Fosfato Monoamônico (MAP)."""
+    """Renderiza o painel dedicado do MAP."""
     render_fertilizer_page("map")
 
 

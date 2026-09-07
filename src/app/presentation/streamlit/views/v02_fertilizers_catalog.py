@@ -21,6 +21,23 @@ from app.presentation.streamlit.components.ui import (
 )
 
 _PAGES_DIR = Path(__file__).resolve().parent.parent / "pages"
+_CATALOG_DIR = _PAGES_DIR / "catalogo_de_fertilizantes"
+
+_FERTILIZER_PAGE_MAP: dict[str, Path] = {
+    "ureia": _CATALOG_DIR / "macronutrientes_primarios" / "nitrogenados" / "ureia.py",
+    "amonia-anidra": _CATALOG_DIR / "macronutrientes_primarios" / "nitrogenados" / "amonia_anidra.py",
+    "nitrato-de-amonio": _CATALOG_DIR / "macronutrientes_primarios" / "nitrogenados" / "nitrato_de_amonio.py",
+    "sulfato-de-amonio": _CATALOG_DIR / "macronutrientes_primarios" / "nitrogenados" / "sulfato_de_amonio.py",
+    "map": _CATALOG_DIR / "macronutrientes_primarios" / "fosfatados" / "map.py",
+    "dap": _CATALOG_DIR / "macronutrientes_primarios" / "fosfatados" / "dap.py",
+    "ssp": _CATALOG_DIR / "macronutrientes_primarios" / "fosfatados" / "ssp.py",
+    "tsp": _CATALOG_DIR / "macronutrientes_primarios" / "fosfatados" / "tsp.py",
+    "rocha-fosfatica": _CATALOG_DIR / "macronutrientes_primarios" / "fosfatados" / "rocha_fosfatica.py",
+    "cloreto-de-potassio": _CATALOG_DIR / "macronutrientes_primarios" / "potassicos" / "cloreto_de_potassio.py",
+    "sulfato-de-potassio": _CATALOG_DIR / "macronutrientes_primarios" / "potassicos" / "sulfato_de_potassio.py",
+    "enxofre-elementar": _CATALOG_DIR / "macronutrientes_secundarios" / "enxofre_elementar.py",
+    "micronutrientes": _CATALOG_DIR / "micronutrientes" / "micronutrientes.py",
+}
 
 
 def _classify_macro_category(cat_name: str) -> str:
@@ -99,10 +116,10 @@ def _render_fertilizer_cards(records: list[dict[str, Any]], cols_per_row: int = 
                         st.markdown("<div style='min-height: 2.2rem;'><span style='color: #9CA3AF; font-size: 0.80rem;'>Não declarada</span></div>", unsafe_allow_html=True)
 
                     st.write("")
-                    # Link direto para a página individual do fertilizante
-                    page_file = str(_PAGES_DIR / f"fert_{slug.replace('-', '_')}.py")
+                    # Link direto para a página individual do fertilizante em sua respectiva pasta
+                    page_path = _FERTILIZER_PAGE_MAP.get(slug, _PAGES_DIR / f"fert_{slug.replace('-', '_')}.py")
                     try:
-                        st.page_link(page_file, label="📊 Acessar Painel do Produto", width="stretch")
+                        st.page_link(str(page_path), label="📊 Acessar Painel do Produto", width="stretch")
                     except Exception:
                         st.caption(f"Acesse '{canonical_name}' na sidebar.")
 
@@ -230,7 +247,8 @@ def render_view() -> None:
         with c_btn:
             st.write("")
             try:
-                st.page_link(str(_PAGES_DIR / "fert_micronutrientes.py"), label="👉 Abrir Painel de Micronutrientes", icon=":material/biotech:", width="stretch")
+                micro_page = _FERTILIZER_PAGE_MAP.get("micronutrientes", _CATALOG_DIR / "micronutrientes" / "micronutrientes.py")
+                st.page_link(str(micro_page), label="👉 Abrir Painel de Micronutrientes", icon=":material/biotech:", width="stretch")
             except Exception:
                 st.info("Acesse 'Micronutrientes' na barra lateral.")
 

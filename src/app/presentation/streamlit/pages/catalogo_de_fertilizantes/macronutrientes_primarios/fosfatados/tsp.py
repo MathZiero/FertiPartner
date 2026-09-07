@@ -4,7 +4,7 @@ from app.presentation.streamlit.views.v_fertilizer_detail import render_fertiliz
 
 
 def render_page() -> None:
-    """Renderiza o painel dedicado do Superfosfato Triplo (TSP)."""
+    """Renderiza o painel dedicado do TSP."""
     render_fertilizer_page("tsp")
 
 

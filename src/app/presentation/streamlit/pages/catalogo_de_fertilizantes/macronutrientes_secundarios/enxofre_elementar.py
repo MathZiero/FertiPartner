@@ -4,7 +4,7 @@ from app.presentation.streamlit.views.v_fertilizer_detail import render_fertiliz
 
 
 def render_page() -> None:
-    """Renderiza o painel dedicado do Enxofre Elementar Pastilhado."""
+    """Renderiza o painel dedicado do Enxofre Elementar."""
     render_fertilizer_page("enxofre-elementar")
 
 
