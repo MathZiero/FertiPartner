@@ -20,6 +20,7 @@ def test_gemini_client_unconfigured_fails_gracefully():
         messages=[ChatMessage(role=ChatRole.USER, content="Olá")]
     )
     assert not resp.is_success
+    assert resp.error_message is not None
     assert "não configurada" in resp.error_message
 
 
@@ -205,6 +206,7 @@ def test_gemini_client_handles_404_error_message():
 
         res = client.generate_content([ChatMessage(role=ChatRole.USER, content="Teste")])
         assert not res.is_success
+        assert res.error_message is not None
         assert "gemini-3.6-flash" in res.error_message
 
 
