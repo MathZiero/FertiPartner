@@ -99,6 +99,60 @@ section[data-testid="stSidebar"] div {
     letter-spacing: 0.06em !important;
 }
 
+/* Submenus expansíveis na barra lateral */
+section[data-testid="stSidebar"] [data-testid="stExpander"] {
+    background-color: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 9px !important;
+    margin-bottom: 0.35rem !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    overflow: hidden !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    font-weight: 600 !important;
+    font-size: 0.83rem !important;
+    color: #1B4332 !important;
+    padding: 0.4rem 0.6rem !important;
+    border-radius: 8px !important;
+    transition: background 0.15s ease !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {
+    color: #2D6A4F !important;
+    background-color: #EDF3EF !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    padding: 0.25rem 0.4rem 0.4rem 0.4rem !important;
+    border-top: 1px solid #F0F4F1 !important;
+    background-color: #FAFCFA !important;
+}
+
+/* Links de páginas dentro da barra lateral (st.page_link) */
+section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] {
+    color: #374151 !important;
+    border-radius: 6px !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    padding: 0.32rem 0.55rem !important;
+    margin-bottom: 0.15rem !important;
+    transition: all 0.15s ease !important;
+    border: 1px solid transparent !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]:hover {
+    background-color: #E5EAE7 !important;
+    color: #1B4332 !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"][aria-current="page"] {
+    background-color: #D8F3DC !important;
+    border-color: #B7E4C7 !important;
+    color: #1B4332 !important;
+    font-weight: 700 !important;
+}
+
 /* Header estilizado centralizado */
 .fp-header-container {
     background: linear-gradient(135deg, #FFFFFF 0%, #F0F7F3 100%);

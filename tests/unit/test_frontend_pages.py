@@ -118,6 +118,9 @@ def test_dashboard_compiles_and_contains_updated_categories():
     assert "catalogo.py" not in content, "catalogo.py (Hub Central) não deve ser referenciado no dashboard"
     assert "02_catalogo.py" not in content, "02_catalogo.py não deve ser referenciado no dashboard"
     assert "Catálogo •" not in content, "Não devem existir categorias 'Catálogo • ...' divididas no dashboard"
+    assert 'position="hidden"' in content, "st.navigation deve usar position='hidden' para controle de submenus"
+    assert "st.expander" in content, "Submenus por tipo de nutriente devem usar st.expander"
+    assert "st.page_link" in content, "Páginas devem ser acessíveis via st.page_link na barra lateral"
 
 
 def test_catalogo_folder_hierarchy_exists():
