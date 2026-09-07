@@ -137,7 +137,7 @@ def render_view() -> None:
             )
 
     apply_ferti_theme(fig_line, height=420, x_title="Data da Cotação", y_title="USD por Tonelada Métrica (MT)")
-    st.plotly_chart(fig_line, use_container_width=True, config=get_default_plotly_config())
+    st.plotly_chart(fig_line, width="stretch", config=get_default_plotly_config())
 
     st.divider()
 
@@ -156,7 +156,7 @@ def render_view() -> None:
         )
         fig_mom.update_traces(texttemplate="%{y:+.1f}%", textposition="outside")
         apply_ferti_theme(fig_mom, height=280, show_legend=False)
-        st.plotly_chart(fig_mom, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_mom, width="stretch", config=get_default_plotly_config())
 
     st.divider()
 
@@ -180,7 +180,7 @@ def render_view() -> None:
             "Média 3M ($/MT)": st.column_config.NumberColumn(format="$ %.2f"),
             "Var. MoM (%)": st.column_config.NumberColumn(format="%.2f%%"),
         },
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
     render_download_csv_button(filtered, filename="historico_precos.csv")

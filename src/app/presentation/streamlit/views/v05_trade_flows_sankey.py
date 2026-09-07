@@ -131,7 +131,7 @@ def render_view() -> None:
     )
     fig_sankey.update_layout(margin=dict(l=20, r=20, t=60, b=20))
 
-    st.plotly_chart(fig_sankey, use_container_width=True, config=get_default_plotly_config())
+    st.plotly_chart(fig_sankey, width="stretch", config=get_default_plotly_config())
 
     st.divider()
 
@@ -150,7 +150,7 @@ def render_view() -> None:
                 format="%d MT" if metric_choice == "Volume (MT)" else "$ %d"
             )
         },
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
     render_download_csv_button(routes_sorted, filename=f"rotas_comerciais_{selected_year}.csv")

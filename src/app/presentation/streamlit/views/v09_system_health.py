@@ -27,7 +27,7 @@ def render_view() -> None:
     # Controles superiores
     c_btn, _ = st.columns([3, 9])
     with c_btn:
-        if st.button("🔄 Atualizar Métricas & Limpar Cache", use_container_width=True):
+        if st.button("🔄 Atualizar Métricas & Limpar Cache", width="stretch"):
             st.cache_data.clear()
             st.rerun()
 
@@ -95,7 +95,7 @@ def render_view() -> None:
                     "Obtidos": st.column_config.NumberColumn(format="%d"),
                     "Duração (s)": st.column_config.NumberColumn(format="%.1f s"),
                 },
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
             render_download_csv_button(df_runs, filename="historico_ingestoes_fertipartner.csv")
@@ -130,7 +130,7 @@ def render_view() -> None:
                 column_config={
                     "Registros Ingeridos": st.column_config.NumberColumn(format="%d"),
                 },
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
         else:
@@ -174,7 +174,7 @@ def render_view() -> None:
                     "producing_countries_count": "Países Produtores",
                     "price_points_count": "Pontos de Preço",
                 })[["Ano Ref.", "Fertilizante", "Fluxos Comércio", "Registros Produção", "Países Produtores", "Pontos de Preço", "Status Integridade"]],
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
             render_download_csv_button(df_matrix, filename="matriz_consistencia_banco_dados.csv")

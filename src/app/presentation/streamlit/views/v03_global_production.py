@@ -162,7 +162,7 @@ def render_view() -> None:
             plot_bgcolor="rgba(0,0,0,0)",
             font=dict(color="#1B4332"),
         )
-        st.plotly_chart(fig_map, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_map, width="stretch", config=get_default_plotly_config())
     else:
         st.info(f"Sem dados geográficos de {map_flow_type.lower()} para o filtro selecionado.")
 
@@ -188,7 +188,7 @@ def render_view() -> None:
             textposition="inside",
         )
         apply_ferti_theme(fig_bar, height=360, show_legend=False)
-        st.plotly_chart(fig_bar, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_bar, width="stretch", config=get_default_plotly_config())
 
     with col_tbl:
         st.markdown("##### 📊 Detalhamento e Market Share (%)")
@@ -213,7 +213,7 @@ def render_view() -> None:
                     format="%d MT",
                 ),
             },
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         render_download_csv_button(display_tbl, filename=f"producao_global_{selected_year}.csv")

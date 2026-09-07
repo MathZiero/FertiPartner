@@ -107,7 +107,7 @@ def render_view() -> None:
         )
         fig_exp.update_traces(texttemplate="%{x:,.0f} MT", textposition="inside")
         apply_ferti_theme(fig_exp, height=340, show_legend=False)
-        st.plotly_chart(fig_exp, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_exp, width="stretch", config=get_default_plotly_config())
 
     with col_dest:
         st.markdown("##### 📥 Principais Mercados Compradores (Destinos)")
@@ -124,7 +124,7 @@ def render_view() -> None:
         )
         fig_imp.update_traces(texttemplate="%{x:,.0f} MT", textposition="inside")
         apply_ferti_theme(fig_imp, height=340, show_legend=False)
-        st.plotly_chart(fig_imp, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_imp, width="stretch", config=get_default_plotly_config())
 
     st.divider()
 
@@ -145,7 +145,7 @@ def render_view() -> None:
             "Valor em Dólares (USD)": st.column_config.NumberColumn(format="$ %d"),
             "Preço Médio (USD/MT)": st.column_config.NumberColumn(format="$ %.2f"),
         },
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
     render_download_csv_button(filtered[display_cols], filename=f"comercio_internacional_{selected_year}.csv")

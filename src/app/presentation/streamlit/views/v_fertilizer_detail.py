@@ -190,7 +190,7 @@ def _render_section_production(fert: dict[str, Any], slug: str) -> None:
                 plot_bgcolor="rgba(0,0,0,0)",
                 font=dict(color="#1B4332"),
             )
-            st.plotly_chart(fig_map, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_map, width="stretch", config=get_default_plotly_config())
         else:
             st.info(f"Sem dados geográficos de {flow_type.lower()} para {canonical_name} no ano {map_year}.")
 
@@ -223,7 +223,7 @@ def _render_section_production(fert: dict[str, Any], slug: str) -> None:
                     )
                     fig_bar.update_traces(texttemplate="%{x:,.0f} MT", textposition="inside")
                     apply_ferti_theme(fig_bar, height=350, show_legend=False)
-                    st.plotly_chart(fig_bar, use_container_width=True, config=get_default_plotly_config())
+                    st.plotly_chart(fig_bar, width="stretch", config=get_default_plotly_config())
 
                 with col_tbl:
                     display_tbl = filtered_rank[["rank_position", "country_name", "standard_quantity_mt", "global_market_share_pct"]].sort_values(by="rank_position")
@@ -246,7 +246,7 @@ def _render_section_production(fert: dict[str, Any], slug: str) -> None:
                                 format="%d MT",
                             ),
                         },
-                        use_container_width=True,
+                        width="stretch",
                         hide_index=True,
                     )
                     render_download_csv_button(display_tbl, filename=f"ranking_producao_{slug}_{rank_year}.csv")
@@ -328,7 +328,7 @@ def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
                 )])
                 apply_ferti_theme(fig_sankey, title=f"Top Rotas de {canonical_name} ({sankey_year})", height=450, show_legend=False)
                 fig_sankey.update_layout(margin=dict(l=20, r=20, t=50, b=20))
-                st.plotly_chart(fig_sankey, use_container_width=True, config=get_default_plotly_config())
+                st.plotly_chart(fig_sankey, width="stretch", config=get_default_plotly_config())
             else:
                 st.info(f"Sem fluxos bilaterais significativos de {canonical_name} para {sankey_year}.")
         else:
@@ -360,7 +360,7 @@ def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
                 )
                 fig_exp.update_traces(texttemplate="%{x:,.0f} MT", textposition="inside")
                 apply_ferti_theme(fig_exp, height=320, show_legend=False)
-                st.plotly_chart(fig_exp, use_container_width=True, config=get_default_plotly_config())
+                st.plotly_chart(fig_exp, width="stretch", config=get_default_plotly_config())
 
             with c_imp:
                 st.markdown("###### 📥 Maiores Destinos (Importadores)")
@@ -377,7 +377,7 @@ def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
                 )
                 fig_imp.update_traces(texttemplate="%{x:,.0f} MT", textposition="inside")
                 apply_ferti_theme(fig_imp, height=320, show_legend=False)
-                st.plotly_chart(fig_imp, use_container_width=True, config=get_default_plotly_config())
+                st.plotly_chart(fig_imp, width="stretch", config=get_default_plotly_config())
 
             st.markdown("###### 📑 Relações Comerciais Consolidadas")
             disp_cols = ["exporter_country", "importer_country", "total_quantity_mt", "total_value_usd", "avg_usd_per_mt"]
@@ -390,7 +390,7 @@ def _render_section_trade(fert: dict[str, Any], slug: str) -> None:
                     "total_value_usd": "Valor (USD)",
                     "avg_usd_per_mt": "Preço Médio (USD/MT)",
                 }),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
             render_download_csv_button(filtered_trade[avail_cols], filename=f"comercio_{slug}_{bar_year}.csv")
@@ -496,7 +496,7 @@ def _render_section_prices(fert: dict[str, Any], slug: str) -> None:
                     ))
 
             apply_ferti_theme(fig_line, height=400, x_title="Data da Cotação", y_title="USD por Tonelada Métrica (MT)")
-            st.plotly_chart(fig_line, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_line, width="stretch", config=get_default_plotly_config())
 
             render_download_csv_button(filtered_prices, filename=f"precos_{slug}.csv")
         else:
@@ -585,7 +585,7 @@ def _render_section_brazil(fert: dict[str, Any], slug: str) -> None:
                 name="Produção Nacional" if "national_production" in t.name else "Importações"
             ))
             apply_ferti_theme(fig_bal, height=350)
-            st.plotly_chart(fig_bal, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_bal, width="stretch", config=get_default_plotly_config())
         else:
             st.info(f"Sem dados de balanço nacional consolidados para {canonical_name} no ano {br_year}.")
 

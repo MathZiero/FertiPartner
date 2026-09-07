@@ -156,7 +156,7 @@ def render_micronutrients_page() -> None:
         )
         fig_vol.update_traces(texttemplate="%{x:,.0f} MT", textposition="inside")
         apply_ferti_theme(fig_vol, height=360, show_legend=False)
-        st.plotly_chart(fig_vol, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_vol, width="stretch", config=get_default_plotly_config())
 
     with col_dep:
         fig_dep = px.bar(
@@ -170,7 +170,7 @@ def render_micronutrients_page() -> None:
         )
         fig_dep.update_traces(texttemplate="%{x:.1f}%", textposition="inside")
         apply_ferti_theme(fig_dep, height=360, show_legend=False)
-        st.plotly_chart(fig_dep, use_container_width=True, config=get_default_plotly_config())
+        st.plotly_chart(fig_dep, width="stretch", config=get_default_plotly_config())
 
     st.divider()
 
@@ -192,7 +192,7 @@ def render_micronutrients_page() -> None:
                     max_value=100,
                 ),
             },
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         render_download_csv_button(df_micro, filename="micronutrientes_mercado.csv")

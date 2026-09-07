@@ -61,7 +61,7 @@ def render_view() -> None:
                 labels={"price_date": "Data", "standard_price_usd_per_mt": "Preço (USD/MT)", "benchmark_name": "Benchmark"},
             )
             apply_ferti_theme(fig_p_comp, height=380)
-            st.plotly_chart(fig_p_comp, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_p_comp, width="stretch", config=get_default_plotly_config())
         else:
             st.info("Preços indisponíveis para os fertilizantes selecionados.")
 
@@ -82,7 +82,7 @@ def render_view() -> None:
                     "cas_rn": "CAS RN",
                     "garantia_nutricional": "Garantia Típica",
                 }),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
@@ -103,7 +103,7 @@ def render_view() -> None:
                 labels={"standard_quantity_mt": "Produção (MT)", "country_name": "País", "fertilizer_name": "Fertilizante"},
             )
             apply_ferti_theme(fig_country, height=400)
-            st.plotly_chart(fig_country, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_country, width="stretch", config=get_default_plotly_config())
 
             st.divider()
 
@@ -119,7 +119,7 @@ def render_view() -> None:
                     "Produção (MT)": st.column_config.NumberColumn(format="%d MT"),
                     "Market Share (%)": st.column_config.NumberColumn(format="%.2f%%"),
                 },
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
             render_download_csv_button(country_df, filename="comparativo_paises.csv")

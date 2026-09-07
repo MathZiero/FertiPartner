@@ -97,9 +97,12 @@ def test_dashboard_compiles_and_contains_updated_categories():
     assert compiled is not None
 
     content = dashboard_path.read_text(encoding="utf-8")
+    assert 'initial_sidebar_state="collapsed"' in content, "Sidebar deve ser colapsada por padrão"
     assert "Catálogo de Fertilizantes" in content, "Catálogo não encontrado no dashboard"
-    assert "Macronutrientes Primários" in content, "Categoria 'Macronutrientes Primários' não encontrada no dashboard"
-    assert "Macronutrientes Secundários" in content, "Categoria 'Macronutrientes Secundários' não encontrada no dashboard"
+    assert "Primários: Nitrogenados" in content, "Subdivisão 'Primários: Nitrogenados' não encontrada no dashboard"
+    assert "Primários: Fosfatados" in content, "Subdivisão 'Primários: Fosfatados' não encontrada no dashboard"
+    assert "Primários: Potássicos" in content, "Subdivisão 'Primários: Potássicos' não encontrada no dashboard"
+    assert "Secundários" in content, "Categoria 'Secundários' não encontrada no dashboard"
     assert "Micronutrientes" in content, "Categoria 'Micronutrientes' não encontrada no dashboard"
     assert "💡 Inteligência" in content, "Categoria '💡 Inteligência' não encontrada no dashboard"
     assert "fert_ureia.py" in content, "Página da Ureia não encontrada no dashboard"

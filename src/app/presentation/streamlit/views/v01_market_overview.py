@@ -99,7 +99,7 @@ def render_view() -> None:
                     },
                 )
                 apply_ferti_theme(fig_bar, height=350, x_title="Fertilizante", y_title="Volume em Toneladas Métricas (MT)")
-                st.plotly_chart(fig_bar, use_container_width=True, config=get_default_plotly_config())
+                st.plotly_chart(fig_bar, width="stretch", config=get_default_plotly_config())
             else:
                 st.info("Dados de dependência não disponíveis.")
 
@@ -115,7 +115,7 @@ def render_view() -> None:
                 )
                 fig_pie.update_traces(textposition="inside", textinfo="percent+label")
                 apply_ferti_theme(fig_pie, height=350, show_legend=False)
-                st.plotly_chart(fig_pie, use_container_width=True, config=get_default_plotly_config())
+                st.plotly_chart(fig_pie, width="stretch", config=get_default_plotly_config())
             else:
                 st.info("Dados de produção não disponíveis.")
 
@@ -136,7 +136,7 @@ def render_view() -> None:
                 },
             )
             apply_ferti_theme(fig_prices, height=400, x_title="Data da Cotação", y_title="Preço em Dólares por Tonelada Métrica (USD/MT)")
-            st.plotly_chart(fig_prices, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_prices, width="stretch", config=get_default_plotly_config())
         else:
             st.info("Séries de preços não disponíveis.")
 
@@ -153,7 +153,7 @@ def render_view() -> None:
             }
             st.dataframe(
                 df_fert[available_cols].rename(columns=rename_map),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
             render_download_csv_button(df_fert, filename="catalogo_fertilizantes.csv")

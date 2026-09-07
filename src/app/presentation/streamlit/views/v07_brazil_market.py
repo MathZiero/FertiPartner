@@ -137,7 +137,7 @@ def render_view() -> None:
                 name="Produção Nacional" if "national_production" in t.name else "Importações"
             ))
             apply_ferti_theme(fig_bal, height=360)
-            st.plotly_chart(fig_bal, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_bal, width="stretch", config=get_default_plotly_config())
 
         with c_dep_ind:
             st.markdown("##### 🚨 Taxa de Dependência Externa por Fertilizante (%)")
@@ -156,7 +156,7 @@ def render_view() -> None:
                 )
                 fig_gauge.update_traces(texttemplate="%{x:.1f}%", textposition="inside")
                 apply_ferti_theme(fig_gauge, height=360, show_legend=False)
-                st.plotly_chart(fig_gauge, use_container_width=True, config=get_default_plotly_config())
+                st.plotly_chart(fig_gauge, width="stretch", config=get_default_plotly_config())
             else:
                 st.info("Taxa de dependência não calculada para os filtros selecionados (aguardando dados consolidados de produção).")
 
@@ -177,7 +177,7 @@ def render_view() -> None:
                 )
                 fig_uf.update_traces(texttemplate="%{x:.1f}%", textposition="inside")
                 apply_ferti_theme(fig_uf, height=380, show_legend=False)
-                st.plotly_chart(fig_uf, use_container_width=True, config=get_default_plotly_config())
+                st.plotly_chart(fig_uf, width="stretch", config=get_default_plotly_config())
             else:
                 st.info("Distribuição por UF não disponível.")
 
@@ -200,7 +200,7 @@ def render_view() -> None:
                         ),
                         "Volume Estimado (MT)": st.column_config.NumberColumn(format="%d MT"),
                     },
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True,
                 )
 
@@ -221,7 +221,7 @@ def render_view() -> None:
             )
             fig_supp.update_traces(textinfo="percent+label", textposition="inside")
             apply_ferti_theme(fig_supp, height=360, show_legend=False)
-            st.plotly_chart(fig_supp, use_container_width=True, config=get_default_plotly_config())
+            st.plotly_chart(fig_supp, width="stretch", config=get_default_plotly_config())
         else:
             st.info("Registros de fornecedores do Brasil não encontrados.")
 
@@ -248,7 +248,7 @@ def render_view() -> None:
                 max_value=100,
             ),
         },
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
     render_download_csv_button(filtered, filename="dependencia_brasil.csv")
