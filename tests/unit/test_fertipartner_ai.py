@@ -128,3 +128,105 @@ def test_executive_briefing_use_case_with_mock_client():
     assert resp.is_success
     assert "Gargalos moderados" in resp.content
     assert mock_client.generate_content.called
+
+
+def test_gemini_client_default_model_is_gemini_3_6_flash():
+    """Garante que o modelo padrão atualizado é o gemini-3.6-flash."""
+    client = GeminiClient()
+    assert client.DEFAULT_MODEL == "gemini-3.6-flash"
+    assert client.model_name == "gemini-3.6-flash"
+
+
+def test_gemini_client_list_available_models_fallback():
+    """Valida retorno seguro de fallback quando a chave não estiver configurada."""
+    models = GeminiClient.list_available_models("")
+    assert "gemini-3.6-flash" in models
+    assert "gemini-3.8-flash" in models
+
+
+def test_gemini_client_list_available_models_with_mock_api():
+    """Valida descoberta dinâmica de modelos via v1beta/models da Google."""
+    mock_payload = {
+        "models": [
+            {
+                "name": "models/gemini-1.5-flash",
+                "supportedGenerationMethods": ["generateContent"],
+            },
+            {
+                "name": "models/gemini-2.5-flash",
+                "supportedGenerationMethods": ["generateContent"],
+            },
+            {
+                "name": "models/gemini-3.8-flash",
+                "supportedGenerationMethods": ["generateContent"],
+            },
+            {
+                "name": "models/gemini-3.6-flash",
+                "supportedGenerationMethods": ["generateContent"],
+            },
+            {
+                "name": "models/embedding-001",
+                "supportedGenerationMethods": ["embedContent"],
+            },
+        ]
+    }
+    with patch("httpx.Client.get") as mock_get:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = mock_payload
+        mock_get.return_value = mock_resp
+
+        models = GeminiClient.list_available_models("AIzaSyFakeKeyTest12345")
+        assert "gemini-3.6-flash" in models
+        assert "gemini-3.8-flash" in models
+        # Modelos depreciados e embeddings devem ter sido filtrados
+        assert "gemini-1.5-flash" not in models
+        assert "gemini-2.5-flash" not in models
+        assert "embedding-001" not in models
+        # gemini-3.6-flash deve ser o primeiro
+        assert models[0] == "gemini-3.6-flash"
+
+
+def test_gemini_client_handles_404_error_message():
+    """Valida que resposta 404 da API Gemini extrai a mensagem detalhada da Google."""
+    client = GeminiClient(api_key="AIzaSyFakeKeyTest12345", model_name="gemini-2.5-flash")
+    with patch("httpx.Client.post") as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 404
+        mock_resp.json.return_value = {
+            "error": {
+                "code": 404,
+                "message": "This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash.",
+                "status": "NOT_FOUND",
+            }
+        }
+        mock_resp.text = "404 Not Found"
+        mock_post.return_value = mock_resp
+
+        res = client.generate_content([ChatMessage(role=ChatRole.USER, content="Teste")])
+        assert not res.is_success
+        assert "gemini-3.6-flash" in res.error_message
+
+
+def test_gemini_client_generation_config_omits_temperature_for_gemini_3():
+    """Garante que para modelos da família gemini-3.x temperature não é enviada no payload."""
+    client = GeminiClient(api_key="AIzaSyFakeKeyTest12345", model_name="gemini-3.6-flash")
+    with patch("httpx.Client.post") as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "candidates": [{"content": {"parts": [{"text": "Resposta OK"}]}}]
+        }
+        mock_post.return_value = mock_resp
+
+        res = client.generate_content(
+            [ChatMessage(role=ChatRole.USER, content="Olá")],
+            temperature=0.2,
+        )
+        assert res.is_success
+        call_kwargs = mock_post.call_args[1]
+        json_payload = call_kwargs["json"]
+        assert "generationConfig" in json_payload
+        assert "temperature" not in json_payload["generationConfig"]
+        assert json_payload["generationConfig"]["maxOutputTokens"] == 2048
+

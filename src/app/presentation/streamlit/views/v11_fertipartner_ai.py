@@ -41,11 +41,16 @@ def render_view() -> None:
             unsafe_allow_html=True,
         )
     with c_model:
+        available_models = FertiAIService.get_available_models()
         curr_model = FertiAIService.get_selected_model()
+        if curr_model not in available_models:
+            curr_model = available_models[0]
+            FertiAIService.set_selected_model(curr_model)
+
         sel_model = st.selectbox(
             "Modelo Gemini:",
-            FertiAIService.AVAILABLE_MODELS,
-            index=FertiAIService.AVAILABLE_MODELS.index(curr_model) if curr_model in FertiAIService.AVAILABLE_MODELS else 0,
+            available_models,
+            index=available_models.index(curr_model) if curr_model in available_models else 0,
             key="sb_select_gemini_model",
             label_visibility="collapsed",
         )

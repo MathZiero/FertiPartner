@@ -14,12 +14,49 @@ class GeminiClient:
     """Cliente HTTP resiliente para a API Google Gemini v1beta."""
 
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-    DEFAULT_MODEL = "gemini-2.5-flash"
+    DEFAULT_MODEL = "gemini-3.6-flash"
 
     def __init__(self, api_key: str | None = None, model_name: str | None = None) -> None:
         self.api_key = api_key or ""
         self.model_name = model_name or self.DEFAULT_MODEL
         self._http_client = httpx.Client(timeout=35.0)
+
+    @classmethod
+    def list_available_models(cls, api_key: str) -> list[str]:
+        """Consulta a API do Google AI Studio para listar modelos disponíveis suportando generateContent.
+
+        Filtra modelos depreciados e prioriza os modelos recomendados da série 3.x.
+        Retorna fallback seguro caso a API não responda ou a chave esteja ausente.
+        """
+        fallback = ["gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.1-pro"]
+        if not api_key or len(api_key.strip()) < 10:
+            return fallback
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key.strip()}"
+        try:
+            with httpx.Client(timeout=8.0) as client:
+                resp = client.get(url)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    models = data.get("models", [])
+                    valid_models: list[str] = []
+                    deprecated_tokens = ["1.0", "1.5", "2.0", "2.5", "vision", "text-bison", "chat-bison"]
+                    for m in models:
+                        name = m.get("name", "").removeprefix("models/")
+                        supported = m.get("supportedGenerationMethods", [])
+                        if "generateContent" in supported and name.startswith("gemini-"):
+                            if not any(dep in name for dep in deprecated_tokens):
+                                valid_models.append(name)
+
+                    if valid_models:
+                        if "gemini-3.6-flash" in valid_models:
+                            valid_models.remove("gemini-3.6-flash")
+                            valid_models.insert(0, "gemini-3.6-flash")
+                        return valid_models
+        except Exception as exc:
+            logger.warning("Falha na descoberta de modelos Gemini via API: %s", exc)
+
+        return fallback
 
     def is_configured(self) -> bool:
         """Verifica se a chave da API está devidamente configurada."""
@@ -82,12 +119,16 @@ class GeminiClient:
         if not contents:
             return AIResponse(content="", is_success=False, error_message="Nenhuma mensagem para envio.")
 
+        gen_config: dict[str, Any] = {
+            "maxOutputTokens": 2048,
+        }
+        # Na série Gemini 3.x, parâmetros como temperature não são suportados em generationConfig
+        if not self.model_name.startswith("gemini-3") and temperature is not None:
+            gen_config["temperature"] = temperature
+
         payload: dict[str, Any] = {
             "contents": contents,
-            "generationConfig": {
-                "temperature": temperature,
-                "maxOutputTokens": 2048,
-            },
+            "generationConfig": gen_config,
         }
 
         if system_instruction:
@@ -142,12 +183,21 @@ class GeminiClient:
 
             elif resp.status_code in (400, 401, 403):
                 err_data = resp.json().get("error", {})
-                err_msg = err_data.get("message", "Chave de API inválida ou sem permissão de acesso.")
-                logger.warning("Falha de autenticação no Gemini: %s", err_msg)
+                err_msg = err_data.get("message", "Chave de API inválida ou parâmetros incorretos.")
+                logger.warning("Falha de autenticação/parâmetros no Gemini: %s", err_msg)
                 return AIResponse(
                     content="",
                     is_success=False,
-                    error_message=f"Erro de autenticação no Google Gemini: {err_msg}",
+                    error_message=f"Erro no Google Gemini: {err_msg}",
+                )
+            elif resp.status_code == 404:
+                err_data = resp.json().get("error", {})
+                err_msg = err_data.get("message", f"O modelo '{self.model_name}' não está disponível ou foi depreciado.")
+                logger.warning("Modelo Gemini indisponível (HTTP 404): %s", err_msg)
+                return AIResponse(
+                    content="",
+                    is_success=False,
+                    error_message=f"Modelo Gemini indisponível: {err_msg}",
                 )
             elif resp.status_code == 429:
                 return AIResponse(
@@ -156,11 +206,17 @@ class GeminiClient:
                     error_message="Limite de taxa (rate limit / cota gratuita) atingido na API do Gemini. Aguarde alguns segundos.",
                 )
             else:
+                err_msg = ""
+                try:
+                    err_msg = resp.json().get("error", {}).get("message", "")
+                except Exception:
+                    pass
+                detail = f": {err_msg}" if err_msg else f" (HTTP {resp.status_code})."
                 logger.error("Erro na API Gemini: HTTP %s - %s", resp.status_code, resp.text)
                 return AIResponse(
                     content="",
                     is_success=False,
-                    error_message=f"Falha na comunicação com o Google Gemini (HTTP {resp.status_code}).",
+                    error_message=f"Falha na comunicação com o Google Gemini{detail}",
                 )
 
         except httpx.TimeoutException:

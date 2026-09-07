@@ -13,9 +13,9 @@ class FertiAIService:
     """Gerencia a sessão e clientes de IA na camada de apresentação Streamlit."""
 
     AVAILABLE_MODELS = [
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-1.5-flash",
+        "gemini-3.6-flash",
+        "gemini-3.8-flash",
+        "gemini-3.1-pro",
     ]
 
     @classmethod
@@ -43,12 +43,27 @@ class FertiAIService:
     @classmethod
     def get_selected_model(cls) -> str:
         """Obtém o modelo selecionado."""
-        return st.session_state.get("gemini_model", "gemini-2.5-flash")
+        return st.session_state.get("gemini_model", "gemini-3.6-flash")
 
     @classmethod
     def set_selected_model(cls, model_name: str) -> None:
         """Atualiza o modelo selecionado."""
         st.session_state["gemini_model"] = model_name
+
+    @classmethod
+    def get_available_models(cls) -> list[str]:
+        """Retorna os modelos disponíveis, consultando a API do Google se a chave estiver configurada."""
+        api_key = cls.get_api_key()
+        if not api_key:
+            return cls.AVAILABLE_MODELS
+
+        cache_key = f"gemini_models_cache_{api_key[:8]}"
+        if cache_key in st.session_state:
+            return st.session_state[cache_key]
+
+        models = GeminiClient.list_available_models(api_key)
+        st.session_state[cache_key] = models
+        return models
 
     @classmethod
     def get_client(cls) -> GeminiClient:
