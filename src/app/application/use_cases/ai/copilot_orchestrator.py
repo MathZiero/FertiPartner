@@ -39,6 +39,7 @@ class FertiPartnerAIOrchestrator:
         working_history.append(ChatMessage(role=ChatRole.USER, content=user_prompt.strip()))
 
         tools_used: list[str] = []
+        response: AIResponse = AIResponse(content="", is_success=True)
 
         for turn in range(self.MAX_TOOL_TURNS):
             logger.info("Executando turno %d da conversa com Gemini", turn + 1)
