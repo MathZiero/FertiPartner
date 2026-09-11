@@ -133,6 +133,24 @@ SOURCE_CONFIGS: list[SourceConfig] = [
         min_year=2018,
         max_year_offset=1,
     ),
+    SourceConfig(
+        name="worldbank",
+        table="country_indicators",
+        year_column="year",
+        month_column=None,
+        granularity="annual",
+        min_year=2015,
+        max_year_offset=1,
+    ),
+    SourceConfig(
+        name="faostat_prices",
+        table="price_records",
+        year_column="price_date",
+        month_column=None,
+        granularity="annual",
+        min_year=2015,
+        max_year_offset=1,
+    ),
 ]
 
 
@@ -405,6 +423,72 @@ class GapDetector:
             max_year_used=max_y,
         )
 
+    def detect_worldbank_gaps(
+        self,
+        fertilizer_id: int | None = None,
+        min_year: int | None = None,
+        max_year: int | None = None,
+    ) -> DatasetGapResult:
+        """Detecta lacunas em country_indicators (World Bank)."""
+        cfg = next(c for c in SOURCE_CONFIGS if c.name == "worldbank")
+        min_y = min_year if min_year is not None else cfg.min_year
+        max_y = max_year if max_year is not None else self._resolve_max_year(cfg)
+
+        res = self.supabase.table(cfg.table).select("year").execute()
+        rows = res.data or []
+        present = [int(r["year"]) for r in rows if r.get("year") is not None]
+        missing = _compute_missing_years(present, min_y, max_y)
+
+        return DatasetGapResult(
+            source="worldbank",
+            fertilizer_id=fertilizer_id or 0,
+            missing_years=missing,
+            missing_months=[],
+            present_years=sorted(set(present)),
+            min_year_used=min_y,
+            max_year_used=max_y,
+        )
+
+    def detect_faostat_prices_gaps(
+        self,
+        fertilizer_id: int,
+        min_year: int | None = None,
+        max_year: int | None = None,
+    ) -> DatasetGapResult:
+        """Detecta lacunas em price_records para FAOSTAT PP (source_id=9)."""
+        cfg = next(c for c in SOURCE_CONFIGS if c.name == "faostat_prices")
+        min_y = min_year if min_year is not None else cfg.min_year
+        max_y = max_year if max_year is not None else self._resolve_max_year(cfg)
+
+        res = (
+            self.supabase.table(cfg.table)
+            .select("price_date")
+            .eq("fertilizer_id", fertilizer_id)
+            .eq("source_id", 9)
+            .execute()
+        )
+        rows = res.data or []
+        present = []
+        for r in rows:
+            pd_str = str(r.get("price_date", ""))
+            if pd_str and len(pd_str) >= 4:
+                try:
+                    present.append(int(pd_str[:4]))
+                except ValueError:
+                    pass
+
+        missing = _compute_missing_years(present, min_y, max_y)
+
+        return DatasetGapResult(
+            source="faostat_prices",
+            fertilizer_id=fertilizer_id,
+            missing_years=missing,
+            missing_months=[],
+            present_years=sorted(set(present)),
+            min_year_used=min_y,
+            max_year_used=max_y,
+        )
+
     def detect_all(
         self,
         fertilizer_id: int,
@@ -421,6 +505,8 @@ class GapDetector:
             "comex": self.detect_comex_gaps,
             "fred": self.detect_fred_gaps,
             "comtrade": self.detect_comtrade_gaps,
+            "worldbank": self.detect_worldbank_gaps,
+            "faostat_prices": self.detect_faostat_prices_gaps,
         }
 
         for source_name in active_sources:
@@ -595,6 +681,8 @@ class SmartCollector:
             run_faostat_pipeline,
             run_fred_pipeline,
             run_comtrade_pipeline,
+            run_worldbank_pipeline,
+            run_faostat_prices_pipeline,
         )
 
         t_start = time.time()
@@ -621,6 +709,17 @@ class SmartCollector:
                 )
             elif source == "comtrade":
                 res = run_comtrade_pipeline(
+                    fertilizer_id=fertilizer_id,
+                    year=year,
+                    dry_run=dry_run,
+                )
+            elif source == "worldbank":
+                res = run_worldbank_pipeline(
+                    year=year,
+                    dry_run=dry_run,
+                )
+            elif source == "faostat_prices":
+                res = run_faostat_prices_pipeline(
                     fertilizer_id=fertilizer_id,
                     year=year,
                     dry_run=dry_run,
@@ -801,7 +900,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--source",
-        choices=["all", "comex", "faostat", "fred", "comtrade"],
+        choices=["all", "comex", "faostat", "fred", "comtrade", "worldbank", "faostat_prices"],
         default="all",
         help="Fonte de dados a processar (padrão: all)",
     )

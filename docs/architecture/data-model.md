@@ -55,6 +55,9 @@ erDiagram
     FERTILIZERS ||--o{ CONSUMPTION_RECORDS : consumed
     COUNTRIES ||--o{ CONSUMPTION_RECORDS : used_in
     DATA_SOURCES ||--o{ CONSUMPTION_RECORDS : sourced_from
+
+    COUNTRIES ||--o{ COUNTRY_INDICATORS : measures
+    DATA_SOURCES ||--o{ COUNTRY_INDICATORS : sourced_from
 ```
 
 ---
@@ -298,6 +301,20 @@ Repositório imutável de payloads recebidos das APIs.
 * `source_id` (INT, NOT NULL, FK -> data_sources)
 * `raw_data_id` (BIGINT, FK -> raw_data, NULLABLE)
 * *Chave Candidata / Unique*: `UNIQUE(fertilizer_id, country_id, period_start_date, period_type, sector, source_id)`
+
+#### `country_indicators` (RD09: Indicadores Macroeconômicos e Intensidade de Fertilizantes)
+Fato de indicadores contínuos por país e ano (ex: intensidade de uso em kg por hectare de terra arável pelo Banco Mundial, percentuais de produção nacional).
+* `id` (BIGSERIAL, PK)
+* `country_id` (INT, NOT NULL, FK -> countries)
+* `indicator_code` (VARCHAR(50), NOT NULL) — Ex: `AG.CON.FERT.ZS`, `AG.CON.FERT.PT.ZS`
+* `indicator_name` (VARCHAR(255), NOT NULL) — Descrição formal do indicador
+* `year` (INT, NOT NULL) — Ano de referência da medição
+* `value` (NUMERIC(18,4), NOT NULL) — Valor numérico medido
+* `unit_code` (VARCHAR(30), DEFAULT 'KG_PER_HA') — Unidade de mensuração (`KG_PER_HA`, `PERCENT`)
+* `data_status` (VARCHAR(30), DEFAULT 'OFFICIAL')
+* `source_id` (INT, NOT NULL, FK -> data_sources, default 8 para World Bank)
+* `raw_data_id` (BIGINT, FK -> raw_data, NULLABLE)
+* *Chave Candidata / Unique*: `UNIQUE(country_id, indicator_code, year, source_id)`
 
 ---
 

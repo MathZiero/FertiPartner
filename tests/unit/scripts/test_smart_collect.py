@@ -409,6 +409,8 @@ class TestSourceConfigs:
         assert "faostat" in sources
         assert "fred" in sources
         assert "comtrade" in sources
+        assert "worldbank" in sources
+        assert "faostat_prices" in sources
 
     def test_cada_fonte_tem_min_year_valido(self):
         for cfg in SOURCE_CONFIGS:
@@ -421,6 +423,8 @@ class TestSourceConfigs:
         assert cfg_by_name["fred"].granularity == "monthly"
         assert cfg_by_name["faostat"].granularity == "annual"
         assert cfg_by_name["comtrade"].granularity == "annual"
+        assert cfg_by_name["worldbank"].granularity == "annual"
+        assert cfg_by_name["faostat_prices"].granularity == "annual"
 
 
 # ---------------------------------------------------------------------------
@@ -453,3 +457,40 @@ class TestSmartCollectorDecideStrategy:
         gap_result = DatasetGapResult("faostat", 1, [], [])
         strategy = collector.decide_strategy(gap_result, mode="gap-fill")
         assert strategy == "gap-fill"
+
+
+class TestGapDetectorNewSources:
+
+    def test_detect_worldbank_gaps(self, gap_detector, mock_supabase):
+        mock_response = MagicMock()
+        mock_response.data = [{"year": 2018}, {"year": 2020}]
+        (
+            mock_supabase
+            .table.return_value
+            .select.return_value
+            .execute.return_value
+        ) = mock_response
+
+        result = gap_detector.detect_worldbank_gaps(min_year=2018, max_year=2020)
+        assert result.source == "worldbank"
+        assert 2019 in result.missing_years
+        assert 2018 not in result.missing_years
+        assert 2020 not in result.missing_years
+
+    def test_detect_faostat_prices_gaps(self, gap_detector, mock_supabase):
+        mock_response = MagicMock()
+        mock_response.data = [{"price_date": "2020-12-01"}, {"price_date": "2022-12-01"}]
+        (
+            mock_supabase
+            .table.return_value
+            .select.return_value
+            .eq.return_value
+            .eq.return_value
+            .execute.return_value
+        ) = mock_response
+
+        result = gap_detector.detect_faostat_prices_gaps(fertilizer_id=1, min_year=2020, max_year=2022)
+        assert result.source == "faostat_prices"
+        assert 2021 in result.missing_years
+        assert 2020 not in result.missing_years
+        assert 2022 not in result.missing_years
