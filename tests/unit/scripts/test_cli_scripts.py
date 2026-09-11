@@ -10,6 +10,8 @@ import scripts.collect_brazil_comex as script_comex
 import scripts.collect_faostat_production as script_faostat
 import scripts.populate_fertilizer_catalog as script_catalog
 import scripts.collect_top_trade_flows as script_comtrade
+import scripts.collect_worldbank_indicators as script_wb
+import scripts.collect_faostat_prices as script_fao_prices
 
 from domain.fertilizers import FERTILIZERS_CATALOG
 
@@ -505,7 +507,143 @@ def test_collect_fertilizer_all_sources_fault_tolerant_to_api_failure(monkeypatc
 
 
 # ==============================================================================
-# 8. TESTE DE BOOTSTRAP: Execução direta com Python do Sistema
+# 8. TESTES: collect_worldbank_indicators.py (World Bank WDI)
+# ==============================================================================
+
+def test_collect_worldbank_indicators_dry_run(monkeypatch, capsys):
+    """Comportamento: Com --dry-run, consulta amostra na API do Banco Mundial e exibe amostras sem gravar no banco."""
+    monkeypatch.setattr("sys.argv", [
+        "collect_worldbank_indicators.py",
+        "--indicator", "AG.CON.FERT.ZS",
+        "--countries", "BRA", "USA",
+        "--dry-run",
+    ])
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = [
+        {"page": 1, "pages": 1, "per_page": 5, "total": 2},
+        [
+            {"country": {"value": "Brazil"}, "date": "2023", "value": 344.09},
+            {"country": {"value": "United States"}, "date": "2023", "value": 130.50},
+        ],
+    ]
+
+    with patch("scripts.collect_worldbank_indicators.WorldBankCollector") as MockCollector:
+        instance = MockCollector.return_value
+        instance.http.get.return_value = mock_resp
+
+        script_wb.main()
+
+        instance.run.assert_not_called()
+        instance.http.get.assert_called_once()
+
+    captured = capsys.readouterr()
+    assert "[MODO DRY-RUN]" in captured.out
+    assert "Brazil (2023): 344.09" in captured.out
+    assert "United States (2023): 130.5" in captured.out
+
+
+def test_collect_worldbank_indicators_full_run(monkeypatch, capsys):
+    """Comportamento: Execução completa sem --dry-run deve invocar collector.run() com argumentos informados."""
+    monkeypatch.setattr("sys.argv", [
+        "collect_worldbank_indicators.py",
+        "--indicator", "AG.CON.FERT.ZS",
+        "--countries", "BRA",
+        "--start-year", "2020",
+        "--end-year", "2023",
+    ])
+
+    with patch("scripts.collect_worldbank_indicators.WorldBankCollector") as MockCollector:
+        instance = MockCollector.return_value
+        instance.run.return_value = {
+            "status": "SUCCESS",
+            "run_id": "run-wb-test",
+            "records_fetched": 4,
+            "records_inserted": 4,
+        }
+
+        script_wb.main()
+
+        instance.run.assert_called_once_with(
+            indicator_id="AG.CON.FERT.ZS",
+            country_codes=["BRA"],
+            start_year=2020,
+            end_year=2023,
+        )
+
+    captured = capsys.readouterr()
+    assert "COLETA DO BANCO MUNDIAL CONCLUÍDA COM SUCESSO!" in captured.out
+    assert "Total de registros obtidos da API: 4" in captured.out
+
+
+# ==============================================================================
+# 9. TESTES: collect_faostat_prices.py (FAOSTAT PP)
+# ==============================================================================
+
+def test_collect_faostat_prices_dry_run(monkeypatch, capsys):
+    """Comportamento: Com --dry-run, consulta amostra na API do FAOSTAT PP sem gravar no banco."""
+    monkeypatch.setattr("sys.argv", [
+        "collect_faostat_prices.py",
+        "--year", "2022",
+        "--area-codes", "21",
+        "--dry-run",
+    ])
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {
+        "data": [
+            {"Item": "Urea", "Value": "550.0", "Element": "Producer Price (USD/tonne)"}
+        ]
+    }
+
+    with patch("scripts.collect_faostat_prices.FAOSTATInputPricesCollector") as MockCollector:
+        instance = MockCollector.return_value
+        instance.auth_manager.get_token.return_value = "mock_token"
+        instance.http.get.return_value = mock_resp
+
+        script_fao_prices.main()
+
+        instance.run.assert_not_called()
+        instance.http.get.assert_called_once()
+
+    captured = capsys.readouterr()
+    assert "[MODO DRY-RUN]" in captured.out
+    assert "Urea: 550.0 USD/MT" in captured.out
+
+
+def test_collect_faostat_prices_full_run_with_fertilizer_filter(monkeypatch, capsys):
+    """Comportamento: Execução com --fertilizer ureia deve mapear slug para ID 1 e invocar collector.run()."""
+    monkeypatch.setattr("sys.argv", [
+        "collect_faostat_prices.py",
+        "--year", "2022",
+        "--fertilizer", "ureia",
+        "--area-codes", "21",
+    ])
+
+    with patch("scripts.collect_faostat_prices.FAOSTATInputPricesCollector") as MockCollector:
+        instance = MockCollector.return_value
+        instance.run.return_value = {
+            "status": "SUCCESS",
+            "run_id": "run-fao-pp-test",
+            "records_fetched": 1,
+            "records_inserted": 1,
+        }
+
+        script_fao_prices.main()
+
+        instance.run.assert_called_once_with(
+            year=2022,
+            area_codes=["21"],
+            fertilizer_id=1,
+        )
+
+    captured = capsys.readouterr()
+    assert "COLETA FAOSTAT PREÇOS CONCLUÍDA COM SUCESSO!" in captured.out
+    assert "Filtro de fertilizante: Ureia (ID 1)" in captured.out
+
+
+# ==============================================================================
+# 10. TESTE DE BOOTSTRAP: Execução direta com Python do Sistema
 # ==============================================================================
 
 def test_cli_scripts_execute_via_system_python_without_modulenotfound():
