@@ -49,11 +49,11 @@ gaps detectados? → SIM → gap-fill (coleta apenas os períodos ausentes)
 
 - [x] Leitura do contexto e skills
 - [x] Criação do plano ativo
-- [ ] Testes unitários (TDD RED)
-- [ ] Implementação `scripts/smart_collect.py`
-- [ ] Workflow `.github/workflows/smart_collect.yml`
-- [ ] Testes passando (TDD GREEN)
-- [ ] Suite completa sem regressões
+- [x] Testes unitários (TDD RED) — 38 testes
+- [x] Implementação `scripts/smart_collect.py`
+- [x] Workflow `.github/workflows/smart_collect.yml`
+- [x] Testes passando (TDD GREEN) — 38/38
+- [x] Suite completa sem regressões — 210/210
 
 ## Decisões Registradas
 
@@ -66,8 +66,11 @@ gaps detectados? → SIM → gap-fill (coleta apenas os períodos ausentes)
 
 ## Problemas Encontrados
 
-Nenhum até o momento.
+Nenhum.
 
 ## Progresso
 
 Iniciado em: 2026-09-11
+Concluído em: 2026-09-11
+
+Commit: `2ba5689` — feat: coleta inteligente com deteccao de gaps temporais
