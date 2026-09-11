@@ -34,3 +34,8 @@ jobs:
 
       - name: Run tests
         run: uv run pytest -m "not integration"
+        env:
+          SUPABASE_URL: "https://test-project.supabase.co"
+          SUPABASE_KEY: "test-anon-key-12345"
+          SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key-67890"
+          FRED_API_KEY: "test_fred_key_ci"

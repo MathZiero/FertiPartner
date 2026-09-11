@@ -1,0 +1,159 @@
+name: Smart Data Collection
+
+on:
+  schedule:
+    # Executa diariamente às 08:00 UTC (05:00 horário de Brasília)
+    # Nota: GitHub Actions pode atrasar execuções agendadas em horários de alto tráfego.
+    - cron: "0 8 * * *"
+
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Modo inspeção — detecta gaps sem gravar no banco"
+        type: boolean
+        default: false
+        required: false
+      source:
+        description: "Fonte de dados a processar"
+        type: choice
+        options:
+          - all
+          - comex
+          - faostat
+          - fred
+          - comtrade
+        default: all
+        required: false
+      fertilizer_id:
+        description: "ID do fertilizante (vazio = todos)"
+        type: string
+        required: false
+        default: ""
+      min_year:
+        description: "Ano mínimo histórico (vazio = padrão por fonte)"
+        type: string
+        required: false
+        default: ""
+      mode:
+        description: "Estratégia de coleta"
+        type: choice
+        options:
+          - auto
+          - gap-fill
+          - expand
+          - expand-back
+          - expand-forward
+        default: auto
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  # Garante que apenas uma execução de coleta rode por vez,
+  # cancelando execuções agendadas duplicadas mas preservando manuais.
+  group: smart-collect-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smart-collect:
+    name: Detecção de Gaps e Coleta Inteligente
+
+    runs-on: ubuntu-latest
+
+    # Timeout generoso para cobrir coleta de múltiplos fertilizantes
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Instalar dependências
+        run: uv sync --locked
+
+      - name: Preparar argumentos da coleta
+        id: args
+        shell: bash
+        run: |
+          # Determina se é execução agendada (cron) ou manual (workflow_dispatch)
+          TRIGGER="${{ github.event_name }}"
+
+          # dry_run: false por padrão no cron, configurável no dispatch manual
+          if [ "$TRIGGER" = "workflow_dispatch" ]; then
+            DRY_RUN="${{ github.event.inputs.dry_run }}"
+            SOURCE="${{ github.event.inputs.source }}"
+            FERT_ID="${{ github.event.inputs.fertilizer_id }}"
+            MIN_YEAR="${{ github.event.inputs.min_year }}"
+            MODE="${{ github.event.inputs.mode }}"
+          else
+            # Execução agendada: coleta ativa de todas as fontes, modo auto
+            DRY_RUN="false"
+            SOURCE="all"
+            FERT_ID=""
+            MIN_YEAR=""
+            MODE="auto"
+          fi
+
+          echo "dry_run=$DRY_RUN" >> "$GITHUB_OUTPUT"
+          echo "source=$SOURCE" >> "$GITHUB_OUTPUT"
+          echo "fert_id=$FERT_ID" >> "$GITHUB_OUTPUT"
+          echo "min_year=$MIN_YEAR" >> "$GITHUB_OUTPUT"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+
+      - name: Executar coleta inteligente
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          COMTRADE_API_KEY: ${{ secrets.COMTRADE_API_KEY }}
+          FAOSTAT_TOKEN: ${{ secrets.FAOSTAT_TOKEN }}
+          FAOSTAT_USERNAME: ${{ secrets.FAOSTAT_USERNAME }}
+          FAOSTAT_PASSWORD: ${{ secrets.FAOSTAT_PASSWORD }}
+        run: |
+          # Monta argumentos condicionalmente para evitar flags vazias
+          ARGS=""
+
+          if [ "${{ steps.args.outputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+
+          SOURCE="${{ steps.args.outputs.source }}"
+          ARGS="$ARGS --source $SOURCE"
+
+          FERT_ID="${{ steps.args.outputs.fert_id }}"
+          if [ -n "$FERT_ID" ]; then
+            ARGS="$ARGS --fertilizer-id $FERT_ID"
+          fi
+
+          MIN_YEAR="${{ steps.args.outputs.min_year }}"
+          if [ -n "$MIN_YEAR" ]; then
+            ARGS="$ARGS --min-year $MIN_YEAR"
+          fi
+
+          MODE="${{ steps.args.outputs.mode }}"
+          ARGS="$ARGS --mode $MODE"
+
+          echo "Iniciando coleta com argumentos: $ARGS"
+          uv run python scripts/smart_collect.py $ARGS
+
+      - name: Resumo da execução no log
+        if: always()
+        run: |
+          echo "==================================================="
+          echo "Smart Collect finalizado."
+          echo "Trigger    : ${{ github.event_name }}"
+          echo "Fonte      : ${{ steps.args.outputs.source }}"
+          echo "Modo       : ${{ steps.args.outputs.mode }}"
+          echo "Dry-run    : ${{ steps.args.outputs.dry_run }}"
+          echo "==================================================="
