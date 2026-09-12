@@ -21,7 +21,9 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from app.infrastructure.collectors.comex_stat_collector import ComexStatCollector
 from app.infrastructure.collectors.comtrade_collector import UNComtradeCollector
 from app.infrastructure.collectors.faostat_collector import FAOSTATCollector
+from app.infrastructure.collectors.faostat_prices_collector import FAOSTATInputPricesCollector
 from app.infrastructure.collectors.fred_collector import FREDCollector
+from app.infrastructure.collectors.worldbank_collector import WorldBankCollector
 
 logging.basicConfig(
     level=logging.INFO,
@@ -69,9 +71,31 @@ def run_faostat() -> None:
     print(f"FAOSTAT: {result['records_inserted']} fatos inseridos a partir de {result['records_fetched']} linhas brutas.")
 
 
+def run_worldbank() -> None:
+    print("\n" + "=" * 60)
+    print("FASE 5: BANCO MUNDIAL - Indicadores Agrícolas de Intensidade de Fertilizantes")
+    print("=" * 60)
+    collector = WorldBankCollector()
+    result = collector.run(start_year=2018, end_year=2023)
+    print(f"Banco Mundial: {result['records_inserted']} indicadores inseridos a partir de {result['records_fetched']} linhas brutas.")
+
+
+def run_faostat_prices() -> None:
+    print("\n" + "=" * 60)
+    print("FASE 6: FAOSTAT PP - Preços de Fertilizantes Pagos por Produtores")
+    print("=" * 60)
+    collector = FAOSTATInputPricesCollector()
+    result = collector.run(year=2022, area_codes=["21", "231", "41", "185", "33", "143", "57", "179", "194", "59"])
+    print(f"FAOSTAT PP: {result['records_inserted']} preços inseridos a partir de {result['records_fetched']} linhas brutas.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Povoamento do Banco de Dados FertiPartner (4NF)")
-    parser.add_argument("--source", choices=["fred", "comex", "comtrade", "faostat"], help="Executa fonte específica")
+    parser.add_argument(
+        "--source",
+        choices=["fred", "comex", "comtrade", "faostat", "worldbank", "faostat_prices"],
+        help="Executa fonte específica",
+    )
     parser.add_argument("--all", action="store_true", help="Executa todas as fontes na ordem recomendada")
     parser.add_argument("--top-n", type=int, default=10, help="Top N exportadores e importadores para UN Comtrade (padrão: 10)")
     parser.add_argument("--year", type=int, default=2023, help="Ano de referência para UN Comtrade (padrão: 2023)")
@@ -90,6 +114,10 @@ def main() -> None:
         run_comtrade(period=args.year, top_n=args.top_n, auto_top=not args.brazil_only)
         time.sleep(2.0)
         run_faostat()
+        time.sleep(2.0)
+        run_worldbank()
+        time.sleep(2.0)
+        run_faostat_prices()
     elif args.source == "fred":
         run_fred()
     elif args.source == "comex":
@@ -98,6 +126,10 @@ def main() -> None:
         run_comtrade(period=args.year, top_n=args.top_n, auto_top=not args.brazil_only)
     elif args.source == "faostat":
         run_faostat()
+    elif args.source == "worldbank":
+        run_worldbank()
+    elif args.source == "faostat_prices":
+        run_faostat_prices()
 
     elapsed = time.time() - t0
     print(f"\nOperação concluída em {elapsed:.1f} segundos!")

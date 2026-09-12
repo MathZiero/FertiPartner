@@ -395,6 +395,28 @@ FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 COMMENT ON TABLE public.consumption_records IS 'Fato de consumo aparente e entrega de fertilizantes ao mercado final em 4NF.';
 
+CREATE TABLE IF NOT EXISTS public.country_indicators (
+    id BIGSERIAL PRIMARY KEY,
+    country_id INT NOT NULL REFERENCES public.countries(id) ON DELETE RESTRICT,
+    indicator_code VARCHAR(50) NOT NULL,
+    indicator_name VARCHAR(255) NOT NULL,
+    year INT NOT NULL,
+    value NUMERIC(18, 4) NOT NULL,
+    unit_code VARCHAR(30) NOT NULL DEFAULT 'KG_PER_HA',
+    data_status VARCHAR(30) NOT NULL DEFAULT 'OFFICIAL' CHECK (data_status IN ('OFFICIAL', 'ESTIMATED', 'PROVISIONAL')),
+    source_id INT NOT NULL REFERENCES public.data_sources(id) ON DELETE RESTRICT,
+    raw_data_id BIGINT REFERENCES public.raw_data(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CLOCK_TIMESTAMP(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CLOCK_TIMESTAMP(),
+    CONSTRAINT uq_country_indicator_facts UNIQUE (country_id, indicator_code, year, source_id)
+);
+
+CREATE TRIGGER trg_country_indicators_updated_at
+BEFORE UPDATE ON public.country_indicators
+FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+COMMENT ON TABLE public.country_indicators IS 'Fatos e indicadores macroeconômicos e de intensidade agronômica por país e ano (ex.: kg de adubo/ha).';
+
 -- ==============================================================================
 -- 10. ÍNDICES DE DESEMPENHO (RNF05)
 -- ==============================================================================
@@ -406,6 +428,7 @@ CREATE INDEX IF NOT EXISTS idx_trade_exporter ON public.trade_records(exporter_c
 CREATE INDEX IF NOT EXISTS idx_trade_importer ON public.trade_records(importer_country_id, period_start_date);
 CREATE INDEX IF NOT EXISTS idx_price_fert_date ON public.price_records(fertilizer_id, benchmark_id, price_date);
 CREATE INDEX IF NOT EXISTS idx_consump_fert_date ON public.consumption_records(fertilizer_id, country_id, period_start_date);
+CREATE INDEX IF NOT EXISTS idx_country_indicators_lookup ON public.country_indicators(country_id, indicator_code, year);
 CREATE INDEX IF NOT EXISTS idx_raw_data_hash ON public.raw_data(payload_hash);
 CREATE INDEX IF NOT EXISTS idx_raw_data_source ON public.raw_data(source_id, reference_date);
 CREATE INDEX IF NOT EXISTS idx_raw_data_payload_gin ON public.raw_data USING gin(raw_payload);
@@ -645,6 +668,7 @@ ALTER TABLE public.brazil_trade_details ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_markets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.consumption_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.country_indicators ENABLE ROW LEVEL SECURITY;
 
 -- 12.1. Políticas de Leitura Pública (anon e authenticated para catálogo e dados históricos)
 DO $$
@@ -766,7 +790,9 @@ INSERT INTO public.data_sources (id, organization_id, code, name, api_docs_url, 
 (4, 3, 'COMEXSTAT_IMP', 'Comex Stat Importações (Brasil)', 'https://api-comexstat.mdic.gov.br/docs#/', 'https://api-comexstat.mdic.gov.br/general', 'MONTHLY'),
 (5, 3, 'COMEXSTAT_EXP', 'Comex Stat Exportações (Brasil)', 'https://api-comexstat.mdic.gov.br/docs#/', 'https://api-comexstat.mdic.gov.br/general', 'MONTHLY'),
 (6, 5, 'WB_COMMODITY_PRICES', 'World Bank Commodity Markets (Pink Sheet)', 'https://www.worldbank.org/en/research/commodity-markets', 'https://api.worldbank.org/v2', 'MONTHLY'),
-(7, 6, 'FRED_FERT_PRICES', 'FRED St. Louis Commodity Prices', 'https://fred.stlouisfed.org/docs/api/fred/', 'https://api.stlouisfed.org/fred', 'MONTHLY')
+(7, 6, 'FRED_FERT_PRICES', 'FRED St. Louis Commodity Prices', 'https://fred.stlouisfed.org/docs/api/fred/', 'https://api.stlouisfed.org/fred', 'MONTHLY'),
+(8, 5, 'WB_INDICATORS', 'World Bank World Development Indicators', 'https://datahelpdesk.worldbank.org/knowledgebase/articles/888548-world-bank-apis', 'https://api.worldbank.org/v2', 'ANNUAL'),
+(9, 1, 'FAOSTAT_PP', 'FAOSTAT Producer Prices / Prices Paid', 'https://www.fao.org/faostat/en/docs/redoc-static.html', 'https://faostatservices.fao.org/api/v1/en/data/PP', 'ANNUAL')
 ON CONFLICT (code) DO NOTHING;
 
 -- 13.6. Categorias de Fertilizantes
@@ -839,7 +865,8 @@ INSERT INTO public.price_markets (id, code, name, hub_port_name, incoterm) VALUE
 (4, 'US_GULF_DAP_FOB', 'DAP FOB Golfo dos EUA', 'Tampa / NOLA', 'FOB'),
 (5, 'MOROCCO_DAP_FOB', 'DAP FOB Marrocos', 'Jorf Lasfar', 'FOB'),
 (6, 'VANCOUVER_POTASH_FOB', 'Cloreto de Potássio FOB Vancouver', 'Porto de Vancouver', 'FOB'),
-(7, 'BRAZIL_POTASH_CFR', 'Cloreto de Potássio CFR Brasil', 'Paranaguá', 'CFR')
+(7, 'BRAZIL_POTASH_CFR', 'Cloreto de Potássio CFR Brasil', 'Paranaguá', 'CFR'),
+(8, 'US_HENRY_HUB_GAS', 'Gás Natural Henry Hub Spot FOB', 'Henry Hub, Louisiana (EUA)', 'FOB')
 ON CONFLICT (code) DO NOTHING;
 
 -- Reset das sequences para evitar conflitos com IDs manuais do seed

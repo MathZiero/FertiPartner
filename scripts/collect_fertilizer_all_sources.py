@@ -228,6 +228,68 @@ def run_comtrade_pipeline(
     }
 
 
+def run_worldbank_pipeline(
+    year: int,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    """Executa a coleta de indicadores de intensidade de fertilizantes no Banco Mundial."""
+    from app.infrastructure.collectors.worldbank_collector import (
+        WorldBankCollector,
+        WB_INDICATORS_BASE_URL,
+        DEFAULT_TOP_COUNTRIES_ISO3,
+    )
+
+    collector = WorldBankCollector()
+    country_arg = ";".join(DEFAULT_TOP_COUNTRIES_ISO3[:5])
+
+    if dry_run:
+        url = f"{WB_INDICATORS_BASE_URL}/country/{country_arg}/indicator/AG.CON.FERT.ZS"
+        params = {"format": "json", "per_page": 5, "date": f"{year}:{year}"}
+        resp = collector.http.get(url, params=params)
+        data = resp.json()
+        obs = data[1] if isinstance(data, list) and len(data) > 1 and isinstance(data[1], list) else []
+        return {"status": "SUCESSO", "records": len(obs), "details": f"Indicadores WB (dry-run, ano {year})"}
+
+    res = collector.run(start_year=year, end_year=year)
+    return {"status": "SUCESSO", "records": res.get("records_inserted", 0), "details": f"Indicadores WB (ano {year})"}
+
+
+def run_faostat_prices_pipeline(
+    fertilizer_id: int,
+    year: int,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    """Executa a coleta de preços pagos ao produtor no domínio PP do FAOSTAT."""
+    from app.infrastructure.collectors.faostat_prices_collector import (
+        FAOSTATInputPricesCollector,
+        FAO_AREA_TO_ISO2,
+        FAOSTAT_PRICES_DATA_URL,
+        FAO_PRICE_ITEM_FERTILIZER_MAP,
+    )
+
+    collector = FAOSTATInputPricesCollector()
+    area_codes = list(FAO_AREA_TO_ISO2.keys())
+
+    if dry_run:
+        token = collector.auth_manager.get_token()
+        headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+        resp = collector.http.get(
+            FAOSTAT_PRICES_DATA_URL,
+            headers=headers,
+            params={"area": area_codes[0], "year": str(year)},
+        )
+        data = resp.json()
+        items = data.get("data", [])
+        matched = [
+            i for i in items
+            if FAO_PRICE_ITEM_FERTILIZER_MAP.get(str(i.get("Item Code", "")).strip()) == fertilizer_id
+        ]
+        return {"status": "SUCESSO", "records": len(matched), "details": f"FAOSTAT PP {len(area_codes)} áreas (dry-run)"}
+
+    res = collector.run(year=year, area_codes=area_codes, fertilizer_id=fertilizer_id)
+    return {"status": "SUCESSO", "records": res.get("records_inserted", 0), "details": f"FAOSTAT PP {len(area_codes)} áreas"}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Coletor Agregador Multifonte por Fertilizante - FertiPartner"

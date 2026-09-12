@@ -22,6 +22,8 @@ on:
           - faostat
           - fred
           - comtrade
+          - worldbank
+          - faostat_prices
         default: all
         required: false
       fertilizer_id:

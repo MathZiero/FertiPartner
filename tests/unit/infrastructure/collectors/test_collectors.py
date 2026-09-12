@@ -112,6 +112,27 @@ def test_fred_collector_execution(mock_http, mock_supabase):
     assert result["records_inserted"] > 0
 
 
+def test_fred_default_series_includes_extra_series():
+    from app.infrastructure.collectors.fred_collector import DEFAULT_FRED_SERIES
+
+    series_ids = {s["series_id"] for s in DEFAULT_FRED_SERIES}
+    # Verifica inclusão das séries extras de fertilizantes e gás natural
+    assert "DHHNGSP" in series_ids
+    assert "WPU065201" in series_ids
+    assert "WPU065202" in series_ids
+    assert "WPU0652013A5" in series_ids
+    assert "WPU06520201" in series_ids
+    assert "WPU06520202" in series_ids
+
+    # Garante ausência de conflitos em uq_price_facts (fertilizer_slug, benchmark_id, price_type)
+    keys = [
+        (s["fertilizer_slug"], s["benchmark_id"], s.get("price_type", "BENCHMARK"))
+        for s in DEFAULT_FRED_SERIES
+    ]
+    assert len(keys) == len(set(keys)), "Conflito de chave única em DEFAULT_FRED_SERIES detectado"
+
+
+
 @patch("httpx.Client.request")
 def test_comex_stat_collector_aggregation(mock_http, mock_supabase):
     mock_resp = MagicMock()

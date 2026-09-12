@@ -39,6 +39,42 @@ DEFAULT_FRED_SERIES: list[FredSeriesConfig] = [
         "benchmark_id": 1,  # BALTIC_UREA_FOB
         "price_type": "BENCHMARK",
     },
+    {
+        "series_id": "DHHNGSP",
+        "fertilizer_slug": "amonia-anidra",
+        "benchmark_id": 8,  # US_HENRY_HUB_GAS
+        "price_type": "SPOT",
+    },
+    {
+        "series_id": "WPU065201",
+        "fertilizer_slug": "ureia",
+        "benchmark_id": 2,  # US_GULF_UREA_FOB
+        "price_type": "SPOT",
+    },
+    {
+        "series_id": "WPU065202",
+        "fertilizer_slug": "dap",
+        "benchmark_id": 4,  # US_GULF_DAP_FOB
+        "price_type": "SPOT",
+    },
+    {
+        "series_id": "WPU0652013A5",
+        "fertilizer_slug": "ureia",
+        "benchmark_id": 2,  # US_GULF_UREA_FOB
+        "price_type": "CONTRACT",
+    },
+    {
+        "series_id": "WPU06520201",
+        "fertilizer_slug": "map",
+        "benchmark_id": 4,  # US_GULF_DAP_FOB
+        "price_type": "BENCHMARK",
+    },
+    {
+        "series_id": "WPU06520202",
+        "fertilizer_slug": "ssp",
+        "benchmark_id": 4,  # US_GULF_DAP_FOB
+        "price_type": "BENCHMARK",
+    },
 ]
 
 
