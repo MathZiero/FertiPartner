@@ -172,7 +172,12 @@ def render_view() -> None:
                     score_val=sent["score_val"],
                     classification=sent["classification"],
                 )
-                st.plotly_chart(fig_gauge, width="stretch", config={"displayModeBar": False})
+                st.plotly_chart(
+                    fig_gauge,
+                    width="stretch",
+                    config={"displayModeBar": False},
+                    key=f"gauge_sentiment_chart_{idx}",
+                )
 
                 # Badge de status e diagnóstico contextual
                 st.markdown(
