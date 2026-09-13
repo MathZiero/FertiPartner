@@ -64,7 +64,7 @@ GEMINI_TOOLS_DECLARATIONS: list[dict[str, Any]] = [
     },
     {
         "name": "get_recent_news_7d",
-        "description": "Obtém as notícias setoriais coletadas em tempo real nos últimos 7 dias (168 horas) com título, fonte jornalística, data relativa, resumo e categorização de mercado.",
+        "description": "Obtém as notícias setoriais coletadas em tempo real nos últimos 180 dias com título, fonte jornalística, data relativa, resumo e categorização de mercado.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -81,7 +81,7 @@ GEMINI_TOOLS_DECLARATIONS: list[dict[str, Any]] = [
     },
     {
         "name": "get_market_sentiment_barometers",
-        "description": "Obtém o diagnóstico quantitativo dos 5 barômetros de análise de sentimento setorial dos últimos 7 dias (pontuação de -10.0 a +10.0 pts, classificação 'Melhorando'/'Estável'/'Piorando' e drivers de mercado).",
+        "description": "Obtém o diagnóstico quantitativo dos 5 barômetros de análise de sentimento setorial dos últimos 180 dias (pontuação de -10.0 a +10.0 pts, classificação 'Melhorando'/'Estável'/'Piorando' e drivers de mercado).",
         "parameters": {
             "type": "object",
             "properties": {},

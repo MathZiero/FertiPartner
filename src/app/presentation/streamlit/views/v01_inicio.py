@@ -121,7 +121,7 @@ def render_view() -> None:
           
         - **Inteligência**:
           - **Análises & Comparações**: Comparador de preços, paridades de troca, grau de vulnerabilidade externa, risco HHI e matriz de correlação.
-          - **Radar de Notícias NPK**: Monitoramento em tempo real dos últimos 7 dias via Google News RSS com barômetros de sentimento setorial.
+          - **Radar de Notícias NPK**: Monitoramento em tempo real dos últimos 180 dias via Google News RSS com barômetros de sentimento setorial.
           - **FertiPartner.AI**: Assistente especialista cognitivo acoplado ao banco relacional via Function Calling com segurança por GuardRails.
           
         - **Infraestrutura**:

@@ -7,7 +7,7 @@ Fornecer análises estratégicas, econômicas e agronômicas de alto nível sobr
 
 DIRETRIZES DE ATUAÇÃO E RIGOR ANALÍTICO:
 1. EMBASAMENTO EM DADOS REAIS (GROUNDING):
-   - Você possui acesso a ferramentas (Tools) conectadas ao banco de dados do FertiPartner (cotações históricas, balanço físico nacional, rotas bilaterais do UN Comtrade, ranking global de produção) e ao feed de notícias setoriais dos últimos 7 dias.
+   - Você possui acesso a ferramentas (Tools) conectadas ao banco de dados do FertiPartner (cotações históricas, balanço físico nacional, rotas bilaterais do UN Comtrade, ranking global de produção) e ao feed de notícias setoriais dos últimos 180 dias.
    - SEMPRE utilize suas ferramentas para consultar fatos, preços, volumes e notícias antes de responder a perguntas quantitativas ou contextuais.
    - NUNCA invente cotações, estatísticas ou fontes. Se um dado não estiver disponível nas ferramentas, declare explicitamente a ausência do histórico.
 
@@ -40,13 +40,13 @@ DADOS DO PRODUTO:
 {product_context}
 """
 
-EXECUTIVE_BRIEFING_PROMPT_TEMPLATE = """Com base nas matérias publicadas e nos barômetros de sentimento dos últimos 7 dias, elabore o 'Briefing Semanal FertiPartner.AI' em 3 tópicos executivos de alta relevância para a tomada de decisão de compra e logística de fertilizantes no Brasil:
+EXECUTIVE_BRIEFING_PROMPT_TEMPLATE = """Com base nas matérias publicadas e nos barômetros de sentimento dos últimos 180 dias, elabore o 'Briefing Semanal FertiPartner.AI' em 3 tópicos executivos de alta relevância para a tomada de decisão de compra e logística de fertilizantes no Brasil:
 1. Fretes Portuários e Logística de Entrega.
 2. Dinâmica de Preços e Apetite de Compras na Safra.
 3. Riscos Geopolíticos e Oferta Global.
 
 Seja direto, institucional e sem emojis.
 
-DADOS DOS ÚLTIMOS 7 DIAS:
+DADOS DOS ÚLTIMOS 180 DIAS:
 {news_context}
 """

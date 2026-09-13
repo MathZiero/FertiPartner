@@ -14,7 +14,7 @@ class ExecutiveBriefingUseCase:
         self.client = gemini_client
 
     def execute(self) -> AIResponse:
-        """Coleta notícias dos últimos 7 dias e barômetros para síntese executiva."""
+        """Coleta notícias dos últimos 180 dias e barômetros para síntese executiva."""
         if not self.client.is_configured():
             return AIResponse(
                 content="",

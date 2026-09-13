@@ -49,8 +49,8 @@ Cada painel dedicado conta com:
   - Indicador Herfindahl-Hirschman (HHI) de concentração e risco geopolítico da oferta global.
   - Demanda regional e entregas por Unidade Federativa brasileira.
   - Matriz estatística multidimensional de correlação linear de Pearson e volatilidade anualizada (CV %).
-- **Radar de Notícias NPK (Últimos 7 Dias):**
-  - Captura contínua via Google News RSS com corte temporal estrito de 168 horas (7 dias).
+- **Radar de Notícias NPK (Últimos 180 Dias):**
+  - Captura contínua via Google News RSS com agregação de múltiplos feeds por tópicos estratégicos e corte temporal de 180 dias.
   - Barômetros semicirculares em Plotly para os 5 tópicos estratégicos: Frete & Logística, Produção Industrial, Consumo & Demanda, Preços & Mercado e Geopolítica.
   - Diagnóstico automatizado em 3 estados (*Melhorando*, *Estável*, *Piorando*) e pontuação quantitativa líquida de -10 a +10 pontos.
 - **FertiPartner.AI:**

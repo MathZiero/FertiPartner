@@ -189,7 +189,7 @@ def render_view() -> None:
             - **UN Comtrade**: Atualização mensal das matrizes bilaterais globais para fluxos de importação e exportação.
             - **FAOSTAT / IFA**: Sincronização anual de dados consolidados de capacidade industrial e balanço aparente de safras.
             - **FRED / Banco Mundial**: Séries históricas de benchmarks internacionais (Ureia Black Sea, MAP US Gulf, KCl Vancouver).
-            - **Google News RSS Feed**: Captura contínua de publicações setoriais com janela temporal estrita de 7 dias (168 horas).
+            - **Google News RSS Feed**: Captura contínua de publicações setoriais com janela temporal de 180 dias (4.320 horas).
             
             Para consultar a arquitetura completa do sistema, modelagem 4NF e especificações técnicas de código, acesse a página **Software** no menu lateral.
             """

@@ -99,20 +99,20 @@ def test_parse_xml_feed_parses_sample_xml():
     assert "<p>" not in art["snippet"]
 
 
-def test_fetch_fertilizer_news_strictly_under_7_days():
-    """Garante que todas as notícias retornadas foram publicadas a no máximo 7 dias."""
+def test_fetch_fertilizer_news_strictly_under_180_days():
+    """Garante que todas as notícias retornadas foram publicadas a no máximo 180 dias."""
     from datetime import datetime, timezone, timedelta
     df = GoogleNewsService.fetch_fertilizer_news()
     assert not df.empty
     now_utc = datetime.now(timezone.utc)
-    cutoff = now_utc - timedelta(days=7)
+    cutoff = now_utc - timedelta(days=180)
 
     for _, row in df.iterrows():
         pub_str = row.get("published_at")
         assert pub_str is not None
         dt = pd.to_datetime(pub_str, utc=True)
         # Tolerância de 5 segundos para execução
-        assert dt >= (cutoff - timedelta(seconds=5)), f"Notícia com data {dt} excede limite de 7 dias (cutoff: {cutoff})"
+        assert dt >= (cutoff - timedelta(seconds=5)), f"Notícia com data {dt} excede limite de 180 dias (cutoff: {cutoff})"
 
 
 def test_analyze_sentiment_by_topic_returns_structured_metrics():
@@ -137,10 +137,105 @@ def test_analyze_sentiment_by_topic_returns_structured_metrics():
         assert "notícias" in s["status_label"] or len(s["driver"]) > 0
 
 
+def test_analyze_sentiment_sensitivity_to_market_trends():
+    """Valida que o algoritmo de sentimento é sensível a tendências positivas e negativas sem travar em 'Estável'."""
+    test_articles = [
+        # Produção altamente positiva
+        {
+            "title": "Governo sanciona programa de incentivo e amplia produção nacional de fertilizantes",
+            "snippet": "Medida prevê estímulos e investimento recorde na expansão de fábricas e reabertura de plantas.",
+            "topic": "PRODUÇÃO",
+            "published_at": "2026-09-10 10:00:00",
+        },
+        {
+            "title": "Petrobras aprova reabertura de fábrica de fertilizantes nitrogenados",
+            "snippet": "Retomada industrial eleva capacidade produtiva e alivia dependência com eficiência.",
+            "topic": "PRODUÇÃO",
+            "published_at": "2026-09-08 12:00:00",
+        },
+        # Geopolítica negativa (sanções, embargos e cotas)
+        {
+            "title": "Sanções internacionais e controle de cotas geram risco geopolítico no abastecimento",
+            "snippet": "Restrição de exportação da China e tensão no Mar Vermelho reduzem embarques de fosfatados.",
+            "topic": "GEOPOLÍTICA / COMÉRCIO",
+            "published_at": "2026-09-09 14:00:00",
+        },
+        {
+            "title": "Guerra e bloqueio portuário causam prejuízo e encarecem suprimentos globais",
+            "snippet": "Embargo e restrições alfandegárias afetam comércio de fertilizantes.",
+            "topic": "GEOPOLÍTICA / COMÉRCIO",
+            "published_at": "2026-09-07 09:00:00",
+        },
+        # Frete neutro/sem viés
+        {
+            "title": "Movimentação portuária de granéis no Porto de Santos",
+            "snippet": "Dados gerais sobre navios e logística de cargas no porto.",
+            "topic": "FRETE / LOGÍSTICA",
+            "published_at": "2026-09-06 15:00:00",
+        },
+        # Preços com sinal positivo predominante (3 matérias de alívio/queda de custos) diluídas em matérias neutras
+        {
+            "title": "Poder de compra de fertilizantes melhorou 7% com queda de preços",
+            "snippet": "Relação de troca mais favorável traz alívio aos custos de insumos do produtor.",
+            "topic": "PREÇOS / MERCADO",
+            "published_at": "2026-09-10 09:00:00",
+        },
+        {
+            "title": "Cotações em queda aliviam custos na aquisição de nitrogenados",
+            "snippet": "Preços mais acessíveis no porto de Paranaguá beneficiam compras da safra.",
+            "topic": "PREÇOS / MERCADO",
+            "published_at": "2026-09-09 11:00:00",
+        },
+        {
+            "title": "Desconto nas cotações e barateamento de insumos agrícolas",
+            "snippet": "Mercado registra alívio nas cotações internacionais de adubos.",
+            "topic": "PREÇOS / MERCADO",
+            "published_at": "2026-09-08 14:00:00",
+        },
+        {
+            "title": "Relatório semanal de cotações de fertilizantes",
+            "snippet": "Resumo dos valores de mercado sem oscilações expressivas.",
+            "topic": "PREÇOS / MERCADO",
+            "published_at": "2026-09-07 10:00:00",
+        },
+        {
+            "title": "Acompanhamento de preços de fertilizantes em reais por tonelada",
+            "snippet": "Tabela de referência das transações comerciais registradas.",
+            "topic": "PREÇOS / MERCADO",
+            "published_at": "2026-09-06 12:00:00",
+        },
+        {
+            "title": "Divulgação dos índices de preços de insumos",
+            "snippet": "Indicadores econômicos para planejamento agrícola.",
+            "topic": "PREÇOS / MERCADO",
+            "published_at": "2026-09-05 08:00:00",
+        },
+    ]
+    df_synthetic = pd.DataFrame(test_articles)
+    sentiments = GoogleNewsService.analyze_sentiment_by_topic(df_synthetic)
+    sent_dict = {s["topic"]: s for s in sentiments}
+
+    # Produção deve ser claramente positiva
+    assert sent_dict["PRODUÇÃO"]["classification"] == "Melhorando"
+    assert sent_dict["PRODUÇÃO"]["score_val"] > 1.5
+
+    # Geopolítica deve ser claramente negativa
+    assert sent_dict["GEOPOLÍTICA / COMÉRCIO"]["classification"] == "Piorando"
+    assert sent_dict["GEOPOLÍTICA / COMÉRCIO"]["score_val"] < -1.5
+
+    # Preços deve ser Melhorando mesmo com presença de notícias neutras no tema
+    assert sent_dict["PREÇOS / MERCADO"]["classification"] == "Melhorando"
+    assert sent_dict["PREÇOS / MERCADO"]["score_val"] > 1.5
+
+    # Frete deve ser neutro / estável
+    assert sent_dict["FRETE / LOGÍSTICA"]["classification"] == "Estável"
+
+
 def test_fetch_fertilizer_news_is_sorted_by_recency():
     """Garante que as notícias são ordenadas decrescentemente (mais recentes no topo)."""
     df = GoogleNewsService.fetch_fertilizer_news()
     assert not df.empty
     dates = pd.to_datetime(df["published_at"], utc=True)
     assert dates.is_monotonic_decreasing, "Notícias devem estar ordenadas das mais recentes para as mais antigas"
+
 

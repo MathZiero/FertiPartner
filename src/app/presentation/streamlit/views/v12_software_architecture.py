@@ -248,8 +248,8 @@ def render_view() -> None:
             1. `get_fertilizer_prices`: Recupera séries históricas e cotações recentes de fertilizantes por porto ou benchmark internacional.
             2. `get_trade_flows`: Consulta fluxos bilaterais de importação e exportação (origem, destino, tonelagem e valor financeiro).
             3. `get_production_rankings`: Obtém o ranking global de capacidade produtiva industrial e market share internacional.
-            4. `get_market_sentiment_barometers`: Avalia o sentimento setorial ponderado das últimas 168 horas por macronutriente.
-            5. `get_market_news`: Busca notícias recentes com filtro de busca e janela temporal rigorosa de 7 dias.
+            4. `get_market_sentiment_barometers`: Avalia o sentimento setorial ponderado dos últimos 180 dias (4.320 horas) por tópico estratégico.
+            5. `get_market_news`: Busca notícias recentes com filtro de busca e janela temporal de 180 dias.
             6. `get_fertilizer_details`: Retorna ficha técnica completa, características agronômicas e concentração de nutrientes.
             """
         )

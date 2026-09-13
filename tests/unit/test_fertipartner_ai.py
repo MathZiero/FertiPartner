@@ -57,7 +57,7 @@ def test_tool_executor_finds_supply_balance():
 
 
 def test_tool_executor_finds_sentiment_barometers():
-    """Valida execução da ferramenta de barômetros dos últimos 7 dias."""
+    """Valida execução da ferramenta de barômetros dos últimos 180 dias."""
     res_bar = ToolExecutor.execute("get_market_sentiment_barometers", {})
     assert res_bar["status"] == "success"
     assert len(res_bar["market_barometers"]) == 5

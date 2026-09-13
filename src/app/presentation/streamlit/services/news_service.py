@@ -1,5 +1,6 @@
 """Serviço de inteligência de notícias agrícolas e fertilizantes via Google News RSS."""
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 import logging
 import re
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def _generate_mock_news() -> list[dict[str, Any]]:
-    """Gera notícias curadas dinâmicas garantindo datas nos últimos 7 dias."""
+    """Gera notícias curadas dinâmicas garantindo datas nos últimos 180 dias."""
     now = datetime.now(timezone.utc)
     items = [
         {
@@ -32,7 +33,7 @@ def _generate_mock_news() -> list[dict[str, Any]]:
             "title": "Produtor brasileiro avalia relação de troca grão-adubo antes da safra de verão",
             "link": "https://news.google.com",
             "source": "Exame Agro",
-            "days_ago": 0,
+            "days_ago": 3,
             "hours_ago": 5,
             "snippet": "A paridade de troca entre sacas de soja e fertilizantes NPK dita o ritmo de fechamento de pacotes tecnológicos no Centro-Oeste.",
             "topic": "PREÇOS / MERCADO",
@@ -43,7 +44,7 @@ def _generate_mock_news() -> list[dict[str, Any]]:
             "title": "Programa nacional de incentivo à produção de fertilizantes busca reduzir dependência externa",
             "link": "https://news.google.com",
             "source": "Agência Câmara",
-            "days_ago": 3,
+            "days_ago": 7,
             "hours_ago": 1,
             "snippet": "Medida prevê estímulos tributários e fornecimento competitivo de gás natural para indústrias de nitrogenados e rocha fosfática no país.",
             "topic": "PRODUÇÃO",
@@ -54,7 +55,7 @@ def _generate_mock_news() -> list[dict[str, Any]]:
             "title": "Frete marítimo de fertilizantes registra alta com gargalos em rotas estratégicas e taxas portuárias",
             "link": "https://news.google.com",
             "source": "Globo Rural",
-            "days_ago": 2,
+            "days_ago": 10,
             "hours_ago": 3,
             "snippet": "Tempo de espera nos berços de descarga em Paranaguá e Santos pressiona o custo CIF Brasil para cargas de cloreto de potássio e fosfatados.",
             "topic": "FRETE / LOGÍSTICA",
@@ -65,7 +66,7 @@ def _generate_mock_news() -> list[dict[str, Any]]:
             "title": "Exportações russas de fertilizantes mantêm liderança em fornecimento para o mercado brasileiro",
             "link": "https://news.google.com",
             "source": "Reuters Brasil",
-            "days_ago": 4,
+            "days_ago": 14,
             "hours_ago": 2,
             "snippet": "Apesar de restrições em operações de câmbio e seguros globais, navios graneleiros seguem operando rotas regulares do Báltico para o Brasil.",
             "topic": "GEOPOLÍTICA / COMÉRCIO",
@@ -76,7 +77,7 @@ def _generate_mock_news() -> list[dict[str, Any]]:
             "title": "Cotações de ureia granulada sobem no exterior com paradas técnicas e demanda pontual da Índia",
             "link": "https://news.google.com",
             "source": "Notícias Agrícolas",
-            "days_ago": 2,
+            "days_ago": 18,
             "hours_ago": 6,
             "snippet": "Leilão de importação asiático e oscilação dos custos de gás na Europa conferem suporte às cotações no Oriente Médio e Golfo dos EUA.",
             "topic": "PREÇOS / MERCADO",
@@ -87,7 +88,7 @@ def _generate_mock_news() -> list[dict[str, Any]]:
             "title": "China prorroga mecanismos de inspeção e monitoramento sobre embarques externos de fosfatados",
             "link": "https://news.google.com",
             "source": "Valor Econômico",
-            "days_ago": 5,
+            "days_ago": 22,
             "hours_ago": 1,
             "snippet": "Controle de cotas para proteger o abastecimento doméstico chinês reduz oferta imediata de DAP e MAP para o Ocidente.",
             "topic": "GEOPOLÍTICA / COMÉRCIO",
@@ -98,7 +99,7 @@ def _generate_mock_news() -> list[dict[str, Any]]:
             "title": "Mato Grosso amplia recepção de adubos por ferrovia para otimizar custos logísticos de distribuição",
             "link": "https://news.google.com",
             "source": "Canal Rural",
-            "days_ago": 3,
+            "days_ago": 26,
             "hours_ago": 4,
             "snippet": "Terminais intermodais no norte do estado aumentam capacidade estática de estocagem de granéis sólidos fertilizantes para o pico do plantio.",
             "topic": "FRETE / LOGÍSTICA",
@@ -140,7 +141,7 @@ class GoogleNewsService:
 
     @classmethod
     def get_fallback_news(cls) -> list[dict[str, Any]]:
-        """Garante retorno de notícias mock com datas sempre dinâmicas nos últimos 7 dias."""
+        """Garante retorno de notícias mock com datas sempre dinâmicas nos últimos 180 dias."""
         return _generate_mock_news()
 
     @classmethod
@@ -165,26 +166,26 @@ class GoogleNewsService:
             nutrient = "Geral"
 
         # Classificação por tópico estratégico
-        if any(w in text for w in ["frete", "porto", "paranaguá", "paranagua", "santos", "itaqui", "barcarena", "navio", "fila", "espera", "marítim", "maritim", "logístic", "logistic", "ferrovia", "cabotagem", "transporte"]):
+        if any(w in text for w in ["frete", "porto", "paranaguá", "paranagua", "santos", "itaqui", "barcarena", "navio", "fila", "espera", "marítim", "maritim", "logístic", "logistic", "ferrovia", "cabotagem", "transporte", "graneis", "granéis"]):
             return "FRETE / LOGÍSTICA", "blue", nutrient
 
-        if any(w in text for w in ["preço", "preco", "cotação", "cotacao", "cotações", "cotacoes", "dólar", "dolar", "fob", "cfr", "custo", "relação de troca", "relacao de troca", "spread"]):
+        if any(w in text for w in ["preço", "preco", "preços", "precos", "cotação", "cotacao", "cotações", "cotacoes", "dólar", "dolar", "fob", "cfr", "custo", "custos", "relação de troca", "relacao de troca", "spread", "poder de compra"]):
             return "PREÇOS / MERCADO", "purple", nutrient
 
-        if any(w in text for w in ["produção", "producao", "fábrica", "fabrica", "planta", "capacidade", "indústria", "industria", "petrobras", "gás natural", "ampliação", "investimento industrial"]):
+        if any(w in text for w in ["produção", "producao", "fábrica", "fabrica", "fábricas", "fabricas", "planta", "plantas", "capacidade", "indústria", "industria", "petrobras", "gás natural", "gas natural", "ampliação", "ampliacao", "investimento industrial", "hidrogênio verde", "hidrogenio verde"]):
             return "PRODUÇÃO", "emerald", nutrient
 
-        if any(w in text for w in ["rússia", "russia", "china", "belarus", "marrocos", "sanção", "sanções", "tarifa", "mar vermelho", "guerra", "geopolític", "geopolitic", "restrição de exportação", "cota"]):
+        if any(w in text for w in ["rússia", "russia", "china", "belarus", "marrocos", "sanção", "sanções", "sancao", "sancoes", "tarifa", "mar vermelho", "guerra", "geopolític", "geopolitic", "restrição de exportação", "restricao de exportacao", "cota", "cotas", "embargo"]):
             return "GEOPOLÍTICA / COMÉRCIO", "blue", nutrient
 
-        if any(w in text for w in ["consumo", "demanda", "safra", "produtor", "plantio", "compra", "entrega", "escoamento", "soja", "milho", "estoque"]):
+        if any(w in text for w in ["consumo", "demanda", "safra", "produtor", "plantio", "compra", "compras", "entrega", "entregas", "escoamento", "soja", "milho", "estoque"]):
             return "CONSUMO / DEMANDA", "amber", nutrient
 
         return "MERCADO GERAL", "emerald", nutrient
 
     @classmethod
     def _format_relative_date(cls, dt: datetime | None) -> str:
-        """Formata data em string relativa amigável (ex: 'Há 2 horas', 'Hoje', etc.)."""
+        """Formata data em string relativa amigável (ex: 'Há 2 horas', 'Ontem', 'Há 12 dias', etc.)."""
         if not dt:
             return "Recente"
         now = datetime.now(timezone.utc)
@@ -204,7 +205,7 @@ class GoogleNewsService:
 
     @classmethod
     def _parse_xml_feed(cls, xml_bytes: bytes) -> list[dict[str, Any]]:
-        """Analisa o documento XML retornado pelo Google News RSS filtrando <= 7 dias."""
+        """Analisa o documento XML retornado pelo Google News RSS filtrando <= 180 dias."""
         root = ET.fromstring(xml_bytes)
         articles = []
         now_utc = datetime.now(timezone.utc)
@@ -222,7 +223,7 @@ class GoogleNewsService:
             desc_el = item.find("description")
             desc = (desc_el.text or "") if desc_el is not None and desc_el.text else ""
 
-            # Conversão e verificação rigorosa de data (máximo 7 dias = 604.800 segundos)
+            # Conversão e verificação rigorosa de data (máximo 180 dias = 15.552.000 segundos)
             parsed_dt = None
             if pub_date_str:
                 try:
@@ -232,7 +233,7 @@ class GoogleNewsService:
 
             if parsed_dt is not None:
                 diff_sec = (now_utc - parsed_dt).total_seconds()
-                if diff_sec > 604800:  # Mais de 7 dias de publicação
+                if diff_sec > 15552000:  # Mais de 180 dias de publicação (180 * 86.400s)
                     continue
 
             # Extração da fonte e limpeza do sufixo ' - Fonte' no título
@@ -281,36 +282,73 @@ class GoogleNewsService:
     @classmethod
     @st.cache_data(ttl=600, show_spinner=False)
     def fetch_fertilizer_news(cls, search_query: str | None = None) -> pd.DataFrame:
-        """Busca notícias reais do Google News RSS limitadas estritamente a no máximo 7 dias."""
+        """Busca notícias reais do Google News RSS limitadas estritamente a no máximo 180 dias com agregação multi-tópico."""
         if search_query:
-            query = f"fertilizantes {search_query}"
+            queries = [
+                f"(fertilizantes {search_query}) when:180d",
+                f"({search_query} adubo) when:180d",
+            ]
         else:
-            query = "fertilizantes OR adubos OR (frete fertilizantes) OR (preço fertilizantes)"
+            queries = [
+                # Frete e logística
+                "frete fertilizantes when:180d",
+                "logistica fertilizantes when:180d",
+                # Produção e indústria
+                "producao fertilizantes when:180d",
+                "industria fertilizantes when:180d",
+                # Consumo e demanda
+                "consumo fertilizantes when:180d",
+                "demanda fertilizantes when:180d",
+                # Preços e mercado
+                "preco fertilizantes when:180d",
+                "mercado fertilizantes when:180d",
+                # Geopolítica e comércio
+                "geopolitica fertilizantes when:180d",
+                "comercio fertilizantes when:180d",
+                # Termos gerais de consolidação
+                "fertilizantes when:180d",
+                "adubos when:180d",
+            ]
 
-        encoded = urllib.parse.quote(query.strip())
-        url = f"{cls.BASE_RSS_URL}?q={encoded}&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+        def _fetch_feed(q: str) -> list[dict[str, Any]]:
+            encoded = urllib.parse.quote(q.strip())
+            url = f"{cls.BASE_RSS_URL}?q={encoded}&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+            try:
+                req = urllib.request.Request(
+                    url,
+                    headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 FertiPartner/1.0"},
+                )
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    xml_data = resp.read()
+                    return cls._parse_xml_feed(xml_data)
+            except Exception as exc:
+                logger.info("Consulta externa do Google News falhou para '%s' (%s).", q, exc)
+                return []
 
-        articles = None
+        articles = []
+        seen_titles = set()
         try:
-            req = urllib.request.Request(
-                url,
-                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 FertiPartner/1.0"},
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                xml_data = resp.read()
-                articles = cls._parse_xml_feed(xml_data)
+            with ThreadPoolExecutor(max_workers=min(8, len(queries))) as executor:
+                batch_results = list(executor.map(_fetch_feed, queries))
+
+            for batch in batch_results:
+                for art in batch:
+                    title_key = art.get("title", "").strip().lower()
+                    if title_key and title_key not in seen_titles:
+                        seen_titles.add(title_key)
+                        articles.append(art)
         except Exception as exc:
-            logger.info("Consulta externa do Google News falhou (%s). Carregando notícias estruturadas locais.", exc)
+            logger.info("Execução paralela de feeds do Google News falhou (%s).", exc)
 
         if articles:
             df = pd.DataFrame(articles)
         else:
             df = pd.DataFrame(cls.get_fallback_news())
 
-        # Corte rigoroso de 7 dias (máximo 168 horas atrás) e ordenação decrescente pelas mais recentes
+        # Corte rigoroso de 180 dias (máximo 4.320 horas atrás) e ordenação decrescente pelas mais recentes
         if not df.empty and "published_at" in df.columns:
             now_utc = datetime.now(timezone.utc)
-            cutoff = now_utc - timedelta(days=7)
+            cutoff = now_utc - timedelta(days=180)
             df["_dt_chk"] = pd.to_datetime(df["published_at"], errors="coerce", utc=True)
             df = df[df["_dt_chk"].isna() | (df["_dt_chk"] >= cutoff)]
             df = df.sort_values(by="_dt_chk", ascending=False).drop(columns=["_dt_chk"]).reset_index(drop=True)
@@ -319,7 +357,7 @@ class GoogleNewsService:
 
     @classmethod
     def analyze_sentiment_by_topic(cls, df_news: pd.DataFrame) -> list[dict[str, Any]]:
-        """Calcula a análise de sentimento funcional dos últimos 7 dias analisando o texto das notícias reais por tópico."""
+        """Calcula a análise de sentimento funcional dos últimos 180 dias analisando o texto das notícias reais por tópico."""
         import unicodedata
 
         def _strip_accents(text: str) -> str:
@@ -330,56 +368,56 @@ class GoogleNewsService:
             {
                 "topic": "FRETE / LOGÍSTICA",
                 "short_name": "Frete & Logística",
-                "keywords": ["frete", "porto", "paranagua", "santos", "itaqui", "barcarena", "navio", "fila", "espera", "maritimo", "logistica", "ferrovia", "cabotagem", "transporte", "embarque", "descarga", "graneis", "armazem", "estocagem"],
+                "keywords": ["frete", "porto", "paranagua", "santos", "itaqui", "barcarena", "navio", "fila", "espera", "maritimo", "logistica", "ferrovia", "cabotagem", "transporte", "embarque", "descarga", "graneis", "armazem", "estocagem", "escoamento", "canal"],
                 "positive_label": "Melhorando (Fluidez e Tarifas Competitivas)",
                 "neutral_label": "Estável (Fluxos e Portos Regulares)",
                 "negative_label": "Piorando (Gargalos e Tarifas em Alta)",
-                "pos_terms": ["queda de frete", "reducao de frete", "desconto", "fluidez", "desobstrucao", "ferrovia", "investimento", "eficiencia", "alivio", "capacidade", "agilidade", "normalizacao", "ampliacao"],
-                "neg_terms": ["alta com gargalos", "alta de frete", "aumento de frete", "gargalo", "gargalos", "fila", "espera", "demora", "sobretaxa", "custo elevado", "pressao", "greve", "parada", "bloqueio", "prejuizo"],
+                "pos_terms": ["queda de frete", "reducao de frete", "desconto", "fluidez", "desobstrucao", "ferrovia", "investimento", "eficiencia", "alivio", "capacidade", "agilidade", "normalizacao", "ampliacao", "recorde", "escoamento rapido", "modernizacao"],
+                "neg_terms": ["alta com gargalos", "alta de frete", "aumento de frete", "gargalo", "gargalos", "fila", "espera", "demora", "sobretaxa", "custo elevado", "pressao", "greve", "parada", "bloqueio", "prejuizo", "congestionamento", "interrupcao"],
                 "driver": "Operação de berços nos portos de Santos/Paranaguá e tarifas intermodais.",
             },
             {
                 "topic": "PRODUÇÃO",
                 "short_name": "Produção & Indústria",
-                "keywords": ["producao", "fabrica", "planta", "capacidade", "industria", "petrobras", "gas natural", "ampliacao", "investimento", "fabricacao", "sintese", "heringer", "unigel", "nitrogenados", "fosfatados"],
+                "keywords": ["producao", "fabrica", "planta", "capacidade", "industria", "petrobras", "gas natural", "ampliacao", "investimento", "fabricacao", "sintese", "heringer", "unigel", "nitrogenados", "fosfatados", "nacional", "fabricas"],
                 "positive_label": "Melhorando (Capacidade e Oferta em Expansão)",
                 "neutral_label": "Estável (Plantas em Operação Contínua)",
                 "negative_label": "Piorando (Restrições e Paradas de Plantas)",
-                "pos_terms": ["expansao", "inauguracao", "reabertura", "recorde", "aumento", "investimento", "incentivo", "eficiencia", "retomada", "hidrogenio verde", "recuperacao", "acordo", "programa nacional", "ampliacao"],
-                "neg_terms": ["parada", "fechamento", "corte", "queda de producao", "reducao", "crise", "desabastecimento", "gas caro", "manutencao", "extrajudicial", "divida", "falencia"],
+                "pos_terms": ["expansao", "inauguracao", "reabertura", "recorde", "aumento", "investimento", "incentivo", "eficiencia", "retomada", "hidrogenio verde", "recuperacao", "acordo", "programa nacional", "ampliacao", "estimula", "sancionad", "aprova", "sanciona"],
+                "neg_terms": ["parada", "fechamento", "corte", "queda de producao", "reducao", "crise", "desabastecimento", "gas caro", "manutencao", "extrajudicial", "divida", "falencia", "adulterad", "fraude", "apreensao"],
                 "driver": "Nível de atividade fabril nacional e incentivos ao gás competitivo.",
             },
             {
                 "topic": "CONSUMO / DEMANDA",
                 "short_name": "Consumo & Demanda",
-                "keywords": ["consumo", "demanda", "safra", "produtor", "plantio", "compra", "entrega", "escoamento", "soja", "milho", "estoque", "aplicacao", "adubacao"],
+                "keywords": ["consumo", "demanda", "safra", "produtor", "plantio", "compra", "entrega", "escoamento", "soja", "milho", "estoque", "aplicacao", "adubacao", "entregas", "compras", "vendas"],
                 "positive_label": "Melhorando (Demanda Firme para Safras)",
                 "neutral_label": "Estável (Ritmo Médio e Previsível)",
                 "negative_label": "Piorando (Cautela e Atraso no Plantio)",
-                "pos_terms": ["aquecid", "forte", "recorde", "antecipa", "avanco", "plantio acelerado", "crescimento", "compra", "expansao de area", "produtividade", "alta demanda"],
-                "neg_terms": ["atrasa ritmo", "atraso", "cautela", "desacelera", "retracao", "queda de demanda", "inseguranca", "baixa", "parada de compras", "estiagem", "pisou no freio"],
+                "pos_terms": ["aquecid", "forte", "recorde", "antecipa", "avanco", "plantio acelerado", "crescimento", "compra", "expansao de area", "produtividade", "alta demanda", "cresce", "alta nas vendas", "ritmo acelerado"],
+                "neg_terms": ["atrasa ritmo", "atraso", "cautela", "desacelera", "retracao", "queda de demanda", "inseguranca", "baixa", "parada de compras", "estiagem", "pisou no freio", "caem", "queda", "cai forte", "desaceleracao", "reducao"],
                 "driver": "Apetite de compras do produtor rural para fechamento de pacotes na safra.",
             },
             {
                 "topic": "PREÇOS / MERCADO",
                 "short_name": "Preços & Mercado",
-                "keywords": ["preco", "cotacao", "cotacoes", "dolar", "fob", "cfr", "custo", "relacao de troca", "spread", "mercado", "valor", "tonelada"],
+                "keywords": ["preco", "cotacao", "cotacoes", "dolar", "fob", "cfr", "custo", "relacao de troca", "spread", "mercado", "valor", "tonelada", "custos", "poder de compra", "precos"],
                 "positive_label": "Melhorando (Cotações Acessíveis / Margem)",
                 "neutral_label": "Estável (Paridades em Faixa Normal)",
                 "negative_label": "Piorando (Pressão de Custos e Altas)",
-                "pos_terms": ["queda de preco", "desconto", "relacao de troca favoravel", "alivio", "competitiv", "estavel", "acessivel", "barateamento", "recuo"],
-                "neg_terms": ["alta de precos", "sobem no exterior", "escalada", "pressao", "disparada", "encarece", "inflacao", "custo recorde", "prejuizo", "alta"],
+                "pos_terms": ["queda de preco", "desconto", "relacao de troca favoravel", "alivio", "competitiv", "estavel", "acessivel", "barateamento", "recuo", "poder de compra melhorou", "queda nos precos", "precos em baixa", "reducao de custo", "aliviar custos", "melhorou"],
+                "neg_terms": ["alta de precos", "sobem no exterior", "escalada", "pressao", "disparada", "encarece", "inflacao", "custo recorde", "prejuizo", "alta", "mais caros", "precos sobem", "subiram", "alta dos fertilizantes", "pressiona"],
                 "driver": "Cotações CFR Paranaguá e paridade de troca grão vs adubo.",
             },
             {
                 "topic": "GEOPOLÍTICA / COMÉRCIO",
                 "short_name": "Geopolítica & Comércio",
-                "keywords": ["russia", "china", "belarus", "marrocos", "sancao", "sancoes", "tarifa", "mar vermelho", "guerra", "geopolitica", "restricao", "cota", "ormuz", "importacao", "exportacao", "conflito"],
+                "keywords": ["russia", "china", "belarus", "marrocos", "sancao", "sancoes", "tarifa", "mar vermelho", "guerra", "geopolitica", "restricao", "cota", "ormuz", "importacao", "exportacao", "conflito", "acordo", "comercio"],
                 "positive_label": "Melhorando (Abertura Comercial e Acordos)",
                 "neutral_label": "Estável (Fluxos e Relações Mantidas)",
                 "negative_label": "Piorando (Sanções, Cotas e Tensões)",
-                "pos_terms": ["acordo", "abertura", "isencao", "parceria", "embarque garantido", "distensao", "normalizacao", "cooperacao", "mantem lideranca", "livre comercio"],
-                "neg_terms": ["sancao", "sancoes", "restricao", "prorroga mecanismos", "controle de cotas", "cota", "guerra", "tensao", "bloqueio", "tarifa", "conflito", "embargo", "prejuizo", "risco geopolitico", "ormuz"],
+                "pos_terms": ["acordo", "abertura", "isencao", "parceria", "embarque garantido", "distensao", "normalizacao", "cooperacao", "mantem lideranca", "livre comercio", "garantia de fornecimento"],
+                "neg_terms": ["sancao", "sancoes", "restricao", "prorroga mecanismos", "controle de cotas", "cota", "guerra", "tensao", "bloqueio", "tarifa", "conflito", "embargo", "prejuizo", "risco geopolitico", "ormuz", "dependencia externa", "cai forte"],
                 "driver": "Políticas alfandegárias de grandes players globais (Rússia, China, Oriente Médio).",
             },
         ]
@@ -398,16 +436,32 @@ class GoogleNewsService:
                         matched_articles.append(txt_norm)
 
             news_cnt = len(matched_articles)
-            net_points = 0.0
+            pos_arts = 0
+            neg_arts = 0
+            pos_hits_total = 0
+            neg_hits_total = 0
 
             if news_cnt > 0:
                 for txt in matched_articles:
                     pos_hits = sum(1 for term in cfg["pos_terms"] if term in txt)
                     neg_hits = sum(1 for term in cfg["neg_terms"] if term in txt)
-                    net_points += (pos_hits - neg_hits)
-                avg_net = net_points / news_cnt
-                # Mapeia dinamicamente para escala contínua de -10.0 a +10.0 pts
-                calc_score = round(max(-10.0, min(10.0, avg_net * 3.5)), 1)
+                    pos_hits_total += pos_hits
+                    neg_hits_total += neg_hits
+                    if pos_hits > neg_hits:
+                        pos_arts += 1
+                    elif neg_hits > pos_hits:
+                        neg_arts += 1
+
+                total_polarized = pos_arts + neg_arts
+                if total_polarized > 0:
+                    # Polaridade das matérias com sinal indicativo/direcional
+                    polar_ratio = (pos_arts - neg_arts) / total_polarized
+                    # Fator de confiança baseado no volume de matérias com viés (atinge 1.0 com 3+ matérias)
+                    confidence = min(1.0, total_polarized / 3.0)
+                    calc_score = round(max(-10.0, min(10.0, polar_ratio * 10.0 * confidence)), 1)
+                else:
+                    # Nenhuma matéria com sinal explícito de melhora ou piora
+                    calc_score = 0.0
             else:
                 calc_score = 0.0
 
@@ -441,4 +495,5 @@ class GoogleNewsService:
             })
 
         return results
+
 

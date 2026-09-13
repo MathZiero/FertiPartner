@@ -166,10 +166,10 @@ class ToolExecutor:
 
     @classmethod
     def _tool_get_recent_news_7d(cls, args: dict[str, Any]) -> dict[str, Any]:
-        """Retorna matérias dos últimos 7 dias."""
+        """Retorna matérias dos últimos 180 dias."""
         df_news = GoogleNewsService.fetch_fertilizer_news()
         if df_news.empty:
-            return {"status": "no_news", "message": "Nenhuma notícia capturada nos últimos 7 dias."}
+            return {"status": "no_news", "message": "Nenhuma notícia capturada nos últimos 180 dias."}
 
         topic_filter = args.get("topic")
         if topic_filter and topic_filter != "TODOS":
@@ -191,6 +191,11 @@ class ToolExecutor:
             "total_news_found": len(df_news),
             "recent_articles": recent_items,
         }
+
+    # Aliases de compatibilidade para chamadas de ferramentas de notícias
+    _tool_get_recent_news_180d = _tool_get_recent_news_7d
+    _tool_get_recent_news_30d = _tool_get_recent_news_7d
+    _tool_get_recent_news = _tool_get_recent_news_7d
 
     @classmethod
     def _tool_get_market_sentiment_barometers(cls, args: dict[str, Any]) -> dict[str, Any]:

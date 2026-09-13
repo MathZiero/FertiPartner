@@ -68,7 +68,7 @@ def _create_gauge_indicator(score_val: float, classification: str) -> go.Figure:
 def render_view() -> None:
     render_header(
         title="Radar de Notícias - Mercado de Fertilizantes",
-        subtitle="Monitoramento em tempo real de notícias setoriais dos últimos 7 dias: logística portuária, capacidade produtiva, ritmo de demanda das safras, paridade de preços e comércio internacional.",
+        subtitle="Monitoramento em tempo real de notícias setoriais dos últimos 180 dias: logística portuária, capacidade produtiva, ritmo de demanda das safras, paridade de preços e comércio internacional.",
         badge_text="Feed em Tempo Real",
         badge_type="emerald",
     )
@@ -76,17 +76,17 @@ def render_view() -> None:
     # Botão de atualização rápida do feed
     c_btn, c_note = st.columns([2.5, 5.5])
     with c_btn:
-        if st.button("Recarregar Feed (Últimos 7 Dias)", width="stretch"):
+        if st.button("Recarregar Feed (Últimos 180 Dias)", width="stretch"):
             GoogleNewsService.fetch_fertilizer_news.clear()
             st.rerun()
     with c_note:
-        st.caption("Filtro temporal estrito: apenas publicações das últimas 168 horas (7 dias) com impacto direto na cadeia de suprimentos e agronegócio.")
+        st.caption("Filtro temporal: publicações dos últimos 180 dias com agregação especializada multi-tópico e impacto direto na cadeia de suprimentos.")
 
     # Busca de notícias com cache inteligente
     df_news = GoogleNewsService.fetch_fertilizer_news()
 
     if df_news.empty:
-        st.warning("Nenhuma notícia dos últimos 7 dias foi encontrada no momento. Tente novamente mais tarde.")
+        st.warning("Nenhuma notícia dos últimos 180 dias foi encontrada no momento. Tente novamente mais tarde.")
         return
 
     # =========================================================================
@@ -103,7 +103,7 @@ def render_view() -> None:
                 <span class="fp-badge fp-badge-emerald" style="font-size: 0.72rem;">Google Gemini</span>
             </div>
             <div style="font-size: 0.82rem; color: #4B5563; margin-bottom: 0.75rem;">
-                Síntese executiva automatizada sobre fretes portuários, apetite de compras de safra e geopolítica a partir das matérias dos últimos 7 dias.
+                Síntese executiva automatizada sobre fretes portuários, apetite de compras de safra e geopolítica a partir das matérias dos últimos 180 dias.
             </div>
             """,
             unsafe_allow_html=True,
@@ -134,8 +134,8 @@ def render_view() -> None:
     # =========================================================================
     # BARÔMETROS DE ANÁLISE DE SENTIMENTO SETORIAL (PLOTLY)
     # =========================================================================
-    st.markdown("#### Barômetros de Sentimento de Mercado (Últimos 7 Dias)")
-    st.caption("Diagnóstico semântico automatizado por processamento léxico das notícias reais publicadas nas últimas 168 horas.")
+    st.markdown("#### Barômetros de Sentimento de Mercado (Últimos 180 Dias)")
+    st.caption("Diagnóstico semântico automatizado por processamento léxico das notícias reais publicadas nos últimos 180 dias.")
 
     sentiments = GoogleNewsService.analyze_sentiment_by_topic(df_news)
 
@@ -202,9 +202,9 @@ def render_view() -> None:
         st.markdown(
             """
             **Como funciona o algoritmo de análise de sentimento:**
-            1. **Processamento em Tempo Real:** O algoritmo extrai os textos integrais (títulos e resumos) das matérias captadas no feed RSS dos últimos 7 dias.
+            1. **Processamento em Tempo Real:** O algoritmo extrai os textos integrais (títulos e resumos) das matérias captadas no feed RSS dos últimos 180 dias.
             2. **Segmentação Temática:** Cada notícia é mapeada para os 5 eixos críticos do mercado (Frete & Logística, Produção & Indústria, Consumo & Demanda, Preços & Mercado e Geopolítica & Comércio).
-            3. **Análise Léxica Setorial:** Avalia termos de expansão e alívio operacional (*queda de custos, novos investimentos, parcerias, fluidez portuária*) versus gargalos e riscos (*alta de tarifas, quebra de oferta, sanções, embargos, estiagem*).
+            3. **Análise Léxica Setorial:** Avalia termos de expansão e alívio operacional (*queda de custos, novos investimentos, parcerias, fluidez portuária, modernização*) versus gargalos e riscos (*alta de tarifas, quebra de oferta, sanções, embargos, estiagem, congestionamento*).
             4. **Pontuação Contínua:** Calcula a polaridade líquida numa escala de **-10.0 a +10.0 pontos**, classificando o barômetro em **Melhorando** (≥ +1.5 pts), **Estável** (-1.4 a +1.4 pts) ou **Piorando** (≤ -1.5 pts).
             """
         )
@@ -264,7 +264,7 @@ def render_view() -> None:
         df_filtered["_sort_dt"] = pd.to_datetime(df_filtered["published_at"], errors="coerce", utc=True)
         df_filtered = df_filtered.sort_values(by="_sort_dt", ascending=False).drop(columns=["_sort_dt"]).reset_index(drop=True)
 
-    st.markdown(f"<div style='color: #4B5563; font-size: 0.88rem; margin: 0.5rem 0 1rem 0;'>Exibindo <b>{len(df_filtered)}</b> matérias dos últimos 7 dias (mais recentes primeiro):</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='color: #4B5563; font-size: 0.88rem; margin: 0.5rem 0 1rem 0;'>Exibindo <b>{len(df_filtered)}</b> matérias dos últimos 180 dias (mais recentes primeiro):</div>", unsafe_allow_html=True)
 
     # =========================================================================
     # CARDS DE NOTÍCIAS EM DUAS COLUNAS PARALELAS
@@ -345,7 +345,7 @@ def render_view() -> None:
             )
 
     st.divider()
-    render_source_badge("Google News RSS Feed & Inteligência FertiPartner (Últimos 7 Dias)", "Agregador em Tempo Real")
+    render_source_badge("Google News RSS Feed & Inteligência FertiPartner (Últimos 180 Dias)", "Agregador em Tempo Real")
 
 
 if __name__ == "__main__":
