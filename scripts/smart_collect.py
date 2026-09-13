@@ -100,8 +100,8 @@ SOURCE_CONFIGS: list[SourceConfig] = [
     SourceConfig(
         name="comex",
         table="trade_records",
-        year_column="year",
-        month_column="month",
+        year_column="period_start_date",
+        month_column="period_start_date",
         granularity="monthly",
         min_year=2010,
         max_year_offset=0,
@@ -109,7 +109,7 @@ SOURCE_CONFIGS: list[SourceConfig] = [
     SourceConfig(
         name="faostat",
         table="production_records",
-        year_column="year",
+        year_column="period_start_date",
         month_column=None,
         granularity="annual",
         min_year=2010,
@@ -126,8 +126,8 @@ SOURCE_CONFIGS: list[SourceConfig] = [
     ),
     SourceConfig(
         name="comtrade",
-        table="trade_flows",
-        year_column="period",
+        table="trade_records",
+        year_column="period_start_date",
         month_column=None,
         granularity="annual",
         min_year=2018,
@@ -276,14 +276,24 @@ class GapDetector:
         try:
             resp = (
                 self.supabase
-                .table("production_records")
-                .select("year")
+                .table(cfg.table)
+                .select("period_start_date")
                 .eq("fertilizer_id", fertilizer_id)
                 .execute()
             )
-            present = [int(row["year"]) for row in (resp.data or [])]
+            present: list[int] = []
+            for row in (resp.data or []):
+                if "year" in row and row["year"] is not None:
+                    present.append(int(row["year"]))
+                elif row.get("period_start_date"):
+                    psd = str(row["period_start_date"])
+                    if len(psd) >= 4:
+                        try:
+                            present.append(int(psd[:4]))
+                        except ValueError:
+                            pass
         except Exception as exc:
-            logger.warning("Erro ao consultar production_records (faostat): %s", exc)
+            logger.warning("Erro ao consultar %s (faostat): %s", cfg.table, exc)
             present = []
 
         missing = _compute_missing_years(present, min_y, max_y)
@@ -313,18 +323,27 @@ class GapDetector:
         try:
             resp = (
                 self.supabase
-                .table("trade_records")
-                .select("year,month")
+                .table(cfg.table)
+                .select("period_start_date,period_type")
                 .eq("fertilizer_id", fertilizer_id)
                 .execute()
             )
-            present = [
-                (int(row["year"]), int(row["month"]))
-                for row in (resp.data or [])
-                if row.get("year") and row.get("month")
-            ]
+            present: list[tuple[int, int]] = []
+            for row in (resp.data or []):
+                # Ignora fluxos anuais (ex: UN Comtrade gravados em trade_records)
+                if row.get("period_type") and row.get("period_type") != "MONTH":
+                    continue
+                if "year" in row and "month" in row and row["year"] and row["month"]:
+                    present.append((int(row["year"]), int(row["month"])))
+                elif row.get("period_start_date"):
+                    psd = str(row["period_start_date"])
+                    if len(psd) >= 7:
+                        try:
+                            present.append((int(psd[:4]), int(psd[5:7])))
+                        except (ValueError, IndexError):
+                            pass
         except Exception as exc:
-            logger.warning("Erro ao consultar trade_records (comex): %s", exc)
+            logger.warning("Erro ao consultar %s (comex): %s", cfg.table, exc)
             present = []
 
         missing = _compute_missing_months(present, min_y, max_y)
@@ -394,7 +413,7 @@ class GapDetector:
         min_year: int | None = None,
         max_year: int | None = None,
     ) -> DatasetGapResult:
-        """Detecta anos ausentes em trade_flows (Comtrade) para o fertilizante."""
+        """Detecta anos ausentes em trade_records (Comtrade) para o fertilizante."""
         cfg = next(c for c in SOURCE_CONFIGS if c.name == "comtrade")
         min_y = min_year if min_year is not None else cfg.min_year
         max_y = max_year if max_year is not None else self._resolve_max_year(cfg)
@@ -402,14 +421,28 @@ class GapDetector:
         try:
             resp = (
                 self.supabase
-                .table("trade_flows")
-                .select("period")
+                .table(cfg.table)
+                .select("period_start_date,period_type")
                 .eq("fertilizer_id", fertilizer_id)
                 .execute()
             )
-            present = [int(row["period"]) for row in (resp.data or []) if row.get("period")]
+            present: list[int] = []
+            for row in (resp.data or []):
+                if row.get("period_type") and row.get("period_type") != "YEAR":
+                    continue
+                if "period" in row and row["period"] is not None:
+                    present.append(int(row["period"]))
+                elif "year" in row and row["year"] is not None:
+                    present.append(int(row["year"]))
+                elif row.get("period_start_date"):
+                    psd = str(row["period_start_date"])
+                    if len(psd) >= 4:
+                        try:
+                            present.append(int(psd[:4]))
+                        except ValueError:
+                            pass
         except Exception as exc:
-            logger.warning("Erro ao consultar trade_flows (comtrade): %s", exc)
+            logger.warning("Erro ao consultar %s (comtrade): %s", cfg.table, exc)
             present = []
 
         missing = _compute_missing_years(present, min_y, max_y)
@@ -434,9 +467,14 @@ class GapDetector:
         min_y = min_year if min_year is not None else cfg.min_year
         max_y = max_year if max_year is not None else self._resolve_max_year(cfg)
 
-        res = self.supabase.table(cfg.table).select("year").execute()
-        rows = res.data or []
-        present = [int(r["year"]) for r in rows if r.get("year") is not None]
+        try:
+            res = self.supabase.table(cfg.table).select("year").execute()
+            rows = res.data or []
+            present = [int(r["year"]) for r in rows if r.get("year") is not None]
+        except Exception as exc:
+            logger.warning("Erro ao consultar %s (worldbank): %s", cfg.table, exc)
+            present = []
+
         missing = _compute_missing_years(present, min_y, max_y)
 
         return DatasetGapResult(
@@ -460,22 +498,26 @@ class GapDetector:
         min_y = min_year if min_year is not None else cfg.min_year
         max_y = max_year if max_year is not None else self._resolve_max_year(cfg)
 
-        res = (
-            self.supabase.table(cfg.table)
-            .select("price_date")
-            .eq("fertilizer_id", fertilizer_id)
-            .eq("source_id", 9)
-            .execute()
-        )
-        rows = res.data or []
-        present = []
-        for r in rows:
-            pd_str = str(r.get("price_date", ""))
-            if pd_str and len(pd_str) >= 4:
-                try:
-                    present.append(int(pd_str[:4]))
-                except ValueError:
-                    pass
+        try:
+            res = (
+                self.supabase.table(cfg.table)
+                .select("price_date")
+                .eq("fertilizer_id", fertilizer_id)
+                .eq("source_id", 9)
+                .execute()
+            )
+            rows = res.data or []
+            present = []
+            for r in rows:
+                pd_str = str(r.get("price_date", ""))
+                if pd_str and len(pd_str) >= 4:
+                    try:
+                        present.append(int(pd_str[:4]))
+                    except ValueError:
+                        pass
+        except Exception as exc:
+            logger.warning("Erro ao consultar %s (faostat_prices): %s", cfg.table, exc)
+            present = []
 
         missing = _compute_missing_years(present, min_y, max_y)
 
@@ -954,7 +996,19 @@ def main() -> None:
     print(f"Janela máxima : {args.max_year or 'padrão por fonte'}")
     print("=" * 75 + "\n")
 
-    collector = SmartCollector()
+    try:
+        collector = SmartCollector()
+    except Exception as exc:
+        print("\n" + "!" * 75)
+        print(f"ERRO DE INICIALIZAÇÃO DO COLETOR: {exc}")
+        print("Verifique se as credenciais do Supabase estão configuradas:")
+        print("  - SUPABASE_URL")
+        print("  - SUPABASE_KEY (ou SUPABASE_ANON_KEY)")
+        print("  - SUPABASE_SERVICE_ROLE_KEY")
+        print("No GitHub Actions, adicione essas variáveis em Settings > Secrets and variables > Actions.")
+        print("!" * 75 + "\n")
+        sys.exit(1)
+
     t0 = time.time()
 
     report = collector.run(

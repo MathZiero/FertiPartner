@@ -54,6 +54,13 @@ gaps detectados? → SIM → gap-fill (coleta apenas os períodos ausentes)
 - [x] Workflow `.github/workflows/smart_collect.yml`
 - [x] Testes passando (TDD GREEN) — 38/38
 - [x] Suite completa sem regressões — 210/210
+- [x] Correção e alinhamento com o schema 4NF (2026-09-13):
+  - `trade_records` e `production_records` usam `period_start_date` em vez de `year`/`month`.
+  - UN Comtrade consulta `trade_records` com `period_type = 'YEAR'`.
+  - Blocos `try/except` resilientes em `detect_worldbank_gaps` e `detect_faostat_prices_gaps`.
+  - Fallbacks de credenciais (`secrets.SUPABASE_KEY || secrets.SUPABASE_ANON_KEY`) no workflow.
+  - Novos testes unitários 4NF: 45/45 passando.
+  - Suite completa sem regressões: 230/230 testes passando.
 
 ## Decisões Registradas
 
@@ -63,14 +70,15 @@ gaps detectados? → SIM → gap-fill (coleta apenas os períodos ausentes)
 - MAX_YEAR: `current_year - 1` para anuais, `current_year` para mensais.
 - O script reutiliza as funções de pipeline existentes em `collect_fertilizer_all_sources.py`.
 - O relatório é publicado no GitHub Actions Job Summary via `$GITHUB_STEP_SUMMARY`.
+- Schema 4NF: a dimensão temporal universal utiliza `period_start_date` (DATE) e `period_type` ('MONTH' / 'YEAR'), tanto para comércio (Comex, Comtrade) quanto para produção (FAOSTAT).
 
 ## Problemas Encontrados
 
-Nenhum.
+- Incompatibilidade entre as queries de `GapDetector` e o schema 4NF (`column year does not exist` e `table trade_flows not found`), além de falha por ausência da migração da tabela `country_indicators`. Resolvido harmonizando as queries com `period_start_date` e adicionando resiliência contra tabelas pendentes de migração.
 
 ## Progresso
 
 Iniciado em: 2026-09-11
 Concluído em: 2026-09-11
+Bugfix Schema 4NF: 2026-09-13
 
-Commit: `2ba5689` — feat: coleta inteligente com deteccao de gaps temporais

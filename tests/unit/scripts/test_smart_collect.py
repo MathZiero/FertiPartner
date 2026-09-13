@@ -494,3 +494,59 @@ class TestGapDetectorNewSources:
         assert 2021 in result.missing_years
         assert 2020 not in result.missing_years
         assert 2022 not in result.missing_years
+
+    def test_detect_worldbank_gaps_handles_error_gracefully(self, gap_detector, mock_supabase):
+        mock_supabase.table.return_value.select.return_value.execute.side_effect = Exception("Table not found")
+        result = gap_detector.detect_worldbank_gaps(min_year=2020, max_year=2022)
+        assert result.source == "worldbank"
+        assert result.missing_years == [2020, 2021, 2022]
+
+    def test_detect_faostat_prices_gaps_handles_error_gracefully(self, gap_detector, mock_supabase):
+        mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.side_effect = Exception("DB error")
+        result = gap_detector.detect_faostat_prices_gaps(fertilizer_id=1, min_year=2020, max_year=2022)
+        assert result.source == "faostat_prices"
+        assert result.missing_years == [2020, 2021, 2022]
+
+
+class TestGapDetector4NFSchema:
+
+    def test_faostat_detecta_gaps_via_period_start_date(self, gap_detector, mock_supabase):
+        mock_response = MagicMock()
+        mock_response.data = [
+            {"period_start_date": "2020-01-01"},
+            {"period_start_date": "2023-01-01"},
+        ]
+        mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = mock_response
+
+        result = gap_detector.detect_faostat_gaps(fertilizer_id=1, min_year=2020, max_year=2023)
+        assert result.missing_years == [2021, 2022]
+        assert result.present_years == [2020, 2023]
+
+    def test_comex_detecta_gaps_via_period_start_date_e_period_type(self, gap_detector, mock_supabase):
+        mock_response = MagicMock()
+        mock_response.data = [
+            {"period_start_date": "2022-01-01", "period_type": "MONTH"},
+            {"period_start_date": "2022-02-01", "period_type": "MONTH"},
+            {"period_start_date": "2022-01-01", "period_type": "YEAR"},  # Deve ignorar anual (comtrade)
+        ]
+        mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = mock_response
+
+        result = gap_detector.detect_comex_gaps(fertilizer_id=1, min_year=2022, max_year=2022)
+        assert (2022, 1) not in result.missing_months
+        assert (2022, 2) not in result.missing_months
+        assert (2022, 3) in result.missing_months
+        assert len(result.missing_months) == 10
+
+    def test_comtrade_detecta_gaps_via_period_start_date_e_period_type(self, gap_detector, mock_supabase):
+        mock_response = MagicMock()
+        mock_response.data = [
+            {"period_start_date": "2020-01-01", "period_type": "YEAR"},
+            {"period_start_date": "2022-01-01", "period_type": "YEAR"},
+            {"period_start_date": "2021-05-01", "period_type": "MONTH"},  # Deve ignorar mensal (comex)
+        ]
+        mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = mock_response
+
+        result = gap_detector.detect_comtrade_gaps(fertilizer_id=1, min_year=2020, max_year=2022)
+        assert result.missing_years == [2021]
+        assert result.present_years == [2020, 2022]
+
