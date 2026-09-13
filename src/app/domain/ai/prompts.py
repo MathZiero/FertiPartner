@@ -40,13 +40,57 @@ DADOS DO PRODUTO:
 {product_context}
 """
 
-EXECUTIVE_BRIEFING_PROMPT_TEMPLATE = """Com base nas matérias publicadas e nos barômetros de sentimento dos últimos 180 dias, elabore o 'Briefing Semanal FertiPartner.AI' em 3 tópicos executivos de alta relevância para a tomada de decisão de compra e logística de fertilizantes no Brasil:
-1. Fretes Portuários e Logística de Entrega.
-2. Dinâmica de Preços e Apetite de Compras na Safra.
-3. Riscos Geopolíticos e Oferta Global.
 
-Seja direto, institucional e sem emojis.
+def get_briefing_date_ranges() -> dict[str, str]:
+    """Calcula intervalos dinâmicos de datas da última semana e da próxima semana utilizando a biblioteca time do Python."""
+    import time
 
-DADOS DOS ÚLTIMOS 180 DIAS:
+    now_ts = time.time()
+    day_sec = 86400
+
+    past_ts = now_ts - (7 * day_sec)
+    future_ts = now_ts + (7 * day_sec)
+
+    current_date = time.strftime("%d/%m/%Y", time.localtime(now_ts))
+    past_date = time.strftime("%d/%m/%Y", time.localtime(past_ts))
+    future_date = time.strftime("%d/%m/%Y", time.localtime(future_ts))
+
+    return {
+        "current_date": current_date,
+        "past_week_range": f"{past_date} a {current_date}",
+        "future_week_range": f"{current_date} a {future_date}",
+    }
+
+
+class _ExecutiveBriefingPromptTemplate(str):
+    """Template de prompt dinâmico que injeta automaticamente datas calculadas via biblioteca time."""
+
+    def format(self, *args, **kwargs) -> str:
+        dates = get_briefing_date_ranges()
+        for k, v in dates.items():
+            kwargs.setdefault(k, v)
+        return super().format(*args, **kwargs)
+
+
+EXECUTIVE_BRIEFING_PROMPT_TEMPLATE = _ExecutiveBriefingPromptTemplate(
+    """Com base nas notícias setoriais, fatos de mercado e barômetros de sentimento, elabore o 'Briefing Semanal FertiPartner.AI' (Data de Referência: {current_date}).
+
+Sua análise deve ser estruturada como um resumo executivo de inteligência de mercado dividido obrigatoriamente nas 2 seções principais abaixo:
+
+1. RESUMO EXECUTIVO DA ÚLTIMA SEMANA ({past_week_range}):
+- Síntese analítica consolidada das principais notícias e acontecimentos mais relevantes dos últimos 7 dias.
+- Destaques estruturados abrangendo:
+  a) Fretes e Logística (portos de Santos, Paranaguá, Itaqui, filas de navios e escoamento);
+  b) Dinâmica de Preços e Apetite de Compras (cotações NPK, relação de troca e ritmo de aquisição dos produtores na safra);
+  c) Riscos Geopolíticos e Oferta Global (sanções, cotas internacionais e suprimento externo).
+
+2. O QUE ESPERAR PARA A PRÓXIMA SEMANA ({future_week_range}):
+- Projeções de curto prazo e tendências esperadas para os próximos 7 dias no mercado de fertilizantes.
+- Principais fatores de atenção, volatilidade projetada e recomendações estratégicas para a tomada de decisão de compra, trava de custos e gestão logística no agronegócio.
+
+Diretrizes: Mantenha um tom executivo, corporativo, técnico, objetivo e sem emojis.
+
+DADOS SETORIAIS E NOTÍCIAS DISPONÍVEIS:
 {news_context}
 """
+)

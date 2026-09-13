@@ -103,7 +103,7 @@ def render_view() -> None:
                 <span class="fp-badge fp-badge-emerald" style="font-size: 0.72rem;">Google Gemini</span>
             </div>
             <div style="font-size: 0.82rem; color: #4B5563; margin-bottom: 0.75rem;">
-                Síntese executiva automatizada sobre fretes portuários, apetite de compras de safra e geopolítica a partir das matérias dos últimos 180 dias.
+                Resumo executivo consolidado das principais notícias da última semana e projeções estratégicas do que esperar para a próxima semana no mercado de fertilizantes.
             </div>
             """,
             unsafe_allow_html=True,

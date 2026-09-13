@@ -30,10 +30,24 @@ class TestAIPromptsAndToolsSchema:
         assert "{product_context}" not in rendered
 
     def test_executive_briefing_prompt_formatting(self):
+        from app.domain.ai.prompts import get_briefing_date_ranges
+
+        dates = get_briefing_date_ranges()
+        assert "current_date" in dates
+        assert "past_week_range" in dates
+        assert "future_week_range" in dates
+        assert "/" in dates["current_date"]
+        assert " a " in dates["past_week_range"]
+        assert " a " in dates["future_week_range"]
+
         rendered = EXECUTIVE_BRIEFING_PROMPT_TEMPLATE.format(
             news_context="1. Fretes portuários em alta em Paranaguá.\n2. Safra de soja acelerada.",
         )
         assert "Briefing Semanal FertiPartner.AI" in rendered
+        assert "RESUMO EXECUTIVO DA ÚLTIMA SEMANA" in rendered
+        assert "O QUE ESPERAR PARA A PRÓXIMA SEMANA" in rendered
+        assert dates["past_week_range"] in rendered
+        assert dates["future_week_range"] in rendered
         assert "Fretes portuários em alta" in rendered
         assert "{news_context}" not in rendered
 

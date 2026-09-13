@@ -17,6 +17,13 @@ src_dir = root_dir / "src"
 if str(src_dir) not in sys.path:
     sys.path.insert(0, str(src_dir))
 
+# Carrega variáveis do arquivo .env se presente
+try:
+    from dotenv import load_dotenv
+    load_dotenv(override=False)
+except Exception:
+    pass
+
 # Detecta se está sendo executado através de 'streamlit run'
 is_streamlit = False
 try:

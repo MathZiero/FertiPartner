@@ -131,16 +131,17 @@ def test_executive_briefing_use_case_with_mock_client():
     assert mock_client.generate_content.called
 
 
-def test_gemini_client_default_model_is_gemini_3_6_flash():
-    """Garante que o modelo padrão atualizado é o gemini-3.6-flash."""
+def test_gemini_client_default_model_is_gemini_3_5_flash_lite():
+    """Garante que o modelo padrão atualizado é o gemini-3.5-flash-lite."""
     client = GeminiClient()
-    assert client.DEFAULT_MODEL == "gemini-3.6-flash"
-    assert client.model_name == "gemini-3.6-flash"
+    assert client.DEFAULT_MODEL == "gemini-3.5-flash-lite"
+    assert client.model_name == "gemini-3.5-flash-lite"
 
 
 def test_gemini_client_list_available_models_fallback():
     """Valida retorno seguro de fallback quando a chave não estiver configurada."""
     models = GeminiClient.list_available_models("")
+    assert "gemini-3.5-flash-lite" in models
     assert "gemini-3.6-flash" in models
     assert "gemini-3.8-flash" in models
 

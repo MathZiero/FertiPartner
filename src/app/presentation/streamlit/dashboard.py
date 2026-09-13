@@ -9,6 +9,13 @@ _src_dir = str(Path(__file__).resolve().parents[3])
 if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
 
+# Carrega variáveis de ambiente do .env se presente
+try:
+    from dotenv import load_dotenv
+    load_dotenv(override=False)
+except Exception:
+    pass
+
 # Força recarregamento dinâmico dos módulos de apresentação para aplicar imediatamente CSS, temas e componentes
 for mod_name in list(sys.modules.keys()):
     if mod_name.startswith("app.presentation.streamlit.") and not mod_name.endswith(".dashboard"):

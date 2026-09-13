@@ -1,20 +1,26 @@
 """Caso de uso para geração de briefing executivo semanal consolidado por IA."""
 
 import json
+import time
+
 from app.domain.ai.entities import AIResponse, ChatMessage, ChatRole
-from app.domain.ai.prompts import EXECUTIVE_BRIEFING_PROMPT_TEMPLATE, SYSTEM_PROMPT_FERTIPARTNER_AI
+from app.domain.ai.prompts import (
+    EXECUTIVE_BRIEFING_PROMPT_TEMPLATE,
+    SYSTEM_PROMPT_FERTIPARTNER_AI,
+    get_briefing_date_ranges,
+)
 from app.infrastructure.ai.gemini_client import GeminiClient
 from app.application.use_cases.ai.tool_executor import ToolExecutor
 
 
 class ExecutiveBriefingUseCase:
-    """Gera o Briefing Semanal FertiPartner.AI consolidando notícias e barômetros de sentimento."""
+    """Gera o Briefing Semanal FertiPartner.AI com resumo da última semana e projeções da próxima semana."""
 
     def __init__(self, gemini_client: GeminiClient) -> None:
         self.client = gemini_client
 
     def execute(self) -> AIResponse:
-        """Coleta notícias dos últimos 180 dias e barômetros para síntese executiva."""
+        """Coleta notícias recentes e barômetros para síntese executiva da última e próxima semana."""
         if not self.client.is_configured():
             return AIResponse(
                 content="",
@@ -27,14 +33,20 @@ class ExecutiveBriefingUseCase:
 
         news_context = json.dumps(
             {
-                "barometros_sentimento_7d": barometers,
-                "noticias_relevantes_7d": news,
+                "barometros_sentimento": barometers,
+                "noticias_relevantes": news,
             },
             ensure_ascii=False,
             indent=2,
         )
 
-        user_prompt = EXECUTIVE_BRIEFING_PROMPT_TEMPLATE.format(news_context=news_context)
+        dates = get_briefing_date_ranges()
+        user_prompt = EXECUTIVE_BRIEFING_PROMPT_TEMPLATE.format(
+            current_date=dates["current_date"],
+            past_week_range=dates["past_week_range"],
+            future_week_range=dates["future_week_range"],
+            news_context=news_context,
+        )
         messages = [ChatMessage(role=ChatRole.USER, content=user_prompt)]
 
         return self.client.generate_content(

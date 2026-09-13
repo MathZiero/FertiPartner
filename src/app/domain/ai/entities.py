@@ -52,3 +52,4 @@ class AIResponse:
     finish_reason: str | None = None
     tools_used: list[str] = field(default_factory=list)
     raw_parts: list[dict[str, Any]] = field(default_factory=list)
+    model_used: str | None = None
