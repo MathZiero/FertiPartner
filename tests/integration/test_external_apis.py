@@ -13,12 +13,16 @@ load_dotenv()
     not os.environ.get("FRED_API_KEY"),
     reason="FRED_API_KEY not configured in environment",
 )
-def test_fred_api_connectivity_and_contract():
+@pytest.mark.parametrize(
+    "series_id",
+    ["PURANUSDM", "PCU325312325312A", "DHHNGSP"],
+)
+def test_fred_api_connectivity_and_contract(series_id):
     """Verify FRED API key is valid and returns commodity price series."""
     api_key = os.environ.get("FRED_API_KEY")
     assert api_key, "FRED_API_KEY must be configured in .env"
 
-    url = f"https://api.stlouisfed.org/fred/series?series_id=PURANUSDM&api_key={api_key}&file_type=json"
+    url = f"https://api.stlouisfed.org/fred/series?series_id={series_id}&api_key={api_key}&file_type=json"
     with httpx.Client(timeout=15.0) as client:
         response = client.get(url)
 
@@ -26,7 +30,24 @@ def test_fred_api_connectivity_and_contract():
     data = response.json()
     assert "seriess" in data, "FRED response missing 'seriess' key"
     assert len(data["seriess"]) > 0, "FRED returned empty series array"
-    assert data["seriess"][0]["id"] == "PURANUSDM"
+    assert data["seriess"][0]["id"] == series_id
+
+
+@pytest.mark.integration
+def test_worldbank_indicators_api_connectivity_and_contract():
+    """Verify World Bank API is accessible and returns fertilizer consumption indicators."""
+    url = "https://api.worldbank.org/v2/country/BRA/indicator/AG.CON.FERT.ZS?format=json"
+    with httpx.Client(timeout=15.0) as client:
+        response = client.get(url)
+
+    assert response.status_code == 200, f"World Bank API failed: {response.status_code}"
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) == 2, "World Bank format [pagination_metadata, records]"
+    records = data[1]
+    assert len(records) > 0, "Expected fertilizer indicator records for Brazil"
+    sample = records[0]
+    assert sample.get("indicator", {}).get("id") == "AG.CON.FERT.ZS"
 
 
 @pytest.mark.integration
@@ -69,6 +90,9 @@ def test_un_comtrade_api_connectivity_and_contract():
     url = "https://comtradeapi.un.org/public/v1/preview/C/A/HS?period=2023&reporterCode=76&cmdCode=310210"
     with httpx.Client(timeout=20.0) as client:
         response = client.get(url, headers=headers)
+
+    if response.status_code == 403 and "Quota" in response.text:
+        pytest.skip(f"UN Comtrade call volume quota esgotada temporariamente: {response.text}")
 
     assert response.status_code == 200, f"UN Comtrade failed: {response.status_code} - {response.text}"
     data = response.json()

@@ -32,15 +32,15 @@ class AIGuardrails:
         r"now\s+you\s+are\s+(dan|an\s+unrestricted|unfiltered)",
         r"voce\s+agora\s+e\s+(um\s+assistente\s+sem\s+regras|dan|infiltrado)",
         r"pretend\s+(you\s+are|to\s+be)\s+(unrestricted|without\s+rules)",
-        r"finja\s+que\s+(voce\s+e|nao\s+tem\s+regras)",
+        r"finja\s+que\s+(voce\s+)?(e|nao\s+tem\s+regras)",
         r"act\s+as\s+an\s+unrestricted",
         r"developer\s+mode\s+output",
         r"modo\s+desenvolvedor\s+ativar",
         r"jailbreak",
 
         # Exfiltração de System Prompt
-        r"(show|repeat|reveal|print|display)\s+(me\s+)?(the\s+)?system\s+prompt",
-        r"(mostre|repita|revele|imprima|exiba)\s+(o\s+)?(system\s+prompt|instrucoes\s+do\s+sistema)",
+        r"(show|repeat|reveal|print|display)\s+(me\s+)?((the|your)\s+)?system\s+prompt",
+        r"(mostre|repita|revele|imprima|exiba)\s+((o|a|os|as)\s+)?(system\s+prompt|instrucoes\s+do\s+sistema)",
         r"what\s+(are\s+)?your\s+(original|initial|system)\s+instructions",
         r"quais\s+sao\s+suas\s+instrucoes\s+(iniciais|de\s+sistema)",
         r"print\s+everything\s+above",
@@ -86,6 +86,20 @@ class AIGuardrails:
         "o que voce faz", "como funciona", "obrigado", "obrigada", "valeu", "menu", "comandos",
     }
 
+    OUT_OF_SCOPE_EXCLUSIONS = {
+        "acoes", "acao", "nasdaq", "b3", "apple", "microsoft", "google", "meta",
+        "bitcoin", "crypto", "ethereum", "futebol", "campeonato", "champions",
+        "copa do mundo", "poema", "poesia", "filme", "serie", "novela",
+        "receita", "bolo", "remedio", "medicamento", "dor de cabeca",
+    }
+
+    CORE_AGRO_KEYWORDS = {
+        "fertilizante", "fertilizantes", "adubo", "adubos", "npk", "ureia", "map", "dap",
+        "kcl", "soja", "milho", "safra", "cana", "porto", "paranagua", "santos", "solo",
+        "nutricao", "plantio", "semeadura", "safrinha", "lavoura", "cultura", "fosfatado",
+        "nitrogenado", "potassico",
+    }
+
     REJECTION_INJECTION = (
         "Solicitação bloqueada pelas diretrizes de segurança do FertiPartner.AI. "
         "Não é permitido instruir alterações de regras internas, comandos de sistema "
@@ -123,6 +137,19 @@ class AIGuardrails:
         tokens = set(re.findall(r"\b\w+\b", normalized))
         if not tokens:
             return False, cls.REJECTION_OUT_OF_SCOPE
+
+        # Se contiver termos claramente fora de escopo e nenhum termo essencial de agro, bloqueia
+        has_exclusion = any(
+            (exc in tokens if " " not in exc else re.search(rf"\b{re.escape(exc)}\b", normalized))
+            for exc in cls.OUT_OF_SCOPE_EXCLUSIONS
+        )
+        if has_exclusion:
+            has_core_agro = any(
+                (core in tokens if " " not in core else re.search(rf"\b{re.escape(core)}\b", normalized))
+                for core in cls.CORE_AGRO_KEYWORDS
+            )
+            if not has_core_agro:
+                return False, cls.REJECTION_OUT_OF_SCOPE
 
         # Saudações simples curtas
         if len(tokens) <= 3 and any(t in {"ola", "oi", "ajuda", "menu", "socorro", "bom", "dia", "tarde", "noite"} for t in tokens):

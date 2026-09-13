@@ -64,7 +64,7 @@ DEFAULT_FRED_SERIES: list[FredSeriesConfig] = [
         "price_type": "CONTRACT",
     },
     {
-        "series_id": "WPU06520201",
+        "series_id": "PCU325312325312A",
         "fertilizer_slug": "map",
         "benchmark_id": 4,  # US_GULF_DAP_FOB
         "price_type": "BENCHMARK",

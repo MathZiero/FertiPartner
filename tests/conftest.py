@@ -1,12 +1,12 @@
-"""Fixtures globais do pytest compartilhadas entre os testes."""
-
 import os
 import pytest
+from dotenv import load_dotenv
 
 
 @pytest.fixture(autouse=True, scope="session")
 def setup_test_environment():
-    """Garante que credenciais dummy de teste existam em ambientes sem .env (ex: CI/CD do GitHub Actions)."""
+    """Carrega .env se presente e garante que credenciais dummy existam em ambientes sem .env (ex: CI/CD)."""
+    load_dotenv()
     env_defaults = {
         "SUPABASE_URL": "https://test-project.supabase.co",
         "SUPABASE_KEY": "test-anon-key-12345",

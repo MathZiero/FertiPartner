@@ -121,7 +121,7 @@ def test_fred_default_series_includes_extra_series():
     assert "WPU065201" in series_ids
     assert "WPU065202" in series_ids
     assert "WPU0652013A5" in series_ids
-    assert "WPU06520201" in series_ids
+    assert "PCU325312325312A" in series_ids
     assert "WPU06520202" in series_ids
 
     # Garante ausência de conflitos em uq_price_facts (fertilizer_slug, benchmark_id, price_type)
@@ -253,4 +253,50 @@ def test_un_comtrade_run_auto_top_flows(mock_http, mock_supabase):
 
     assert result["status"] == "SUCCESS"
     assert result["records_inserted"] > 0
+
+
+@patch("httpx.Client.request")
+def test_fred_collector_handles_http_exception_and_marks_failed(mock_http, mock_supabase):
+    import httpx
+    mock_http.side_effect = httpx.HTTPError("FRED connection timeout")
+
+    collector = FREDCollector(api_key="mock_key", supabase_client=mock_supabase)
+    with pytest.raises(httpx.HTTPError):
+        collector.run(
+            series_list=[{"series_id": "FAIL_SERIES", "fertilizer_slug": "ureia", "benchmark_id": 1}],
+            start_date="2024-01-01",
+        )
+
+
+@patch("httpx.Client.request")
+def test_fred_collector_handles_empty_observations(mock_http, mock_supabase):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"observations": []}
+    mock_http.return_value = mock_resp
+
+    collector = FREDCollector(api_key="mock_key", supabase_client=mock_supabase)
+    result = collector.run(
+        series_list=[{"series_id": "EMPTY_SERIES", "fertilizer_slug": "ureia", "benchmark_id": 1}],
+        start_date="2024-01-01",
+    )
+
+    assert result["status"] == "SUCCESS"
+    assert result["records_fetched"] == 0
+    assert result["records_inserted"] == 0
+
+
+@patch("httpx.Client.request")
+def test_comex_stat_collector_handles_empty_response(mock_http, mock_supabase):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"data": {"list": []}}
+    mock_http.return_value = mock_resp
+
+    collector = ComexStatCollector(supabase_client=mock_supabase)
+    result = collector.run(year=2024, month_start=1, month_end=1, flow="import")
+
+    assert result["status"] == "SUCCESS"
+    assert result["records_fetched"] == 0
+    assert result["records_inserted"] == 0
 
