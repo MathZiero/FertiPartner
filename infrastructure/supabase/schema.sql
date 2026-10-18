@@ -431,7 +431,12 @@ CREATE INDEX IF NOT EXISTS idx_consump_fert_date ON public.consumption_records(f
 CREATE INDEX IF NOT EXISTS idx_country_indicators_lookup ON public.country_indicators(country_id, indicator_code, year);
 CREATE INDEX IF NOT EXISTS idx_raw_data_hash ON public.raw_data(payload_hash);
 CREATE INDEX IF NOT EXISTS idx_raw_data_source ON public.raw_data(source_id, reference_date);
-CREATE INDEX IF NOT EXISTS idx_raw_data_payload_gin ON public.raw_data USING gin(raw_payload);
+-- Índices para chaves estrangeiras em tabelas filhas (evita sequential scans em operações na raw_data)
+CREATE INDEX IF NOT EXISTS idx_fk_trade_raw_data ON public.trade_records(raw_data_id);
+CREATE INDEX IF NOT EXISTS idx_fk_prod_raw_data ON public.production_records(raw_data_id);
+CREATE INDEX IF NOT EXISTS idx_fk_price_raw_data ON public.price_records(raw_data_id);
+CREATE INDEX IF NOT EXISTS idx_fk_consump_raw_data ON public.consumption_records(raw_data_id);
+CREATE INDEX IF NOT EXISTS idx_fk_ci_raw_data ON public.country_indicators(raw_data_id);
 
 -- ==============================================================================
 -- 11. VIEWS ANALÍTICAS DE ALTA PERFORMANCE (RF02, RF03, RF06, RF07, RF13, RF14, RNF05)

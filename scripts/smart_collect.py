@@ -202,6 +202,13 @@ def _compute_missing_months(
     return sorted(full_set - present_filtered)
 
 
+def _extract_rows(data: Any) -> list[dict[str, Any]]:
+    """Extrai com segurança uma lista de dicionários a partir do payload de resposta Supabase."""
+    if isinstance(data, list):
+        return [r for r in data if isinstance(r, dict)]
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Estrutura de dados para resultado de gap
 # ---------------------------------------------------------------------------
@@ -237,6 +244,12 @@ class DatasetGapResult:
     def total_periods(self) -> int:
         """Total de períodos ausentes (anos + meses)."""
         return len(self.missing_years) + len(self.missing_months)
+
+    @property
+    def granularity_label(self) -> str:
+        """Retorna 'annual' ou 'monthly' conforme a fonte configurada."""
+        cfg = next((c for c in SOURCE_CONFIGS if c.name == self.source), None)
+        return cfg.granularity if cfg else "annual"
 
 
 # ---------------------------------------------------------------------------
@@ -282,7 +295,7 @@ class GapDetector:
                 .execute()
             )
             present: list[int] = []
-            for row in (resp.data or []):
+            for row in _extract_rows(resp.data):
                 if "year" in row and row["year"] is not None:
                     present.append(int(row["year"]))
                 elif row.get("period_start_date"):
@@ -329,7 +342,7 @@ class GapDetector:
                 .execute()
             )
             present: list[tuple[int, int]] = []
-            for row in (resp.data or []):
+            for row in _extract_rows(resp.data):
                 # Ignora fluxos anuais (ex: UN Comtrade gravados em trade_records)
                 if row.get("period_type") and row.get("period_type") != "MONTH":
                     continue
@@ -380,8 +393,8 @@ class GapDetector:
                 .execute()
             )
             present: list[tuple[int, int]] = []
-            for row in resp.data or []:
-                pd = row.get("price_date", "")
+            for row in _extract_rows(resp.data):
+                pd = str(row.get("price_date") or "")
                 if pd and len(pd) >= 7:
                     try:
                         year_m = int(pd[:4])
@@ -427,7 +440,7 @@ class GapDetector:
                 .execute()
             )
             present: list[int] = []
-            for row in (resp.data or []):
+            for row in _extract_rows(resp.data):
                 if row.get("period_type") and row.get("period_type") != "YEAR":
                     continue
                 if "period" in row and row["period"] is not None:
@@ -469,7 +482,7 @@ class GapDetector:
 
         try:
             res = self.supabase.table(cfg.table).select("year").execute()
-            rows = res.data or []
+            rows = _extract_rows(res.data)
             present = [int(r["year"]) for r in rows if r.get("year") is not None]
         except Exception as exc:
             logger.warning("Erro ao consultar %s (worldbank): %s", cfg.table, exc)
@@ -506,10 +519,10 @@ class GapDetector:
                 .eq("source_id", 9)
                 .execute()
             )
-            rows = res.data or []
+            rows = _extract_rows(res.data)
             present = []
             for r in rows:
-                pd_str = str(r.get("price_date", ""))
+                pd_str = str(r.get("price_date") or "")
                 if pd_str and len(pd_str) >= 4:
                     try:
                         present.append(int(pd_str[:4]))
@@ -662,12 +675,7 @@ class CollectionReport:
         return "\n".join(lines)
 
 
-# Adiciona propriedade auxiliar para acesso à granularidade na renderização do relatório
-def _gap_result_granularity_label(self: DatasetGapResult) -> str:
-    cfg = next((c for c in SOURCE_CONFIGS if c.name == self.source), None)
-    return cfg.granularity if cfg else "annual"
 
-DatasetGapResult.granularity_label = property(_gap_result_granularity_label)  # type: ignore[attr-defined]
 
 
 # ---------------------------------------------------------------------------

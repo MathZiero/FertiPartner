@@ -300,3 +300,36 @@ def test_comex_stat_collector_handles_empty_response(mock_http, mock_supabase):
     assert result["records_fetched"] == 0
     assert result["records_inserted"] == 0
 
+
+def test_store_raw_payload_deduplication(mock_supabase):
+    collector = DummyCollector(supabase_client=mock_supabase)
+    mock_supabase.table.side_effect = None
+    raw_tbl = MagicMock()
+    mock_supabase.table.return_value = raw_tbl
+
+    # Cenário 1: hash já existe -> deve retornar o id existente sem chamar insert
+    select_mock = MagicMock()
+    select_mock.eq.return_value.limit.return_value.execute.return_value.data = [{"id": 456}]
+    raw_tbl.select.return_value = select_mock
+
+    raw_id = collector.store_raw_payload(
+        endpoint_url="https://api.example.com/test",
+        payload_data={"data": [1, 2, 3]},
+    )
+    assert raw_id == 456
+    raw_tbl.insert.assert_not_called()
+
+    # Cenário 2: hash não existe -> deve chamar insert e retornar novo id
+    select_mock.eq.return_value.limit.return_value.execute.return_value.data = []
+    insert_mock = MagicMock()
+    insert_mock.execute.return_value.data = [{"id": 789}]
+    raw_tbl.insert.return_value = insert_mock
+
+    raw_id_new = collector.store_raw_payload(
+        endpoint_url="https://api.example.com/test-new",
+        payload_data={"data": [4, 5, 6]},
+    )
+    assert raw_id_new == 789
+    raw_tbl.insert.assert_called_once()
+
+

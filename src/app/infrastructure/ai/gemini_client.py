@@ -21,7 +21,7 @@ def mask_secret(secret: str | None) -> str:
     """Mascara credenciais sensíveis para prevenir leakage em logs, traces e interfaces."""
     if not secret:
         return "None"
-    clean = str(secret).strip()
+    clean = secret.strip()
     if len(clean) <= 8:
         return "***"
     return f"{clean[:4]}...{clean[-4:]}"

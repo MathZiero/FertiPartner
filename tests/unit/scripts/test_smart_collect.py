@@ -27,6 +27,7 @@ from scripts.smart_collect import (
     SOURCE_CONFIGS,
     _compute_missing_years,
     _compute_missing_months,
+    _extract_rows,
 )
 
 
@@ -350,6 +351,39 @@ class TestDatasetGapResult:
             missing_months=[(2021, 3), (2021, 4)],
         )
         assert result.total_periods == 3
+
+    def test_granularity_label_retorna_annual_para_faostat(self):
+        result = DatasetGapResult(source="faostat", fertilizer_id=1)
+        assert result.granularity_label == "annual"
+
+    def test_granularity_label_retorna_monthly_para_comex(self):
+        result = DatasetGapResult(source="comex", fertilizer_id=1)
+        assert result.granularity_label == "monthly"
+
+    def test_granularity_label_padrao_annual_se_fonte_desconhecida(self):
+        result = DatasetGapResult(source="unknown_source", fertilizer_id=1)
+        assert result.granularity_label == "annual"
+
+
+# ---------------------------------------------------------------------------
+# Extração segura de registros Supabase
+# ---------------------------------------------------------------------------
+
+class TestExtractRows:
+
+    def test_extract_rows_com_none_ou_nao_lista(self):
+        assert _extract_rows(None) == []
+        assert _extract_rows("not a list") == []
+        assert _extract_rows(123) == []
+
+    def test_extract_rows_filtra_elementos_nao_dicionario(self):
+        data = [{"a": 1}, "string", 42, None, {"b": 2}]
+        assert _extract_rows(data) == [{"a": 1}, {"b": 2}]
+
+    def test_extract_rows_com_lista_valida(self):
+        data = [{"year": 2021}, {"year": 2022}]
+        assert _extract_rows(data) == [{"year": 2021}, {"year": 2022}]
+
 
 
 # ---------------------------------------------------------------------------

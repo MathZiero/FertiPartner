@@ -137,6 +137,26 @@ class BaseCollector(ABC):
         json_str = json.dumps(payload_data, sort_keys=True, default=str)
         payload_hash = hashlib.sha256(json_str.encode("utf-8")).hexdigest()
 
+        # Deduplicação: reutiliza o registro existente se o mesmo payload (hash) já tiver sido arquivado
+        try:
+            existing = (
+                self.supabase.table("raw_data")
+                .select("id")
+                .eq("payload_hash", payload_hash)
+                .limit(1)
+                .execute()
+            )
+            if existing and existing.data and isinstance(existing.data, list) and len(existing.data) > 0:
+                first = existing.data[0]
+                if isinstance(first, dict) and "id" in first:
+                    first_id = first["id"]
+                    if isinstance(first_id, (int, str)):
+                        existing_id = int(first_id)
+                        logger.debug("Raw payload com hash %s já armazenado (id=%d); reutilizando.", payload_hash, existing_id)
+                        return existing_id
+        except Exception as exc:
+            logger.debug("Falha ao verificar existência de hash em raw_data: %s", exc)
+
         insert_payload = {
             "source_id": sid,
             "collection_run_id": collection_run_id,
