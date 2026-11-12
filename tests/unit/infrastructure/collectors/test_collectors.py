@@ -321,6 +321,7 @@ def test_store_raw_payload_deduplication(mock_supabase):
 
     # Cenário 2: hash não existe -> deve chamar insert e retornar novo id
     select_mock.eq.return_value.limit.return_value.execute.return_value.data = []
+    select_mock.eq.return_value.eq.return_value.limit.return_value.execute.return_value.data = []
     insert_mock = MagicMock()
     insert_mock.execute.return_value.data = [{"id": 789}]
     raw_tbl.insert.return_value = insert_mock
@@ -331,5 +332,112 @@ def test_store_raw_payload_deduplication(mock_supabase):
     )
     assert raw_id_new == 789
     raw_tbl.insert.assert_called_once()
+
+
+def test_sanitize_raw_payload_removes_volatile_metadata_and_null_fields(mock_supabase):
+    collector = DummyCollector(supabase_client=mock_supabase)
+
+    payload_day_1 = {
+        "realtime_start": "2026-11-10",
+        "realtime_end": "2026-11-10",
+        "elapsedTime": "1.23 secs",
+        "processo_info": {"host": "node-1"},
+        "metadata": {
+            "processing_time": 0.451,
+            "dsd": [{"col": "A"}, {"col": "B"}],
+            "datasource": "FAOSTAT",
+        },
+        "data": [
+            {
+                "cmdCode": "310210",
+                "netWgt": 1000.0,
+                "cmdDesc": None,
+                "motDesc": "",
+                "realtime_start": "2026-11-10",
+                "realtime_end": "2026-11-10",
+            }
+        ],
+    }
+    payload_day_2 = {
+        "realtime_start": "2026-11-11",
+        "realtime_end": "2026-11-11",
+        "elapsedTime": "4.89 secs",
+        "processo_info": {"host": "node-2"},
+        "metadata": {
+            "processing_time": 1.982,
+            "dsd": [{"col": "A"}, {"col": "B"}],
+            "datasource": "FAOSTAT",
+        },
+        "data": [
+            {
+                "cmdCode": "310210",
+                "netWgt": 1000.0,
+                "cmdDesc": None,
+                "motDesc": "",
+                "realtime_start": "2026-11-11",
+                "realtime_end": "2026-11-11",
+            }
+        ],
+    }
+
+    clean_1 = collector.sanitize_raw_payload(payload_day_1)
+    clean_2 = collector.sanitize_raw_payload(payload_day_2)
+
+    assert clean_1 == clean_2
+    assert "realtime_start" not in clean_1
+    assert "elapsedTime" not in clean_1
+    assert "processo_info" not in clean_1
+    assert "processing_time" not in clean_1["metadata"]
+    assert "dsd" not in clean_1["metadata"]
+    assert clean_1["metadata"]["datasource"] == "FAOSTAT"
+    assert clean_1["data"] == [{"cmdCode": "310210", "netWgt": 1000.0}]
+
+
+def test_store_raw_payload_updates_existing_endpoint_when_hash_differs(mock_supabase):
+    collector = DummyCollector(supabase_client=mock_supabase)
+    mock_supabase.table.side_effect = None
+    raw_tbl = MagicMock()
+    mock_supabase.table.return_value = raw_tbl
+
+    # Hash query returns empty (payload changed), but (source_id, endpoint_url) query finds id=555
+    select_mock = MagicMock()
+    select_mock.eq.return_value.limit.return_value.execute.return_value.data = []
+    select_mock.eq.return_value.eq.return_value.order.return_value.limit.return_value.execute.return_value.data = [
+        {"id": 555}
+    ]
+    raw_tbl.select.return_value = select_mock
+
+    raw_id = collector.store_raw_payload(
+        endpoint_url="https://api.stlouisfed.org/fred/series/observations?series_id=DHHNGSP",
+        payload_data={"observations": [{"date": "2026-11-11", "value": "3.10"}]},
+        source_id=7,
+    )
+
+    assert raw_id == 555
+    raw_tbl.insert.assert_not_called()
+    raw_tbl.update.assert_called_once()
+
+
+@patch("app.infrastructure.faostat.auth.FAOSTATAuthManager.get_token", return_value="mock_token")
+@patch("httpx.Client.request")
+def test_faostat_collector_skips_raw_data_when_no_fertilizer_items_match(mock_http, mock_token, mock_supabase):
+    from app.infrastructure.collectors.faostat_collector import FAOSTATCollector
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "data": [
+            {"Area Code": "21", "Item Code": "9999", "Element": "Production", "Year": 2022, "Value": "100.0"}
+        ]
+    }
+    mock_http.return_value = mock_resp
+
+    collector = FAOSTATCollector(supabase_client=mock_supabase)
+    with patch.object(collector, "store_raw_payload") as mock_store_raw:
+        result = collector.run(year=2022, area_codes=["21"])
+        assert result["status"] == "SUCCESS"
+        assert result["records_inserted"] == 0
+        mock_store_raw.assert_not_called()
+
 
 

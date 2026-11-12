@@ -133,15 +133,8 @@ class FAOSTATInputPricesCollector(BaseCollector):
                 if not items:
                     continue
 
-                # Armazena payload bruto para conformidade e auditoria 4NF
-                raw_id = self.store_raw_payload(
-                    endpoint_url=f"{FAOSTAT_PRICES_DATA_URL}?area={area}&year={year}",
-                    payload_data=data,
-                    collection_run_id=run_id,
-                    reference_date=f"{year}-12-31",
-                )
-
-                rows_to_insert = []
+                matched_items: list[dict[str, Any]] = []
+                parsed_entries: list[tuple[int, int, float]] = []
                 for item in items:
                     item_code = str(item.get("Item Code", "")).strip()
                     fert_id = FAO_PRICE_ITEM_FERTILIZER_MAP.get(item_code)
@@ -157,8 +150,23 @@ class FAOSTATInputPricesCollector(BaseCollector):
                         continue
 
                     benchmark_id = self.resolve_benchmark_id(area_code=area, fertilizer_id=fert_id)
+                    matched_items.append(item)
+                    parsed_entries.append((fert_id, benchmark_id, price_val))
 
-                    rows_to_insert.append({
+                if not matched_items:
+                    continue
+
+                # Armazena apenas os itens de fertilizantes aplicáveis para conformidade e auditoria 4NF
+                filtered_payload = {**data, "data": matched_items} if isinstance(data, dict) else {"data": matched_items}
+                raw_id = self.store_raw_payload(
+                    endpoint_url=f"{FAOSTAT_PRICES_DATA_URL}?area={area}&year={year}",
+                    payload_data=filtered_payload,
+                    collection_run_id=run_id,
+                    reference_date=f"{year}-12-31",
+                )
+
+                rows_to_insert = [
+                    {
                         "fertilizer_id": fert_id,
                         "benchmark_id": benchmark_id,
                         "price_date": f"{year}-12-01",
@@ -171,7 +179,9 @@ class FAOSTATInputPricesCollector(BaseCollector):
                         "data_status": "OFFICIAL",
                         "source_id": self.source_id,
                         "raw_data_id": raw_id,
-                    })
+                    }
+                    for fert_id, benchmark_id, price_val in parsed_entries
+                ]
 
                 if rows_to_insert:
                     res = (

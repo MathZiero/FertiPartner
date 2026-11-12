@@ -150,3 +150,48 @@ def test_faostat_prices_resolve_benchmark_id(mock_supabase):
     assert collector.resolve_benchmark_id(area_code="231", fertilizer_id=1) == 2
     # US + DAP -> 4 (US_GULF_DAP_FOB)
     assert collector.resolve_benchmark_id(area_code="231", fertilizer_id=3) == 4
+
+
+@patch("app.infrastructure.faostat.auth.FAOSTATAuthManager.get_token", return_value="mock_token")
+@patch("httpx.Client.request")
+def test_faostat_prices_collector_skips_raw_data_when_no_fertilizer_matches(mock_http, mock_token, mock_supabase):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "data": [
+            {"Area Code": "21", "Item Code": "515", "Item": "Apples", "Year": 2022, "Value": "400.0"},
+            {"Area Code": "21", "Item Code": "486", "Item": "Bananas", "Year": 2022, "Value": "300.0"},
+        ]
+    }
+    mock_http.return_value = mock_resp
+
+    collector = FAOSTATInputPricesCollector(supabase_client=mock_supabase)
+    with patch.object(collector, "store_raw_payload") as mock_store_raw:
+        result = collector.run(year=2022, area_codes=["21"])
+        assert result["status"] == "SUCCESS"
+        assert result["records_inserted"] == 0
+        mock_store_raw.assert_not_called()
+
+
+@patch("app.infrastructure.faostat.auth.FAOSTATAuthManager.get_token", return_value="mock_token")
+@patch("httpx.Client.request")
+def test_faostat_prices_collector_stores_only_matched_fertilizer_items_in_raw_data(mock_http, mock_token, mock_supabase):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "data": [
+            {"Area Code": "21", "Item Code": "515", "Item": "Apples", "Year": 2022, "Value": "400.0"},
+            {"Area Code": "21", "Item Code": "4001", "Item": "Urea", "Year": 2022, "Value": "550.0"},
+        ],
+        "metadata": {"datasource": "FAOSTAT", "processing_time": 0.99},
+    }
+    mock_http.return_value = mock_resp
+
+    collector = FAOSTATInputPricesCollector(supabase_client=mock_supabase)
+    with patch.object(collector, "store_raw_payload", return_value=777) as mock_store_raw:
+        collector.run(year=2022, area_codes=["21"])
+        mock_store_raw.assert_called_once()
+        stored_payload = mock_store_raw.call_args.kwargs["payload_data"]
+        assert len(stored_payload["data"]) == 1
+        assert stored_payload["data"][0]["Item Code"] == "4001"
+

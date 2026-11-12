@@ -148,15 +148,8 @@ class FREDCollector(BaseCollector):
                 if not observations:
                     continue
 
-                # Store raw payload
-                raw_id = self.store_raw_payload(
-                    endpoint_url=f"{FRED_OBSERVATIONS_URL}?series_id={sid}",
-                    payload_data=data,
-                    collection_run_id=run_id,
-                    reference_date=observations[-1]["date"] if observations else None,
-                )
-
-                # Transform and insert normalized price_records
+                # Transform and filter valid normalized price_records before storing raw payload
+                valid_observations: list[dict[str, Any]] = []
                 rows_to_insert = []
                 for obs in observations:
                     val_str = obs.get("value", "").strip()
@@ -167,6 +160,7 @@ class FREDCollector(BaseCollector):
                     except ValueError:
                         continue
 
+                    valid_observations.append({"date": obs["date"], "value": val_str})
                     rows_to_insert.append({
                         "fertilizer_id": fert_id,
                         "benchmark_id": benchmark_id,
@@ -179,10 +173,17 @@ class FREDCollector(BaseCollector):
                         "standard_price_usd_per_mt": price_val,
                         "data_status": "OFFICIAL",
                         "source_id": self.source_id,
-                        "raw_data_id": raw_id,
                     })
 
                 if rows_to_insert:
+                    raw_id = self.store_raw_payload(
+                        endpoint_url=f"{FRED_OBSERVATIONS_URL}?series_id={sid}",
+                        payload_data={"series_id": sid, "observations": valid_observations},
+                        collection_run_id=run_id,
+                        reference_date=valid_observations[-1]["date"],
+                    )
+                    for r in rows_to_insert:
+                        r["raw_data_id"] = raw_id
                     # Upsert with on_conflict
                     res = (
                         self.supabase.table("price_records")

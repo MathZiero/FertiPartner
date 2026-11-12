@@ -15,6 +15,16 @@ logger = logging.getLogger(__name__)
 class BaseCollector(ABC):
     """Abstract base class for all data ingestion pipelines."""
 
+    VOLATILE_PAYLOAD_KEYS: frozenset[str] = frozenset({
+        "processing_time",
+        "elapsedTime",
+        "realtime_start",
+        "realtime_end",
+        "processo_info",
+        "dsd",
+        "lastupdated",
+    })
+
     def __init__(
         self,
         supabase_client: Client | None = None,
@@ -124,6 +134,32 @@ class BaseCollector(ABC):
             run_id, status, records_fetched, records_inserted
         )
 
+    @classmethod
+    def _clean_payload_node(cls, node: Any) -> Any:
+        """Recursively strip volatile metadata keys and null/empty values."""
+        if isinstance(node, dict):
+            cleaned: dict[str, Any] = {}
+            for k, v in node.items():
+                if k in cls.VOLATILE_PAYLOAD_KEYS:
+                    continue
+                if v is None or v == "":
+                    continue
+                cleaned_v = cls._clean_payload_node(v)
+                if cleaned_v is None or cleaned_v == "":
+                    continue
+                cleaned[k] = cleaned_v
+            return cleaned
+        if isinstance(node, list):
+            return [cls._clean_payload_node(item) for item in node]
+        return node
+
+    @classmethod
+    def sanitize_raw_payload(cls, payload_data: Any) -> dict[str, Any]:
+        """Return a deterministic, compacted JSONB-ready dict stripped of volatile runtime metadata."""
+        root = payload_data if isinstance(payload_data, dict) else {"data": payload_data}
+        cleaned = cls._clean_payload_node(root)
+        return cleaned if isinstance(cleaned, dict) else {"data": cleaned}
+
     def store_raw_payload(
         self,
         endpoint_url: str,
@@ -132,12 +168,13 @@ class BaseCollector(ABC):
         collection_run_id: str | None = None,
         reference_date: str | None = None,
     ) -> int:
-        """Store immutable raw payload in raw_data with sha256 hash and return row ID."""
+        """Store or update compacted raw payload in raw_data with sha256 hash and return row ID."""
         sid = source_id or self.source_id
-        json_str = json.dumps(payload_data, sort_keys=True, default=str)
+        sanitized_payload = self.sanitize_raw_payload(payload_data)
+        json_str = json.dumps(sanitized_payload, sort_keys=True, default=str)
         payload_hash = hashlib.sha256(json_str.encode("utf-8")).hexdigest()
 
-        # Deduplicação: reutiliza o registro existente se o mesmo payload (hash) já tiver sido arquivado
+        # 1. Deduplicação por hash: reutiliza o registro existente se o mesmo payload já tiver sido arquivado
         try:
             existing = (
                 self.supabase.table("raw_data")
@@ -157,12 +194,47 @@ class BaseCollector(ABC):
         except Exception as exc:
             logger.debug("Falha ao verificar existência de hash em raw_data: %s", exc)
 
+        # 2. Upsert por (source_id, endpoint_url): atualiza in-place se o endpoint já existe, evitando órfãos
+        try:
+            existing_ep = (
+                self.supabase.table("raw_data")
+                .select("id")
+                .eq("source_id", sid)
+                .eq("endpoint_url", endpoint_url)
+                .order("id", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if existing_ep and existing_ep.data and isinstance(existing_ep.data, list) and len(existing_ep.data) > 0:
+                first_ep = existing_ep.data[0]
+                if isinstance(first_ep, dict) and "id" in first_ep:
+                    ep_id_raw = first_ep["id"]
+                    if isinstance(ep_id_raw, (int, str)):
+                        existing_ep_id = int(ep_id_raw)
+                        update_payload: dict[str, Any] = {
+                            "collection_run_id": collection_run_id,
+                            "payload_hash": payload_hash,
+                            "raw_payload": sanitized_payload,
+                            "reference_date": reference_date,
+                            "status": "PROCESSED",
+                            "collected_at": "NOW()",
+                        }
+                        self.supabase.table("raw_data").update(update_payload).eq("id", existing_ep_id).execute()
+                        logger.debug(
+                            "Raw payload atualizado in-place para endpoint %s (id=%d).",
+                            endpoint_url,
+                            existing_ep_id,
+                        )
+                        return existing_ep_id
+        except Exception as exc:
+            logger.debug("Falha ao verificar/atualizar endpoint existente em raw_data: %s", exc)
+
         insert_payload = {
             "source_id": sid,
             "collection_run_id": collection_run_id,
             "endpoint_url": endpoint_url,
             "payload_hash": payload_hash,
-            "raw_payload": payload_data if isinstance(payload_data, dict) else {"data": payload_data},
+            "raw_payload": sanitized_payload,
             "reference_date": reference_date,
             "status": "PROCESSED",
         }

@@ -149,6 +149,11 @@ jobs:
           echo "Iniciando coleta com argumentos: $ARGS"
           uv run python scripts/smart_collect.py $ARGS
 
+          if [ "${{ steps.args.outputs.dry_run }}" != "true" ]; then
+            echo "Executando governança e compactação preventiva de public.raw_data..."
+            uv run python scripts/cleanup_raw_data.py
+          fi
+
       - name: Resumo da execução no log
         if: always()
         run: |

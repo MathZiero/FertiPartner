@@ -431,6 +431,7 @@ CREATE INDEX IF NOT EXISTS idx_consump_fert_date ON public.consumption_records(f
 CREATE INDEX IF NOT EXISTS idx_country_indicators_lookup ON public.country_indicators(country_id, indicator_code, year);
 CREATE INDEX IF NOT EXISTS idx_raw_data_hash ON public.raw_data(payload_hash);
 CREATE INDEX IF NOT EXISTS idx_raw_data_source ON public.raw_data(source_id, reference_date);
+CREATE INDEX IF NOT EXISTS idx_raw_data_source_endpoint ON public.raw_data(source_id, endpoint_url);
 -- Índices para chaves estrangeiras em tabelas filhas (evita sequential scans em operações na raw_data)
 CREATE INDEX IF NOT EXISTS idx_fk_trade_raw_data ON public.trade_records(raw_data_id);
 CREATE INDEX IF NOT EXISTS idx_fk_prod_raw_data ON public.production_records(raw_data_id);

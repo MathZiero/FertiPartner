@@ -182,6 +182,7 @@ def _compute_missing_months(
     present: list[tuple[int, int]],
     min_year: int,
     max_year: int,
+    max_month_in_max_year: int = 12,
 ) -> list[tuple[int, int]]:
     """Retorna tuplas (ano, mês) ausentes na janela [min_year, max_year].
 
@@ -189,13 +190,15 @@ def _compute_missing_months(
         present: Lista de tuplas (ano, mês) já existentes no banco.
         min_year: Limite inferior em anos.
         max_year: Limite superior em anos.
+        max_month_in_max_year: Último mês exigido no ano superior (evita tratar meses futuros como gaps).
 
     Returns:
         Lista de tuplas (ano, mês) ausentes, ordenada.
     """
     full_set: set[tuple[int, int]] = set()
     for year in range(min_year, max_year + 1):
-        for month in range(1, 13):
+        month_limit = max_month_in_max_year if year == max_year else 12
+        for month in range(1, month_limit + 1):
             full_set.add((year, month))
 
     present_filtered = {(y, m) for y, m in present if min_year <= y <= max_year}
@@ -273,6 +276,36 @@ class GapDetector:
     def _resolve_max_year(self, cfg: SourceConfig) -> int:
         return self._current_year() - cfg.max_year_offset
 
+    def _resolve_max_month_for_year(self, target_max_year: int) -> int:
+        """Retorna o mês limite esperado para o ano superior (evita cobrar meses futuros)."""
+        if target_max_year >= self._current_year():
+            return max(1, datetime.now().month - 1)
+        return 12
+
+    @staticmethod
+    def _is_fertilizer_supported(source: str, fertilizer_id: int) -> bool:
+        """Verifica se o fertilizante possui mapeamento ativo na fonte especificada."""
+        if source == "faostat":
+            from app.infrastructure.collectors.faostat_collector import FAO_ITEM_FERTILIZER_MAP
+            return fertilizer_id in set(FAO_ITEM_FERTILIZER_MAP.values())
+        if source == "faostat_prices":
+            from app.infrastructure.collectors.faostat_prices_collector import FAO_PRICE_ITEM_FERTILIZER_MAP
+            return fertilizer_id in set(FAO_PRICE_ITEM_FERTILIZER_MAP.values())
+        if source == "comex":
+            from app.infrastructure.collectors.comex_stat_collector import NCM_FERTILIZER_MAP
+            return fertilizer_id in set(NCM_FERTILIZER_MAP.values())
+        if source == "comtrade":
+            from app.infrastructure.collectors.comtrade_collector import DEFAULT_HS_FERTILIZER_MAP
+            return fertilizer_id in set(DEFAULT_HS_FERTILIZER_MAP.values())
+        if source == "fred":
+            from app.infrastructure.collectors.fred_collector import DEFAULT_FRED_SERIES
+            fert = next((f for f in FERTILIZERS_CATALOG if f["id"] == fertilizer_id), None)
+            if not fert:
+                return False
+            slug = str(fert.get("slug", "")).lower()
+            return any(str(s.get("fertilizer_slug", "")).lower() == slug for s in DEFAULT_FRED_SERIES)
+        return True
+
     # --- FAOSTAT ---
 
     def detect_faostat_gaps(
@@ -285,6 +318,14 @@ class GapDetector:
         cfg = next(c for c in SOURCE_CONFIGS if c.name == "faostat")
         min_y = min_year if min_year is not None else cfg.min_year
         max_y = max_year if max_year is not None else self._resolve_max_year(cfg)
+
+        if not self._is_fertilizer_supported("faostat", fertilizer_id):
+            return DatasetGapResult(
+                source="faostat",
+                fertilizer_id=fertilizer_id,
+                min_year_used=min_y,
+                max_year_used=max_y,
+            )
 
         try:
             resp = (
@@ -333,6 +374,14 @@ class GapDetector:
         min_y = min_year if min_year is not None else cfg.min_year
         max_y = max_year if max_year is not None else self._resolve_max_year(cfg)
 
+        if not self._is_fertilizer_supported("comex", fertilizer_id):
+            return DatasetGapResult(
+                source="comex",
+                fertilizer_id=fertilizer_id,
+                min_year_used=min_y,
+                max_year_used=max_y,
+            )
+
         try:
             resp = (
                 self.supabase
@@ -359,7 +408,8 @@ class GapDetector:
             logger.warning("Erro ao consultar %s (comex): %s", cfg.table, exc)
             present = []
 
-        missing = _compute_missing_months(present, min_y, max_y)
+        max_m = self._resolve_max_month_for_year(max_y)
+        missing = _compute_missing_months(present, min_y, max_y, max_month_in_max_year=max_m)
         present_years = sorted({y for y, _ in present})
         return DatasetGapResult(
             source="comex",
@@ -384,6 +434,14 @@ class GapDetector:
         min_y = min_year if min_year is not None else cfg.min_year
         max_y = max_year if max_year is not None else self._resolve_max_year(cfg)
 
+        if not self._is_fertilizer_supported("fred", fertilizer_id):
+            return DatasetGapResult(
+                source="fred",
+                fertilizer_id=fertilizer_id,
+                min_year_used=min_y,
+                max_year_used=max_y,
+            )
+
         try:
             resp = (
                 self.supabase
@@ -406,7 +464,8 @@ class GapDetector:
             logger.warning("Erro ao consultar price_records (fred): %s", exc)
             present = []
 
-        missing = _compute_missing_months(present, min_y, max_y)
+        max_m = self._resolve_max_month_for_year(max_y)
+        missing = _compute_missing_months(present, min_y, max_y, max_month_in_max_year=max_m)
         present_years = sorted({y for y, _ in present})
         return DatasetGapResult(
             source="fred",
@@ -430,6 +489,14 @@ class GapDetector:
         cfg = next(c for c in SOURCE_CONFIGS if c.name == "comtrade")
         min_y = min_year if min_year is not None else cfg.min_year
         max_y = max_year if max_year is not None else self._resolve_max_year(cfg)
+
+        if not self._is_fertilizer_supported("comtrade", fertilizer_id):
+            return DatasetGapResult(
+                source="comtrade",
+                fertilizer_id=fertilizer_id,
+                min_year_used=min_y,
+                max_year_used=max_y,
+            )
 
         try:
             resp = (
@@ -510,6 +577,14 @@ class GapDetector:
         cfg = next(c for c in SOURCE_CONFIGS if c.name == "faostat_prices")
         min_y = min_year if min_year is not None else cfg.min_year
         max_y = max_year if max_year is not None else self._resolve_max_year(cfg)
+
+        if not self._is_fertilizer_supported("faostat_prices", fertilizer_id):
+            return DatasetGapResult(
+                source="faostat_prices",
+                fertilizer_id=fertilizer_id,
+                min_year_used=min_y,
+                max_year_used=max_y,
+            )
 
         try:
             res = (
@@ -860,6 +935,30 @@ class SmartCollector:
         all_gap_results: list[DatasetGapResult] = []
         all_collected: list[dict[str, Any]] = []
 
+        # Fontes globais (sem vínculo por fertilizante, ex: worldbank) rodam apenas 1 vez
+        global_sources = [s for s in active_sources if s == "worldbank"]
+        fert_sources = [s for s in active_sources if s != "worldbank"]
+
+        if global_sources:
+            wb_gap = self._detector.detect_worldbank_gaps(
+                fertilizer_id=0,
+                min_year=min_year_override,
+                max_year=max_year_override,
+            )
+            all_gap_results.append(wb_gap)
+            wb_strategy = self.decide_strategy(wb_gap, mode=mode)
+            target_wb_years = (
+                wb_gap.missing_years
+                if wb_strategy == "gap-fill"
+                else self._expand_years(wb_gap, wb_strategy)
+            )
+            for year in target_wb_years:
+                result = self._collect_year("worldbank", 0, year, dry_run=dry_run)
+                all_collected.append(result)
+
+        if not fert_sources:
+            return CollectionReport(results=all_gap_results, collected=all_collected)
+
         for fert_id in active_ferts:
             fert = next((f for f in FERTILIZERS_CATALOG if f["id"] == fert_id), None)
             fert_name = fert["canonical_name"] if fert else f"ID {fert_id}"
@@ -867,7 +966,7 @@ class SmartCollector:
 
             gap_results = self._detector.detect_all(
                 fertilizer_id=fert_id,
-                sources=active_sources,
+                sources=fert_sources,
                 min_year_override=min_year_override,
                 max_year_override=max_year_override,
             )
@@ -895,6 +994,9 @@ class SmartCollector:
                     else:
                         # Mensal: agrupa por ano para eficiência
                         years_to_collect = sorted({y for y, _ in gap_result.missing_months})
+                        if gap_result.source == "fred" and years_to_collect:
+                            # FRED busca de start_date até hoje em 1 chamada
+                            years_to_collect = [min(years_to_collect)]
                         for year in years_to_collect:
                             result = self._collect_year(
                                 gap_result.source, fert_id, year, dry_run=dry_run

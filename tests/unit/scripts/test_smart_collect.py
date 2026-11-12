@@ -584,3 +584,61 @@ class TestGapDetector4NFSchema:
         assert result.missing_years == [2021]
         assert result.present_years == [2020, 2022]
 
+    def test_compute_missing_months_respeita_max_month_in_max_year(self):
+        present = [(2026, m) for m in range(1, 10)]
+        gaps = _compute_missing_months(
+            present, min_year=2026, max_year=2026, max_month_in_max_year=10
+        )
+        assert gaps == [(2026, 10)]
+        assert (2026, 11) not in gaps
+        assert (2026, 12) not in gaps
+
+    def test_detect_fred_gaps_ignora_fertilizante_sem_serie_configurada(self, gap_detector, mock_supabase):
+        # Fertilizante ID 4 (KCl) não possui série no DEFAULT_FRED_SERIES
+        result = gap_detector.detect_fred_gaps(fertilizer_id=4, min_year=2020, max_year=2023)
+        assert result.missing_months == []
+        assert result.has_gaps is False
+
+    def test_detect_faostat_gaps_ignora_fertilizante_nao_mapeado(self, gap_detector, mock_supabase):
+        # Fertilizante ID 13 (Micronutrientes) não está em FAO_ITEM_FERTILIZER_MAP
+        result = gap_detector.detect_faostat_gaps(fertilizer_id=13, min_year=2020, max_year=2022)
+        assert result.missing_years == []
+        assert result.has_gaps is False
+
+    def test_smart_collector_executa_worldbank_apenas_uma_vez_para_multiplos_fertilizantes(self, mock_supabase):
+        mock_response = MagicMock()
+        mock_response.data = [{"year": 2022}]
+        mock_supabase.table.return_value.select.return_value.execute.return_value = mock_response
+
+        collector = SmartCollector(supabase_client=mock_supabase)
+        with patch.object(collector, "_collect_year", return_value={"status": "SUCESSO", "records": 5}) as mock_collect:
+            report = collector.run(
+                sources=["worldbank"],
+                fertilizer_ids=[1, 2, 3],
+                mode="gap-fill",
+                min_year_override=2022,
+                max_year_override=2023,
+            )
+            # Apenas 2023 está faltando, e deve ser coletado apenas 1 vez (não 3 vezes)
+            wb_results = [r for r in report.results if r.source == "worldbank"]
+            assert len(wb_results) == 1
+            mock_collect.assert_called_once_with("worldbank", 0, 2023, dry_run=False)
+
+    def test_smart_collector_consolida_coleta_fred_no_menor_ano_faltante(self, mock_supabase):
+        mock_response = MagicMock()
+        mock_response.data = []
+        mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = mock_response
+
+        collector = SmartCollector(supabase_client=mock_supabase)
+        with patch.object(collector, "_collect_year", return_value={"status": "SUCESSO", "records": 24}) as mock_collect:
+            collector.run(
+                sources=["fred"],
+                fertilizer_ids=[1],
+                mode="gap-fill",
+                min_year_override=2021,
+                max_year_override=2023,
+            )
+            # Como FRED busca de start_date até hoje, deve chamar _collect_year apenas 1 vez com o menor ano (2021)
+            mock_collect.assert_called_once_with("fred", 1, 2021, dry_run=False)
+
+

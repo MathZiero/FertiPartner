@@ -194,18 +194,10 @@ class ComexStatCollector(BaseCollector):
                 self.finish_collection_run(run_id, 0, 0, status="SUCCESS")
                 return {"status": "SUCCESS", "run_id": run_id, "records_fetched": 0, "records_inserted": 0}
 
-            # Store raw payload
-            raw_id = self.store_raw_payload(
-                endpoint_url=f"{COMEX_API_URL}?flow={flow}&period={period_from}_{period_to}",
-                payload_data=data,
-                source_id=source_id,
-                collection_run_id=run_id,
-                reference_date=f"{year}-{month_end:02d}-01",
-            )
-
             # Process and aggregate records by unique bilateral key in 4NF
             aggregated_trades: dict[tuple, dict[str, Any]] = {}
             state_breakdowns: dict[tuple, list[dict[str, Any]]] = {}
+            matched_raw_records: list[dict[str, Any]] = []
 
             for item in records:
                 ncm = str(item.get("coNcm", "")).strip()
@@ -224,6 +216,8 @@ class ComexStatCollector(BaseCollector):
 
                 if exporter_id == importer_id:
                     continue
+
+                matched_raw_records.append(item)
 
                 m_str = str(item.get("monthNumber", "01")).strip()
                 m_int = int(m_str) if m_str.isdigit() else 1
@@ -254,7 +248,6 @@ class ComexStatCollector(BaseCollector):
                         "standard_value_usd": fob_val,
                         "incoterm": "FOB",
                         "source_id": source_id,
-                        "raw_data_id": raw_id,
                     }
                     state_breakdowns[key] = []
                 else:
@@ -271,6 +264,20 @@ class ComexStatCollector(BaseCollector):
                 })
 
             trade_rows_to_insert = list(aggregated_trades.values())
+            if not trade_rows_to_insert:
+                self.finish_collection_run(run_id, total_fetched, 0, status="SUCCESS")
+                return {"status": "SUCCESS", "run_id": run_id, "records_fetched": total_fetched, "records_inserted": 0}
+
+            ncm_suffix = f"&ncms={','.join(sorted(active_ncms))}" if set(active_ncms) != set(NCM_FERTILIZER_MAP.keys()) else ""
+            raw_id = self.store_raw_payload(
+                endpoint_url=f"{COMEX_API_URL}?flow={flow}&period={period_from}_{period_to}{ncm_suffix}",
+                payload_data={"data": {"list": matched_raw_records}},
+                source_id=source_id,
+                collection_run_id=run_id,
+                reference_date=f"{year}-{month_end:02d}-01",
+            )
+            for row_dict in trade_rows_to_insert:
+                row_dict["raw_data_id"] = raw_id
             logger.info("Aggregated %d microdata records into %d bilateral country-level trade facts.", len(records), len(trade_rows_to_insert))
 
             # Batch upsert into trade_records (in chunks of 100)

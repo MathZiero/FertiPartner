@@ -313,13 +313,7 @@ class UNComtradeCollector(BaseCollector):
                     if not items:
                         continue
 
-                    raw_id = self.store_raw_payload(
-                        endpoint_url=f"{endpoint}?period={period}&reporterCode={rep_code}&cmdCode={cmd}",
-                        payload_data=data,
-                        collection_run_id=run_id,
-                        reference_date=f"{period}-12-31",
-                    )
-
+                    compact_items: list[dict[str, Any]] = []
                     rows_to_insert = []
                     for item in items:
                         partner_num = item.get("partnerCode")
@@ -349,6 +343,15 @@ class UNComtradeCollector(BaseCollector):
                         net_wgt_kg = float(item.get("netWgt") or 0.0)
                         mt_val = round(net_wgt_kg / 1000.0, 4)
 
+                        compact_items.append({
+                            "period": item.get("period"),
+                            "reporterCode": rep_code,
+                            "partnerCode": int(partner_num),
+                            "cmdCode": cmd,
+                            "flowCode": flow_code,
+                            "netWgt": net_wgt_kg,
+                            "primaryValue": val_usd,
+                        })
                         rows_to_insert.append({
                             "fertilizer_id": fert_id,
                             "flow_type": flow_type,
@@ -365,10 +368,17 @@ class UNComtradeCollector(BaseCollector):
                             "standard_value_usd": val_usd,
                             "incoterm": "FOB" if flow_type == "EXPORT" else "CIF",
                             "source_id": self.source_id,
-                            "raw_data_id": raw_id,
                         })
 
                     if rows_to_insert:
+                        raw_id = self.store_raw_payload(
+                            endpoint_url=f"{endpoint}?period={period}&reporterCode={rep_code}&cmdCode={cmd}",
+                            payload_data={"data": compact_items, "count": len(compact_items)},
+                            collection_run_id=run_id,
+                            reference_date=f"{period}-12-31",
+                        )
+                        for r in rows_to_insert:
+                            r["raw_data_id"] = raw_id
                         unique_rows = {}
                         for r in rows_to_insert:
                             key = (
@@ -470,13 +480,7 @@ class UNComtradeCollector(BaseCollector):
                     if not items:
                         continue
 
-                    raw_id = self.store_raw_payload(
-                        endpoint_url=f"{endpoint}?period={period}&reporterCode={rep_code}&cmdCode={cmd}",
-                        payload_data=data,
-                        collection_run_id=run_id,
-                        reference_date=f"{period}-12-31",
-                    )
-
+                    compact_items: list[dict[str, Any]] = []
                     rows_to_insert = []
                     for item in items:
                         partner_num = item.get("partnerCode")
@@ -506,6 +510,15 @@ class UNComtradeCollector(BaseCollector):
                         net_wgt_kg = float(item.get("netWgt") or 0.0)
                         mt_val = round(net_wgt_kg / 1000.0, 4)
 
+                        compact_items.append({
+                            "period": item.get("period"),
+                            "reporterCode": rep_code,
+                            "partnerCode": int(partner_num),
+                            "cmdCode": cmd,
+                            "flowCode": flow_code,
+                            "netWgt": net_wgt_kg,
+                            "primaryValue": val_usd,
+                        })
                         rows_to_insert.append({
                             "fertilizer_id": fert_id,
                             "flow_type": flow_type,
@@ -522,10 +535,17 @@ class UNComtradeCollector(BaseCollector):
                             "standard_value_usd": val_usd,
                             "incoterm": "FOB" if flow_type == "EXPORT" else "CIF",
                             "source_id": self.source_id,
-                            "raw_data_id": raw_id,
                         })
 
                     if rows_to_insert:
+                        raw_id = self.store_raw_payload(
+                            endpoint_url=f"{endpoint}?period={period}&reporterCode={rep_code}&cmdCode={cmd}",
+                            payload_data={"data": compact_items, "count": len(compact_items)},
+                            collection_run_id=run_id,
+                            reference_date=f"{period}-12-31",
+                        )
+                        for r in rows_to_insert:
+                            r["raw_data_id"] = raw_id
                         unique_rows = {}
                         for r in rows_to_insert:
                             key = (

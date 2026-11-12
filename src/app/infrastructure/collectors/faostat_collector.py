@@ -116,16 +116,9 @@ class FAOSTATCollector(BaseCollector):
                 if not items:
                     continue
 
-                # Store raw payload
-                raw_id = self.store_raw_payload(
-                    endpoint_url=f"{FAOSTAT_DATA_URL}?area={area}&year={year}",
-                    payload_data=data,
-                    collection_run_id=run_id,
-                    reference_date=f"{year}-12-31",
-                )
-
-                prod_rows = []
-                consump_rows = []
+                matched_items: list[dict[str, Any]] = []
+                prod_entries: list[tuple[int, float]] = []
+                consump_entries: list[tuple[int, float]] = []
 
                 for item in items:
                     item_code = str(item.get("Item Code", "")).strip()
@@ -143,33 +136,56 @@ class FAOSTATCollector(BaseCollector):
                         continue
 
                     if element == "Production":
-                        prod_rows.append({
-                            "fertilizer_id": fert_id,
-                            "country_id": country_id,
-                            "period_start_date": f"{year}-01-01",
-                            "period_end_date": f"{year}-12-31",
-                            "period_type": "YEAR",
-                            "data_status": "OFFICIAL",
-                            "original_quantity": qty_mt,
-                            "original_unit_code": "MT",
-                            "standard_quantity_mt": qty_mt,
-                            "source_id": self.source_id,
-                            "raw_data_id": raw_id,
-                        })
+                        matched_items.append(item)
+                        prod_entries.append((fert_id, qty_mt))
                     elif element in ("Agricultural Use", "Agriculture Use", "Use"):
-                        consump_rows.append({
-                            "fertilizer_id": fert_id,
-                            "country_id": country_id,
-                            "period_start_date": f"{year}-01-01",
-                            "period_end_date": f"{year}-12-31",
-                            "period_type": "YEAR",
-                            "sector": "AGRICULTURE",
-                            "original_quantity": qty_mt,
-                            "original_unit_code": "MT",
-                            "standard_quantity_mt": qty_mt,
-                            "source_id": self.source_id,
-                            "raw_data_id": raw_id,
-                        })
+                        matched_items.append(item)
+                        consump_entries.append((fert_id, qty_mt))
+
+                if not matched_items:
+                    continue
+
+                # Store raw payload only for matched fertilizer items
+                filtered_payload = {**data, "data": matched_items} if isinstance(data, dict) else {"data": matched_items}
+                raw_id = self.store_raw_payload(
+                    endpoint_url=f"{FAOSTAT_DATA_URL}?area={area}&year={year}",
+                    payload_data=filtered_payload,
+                    collection_run_id=run_id,
+                    reference_date=f"{year}-12-31",
+                )
+
+                prod_rows = [
+                    {
+                        "fertilizer_id": fert_id,
+                        "country_id": country_id,
+                        "period_start_date": f"{year}-01-01",
+                        "period_end_date": f"{year}-12-31",
+                        "period_type": "YEAR",
+                        "data_status": "OFFICIAL",
+                        "original_quantity": qty_mt,
+                        "original_unit_code": "MT",
+                        "standard_quantity_mt": qty_mt,
+                        "source_id": self.source_id,
+                        "raw_data_id": raw_id,
+                    }
+                    for fert_id, qty_mt in prod_entries
+                ]
+                consump_rows = [
+                    {
+                        "fertilizer_id": fert_id,
+                        "country_id": country_id,
+                        "period_start_date": f"{year}-01-01",
+                        "period_end_date": f"{year}-12-31",
+                        "period_type": "YEAR",
+                        "sector": "AGRICULTURE",
+                        "original_quantity": qty_mt,
+                        "original_unit_code": "MT",
+                        "standard_quantity_mt": qty_mt,
+                        "source_id": self.source_id,
+                        "raw_data_id": raw_id,
+                    }
+                    for fert_id, qty_mt in consump_entries
+                ]
 
                 if prod_rows:
                     res = (
